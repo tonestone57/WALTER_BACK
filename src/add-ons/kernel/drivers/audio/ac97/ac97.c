@@ -245,6 +245,8 @@ ac97_attach(ac97_dev **_dev, codec_reg_read reg_read, codec_reg_write reg_write,
 	int i;
 
 	*_dev = dev = (ac97_dev *) malloc(sizeof(ac97_dev));
+	if (dev == NULL)
+		goto err;
 	memset(dev->reg_cache, 0, sizeof(dev->reg_cache));
 	dev->cookie = cookie;
 	dev->reg_read = reg_read;
@@ -318,6 +320,11 @@ ac97_attach(ac97_dev **_dev, codec_reg_read reg_read, codec_reg_write reg_write,
 	LOG(("codec 3d enhancement = %s\n", dev->codec_3d_stereo_enhancement));
 
 	ac97_dump_capabilities(dev);
+	return;
+
+err:
+	free(dev);
+	*_dev = NULL;
 }
 
 

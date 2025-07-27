@@ -80,7 +80,13 @@ PostEvent(bluetooth_device* ndev, void* event, size_t size)
 	if (port != B_NAME_NOT_FOUND) {
 
 		err = write_port_etc(port, PACK_PORTCODE(BT_EVENT, ndev->index, -1),
-			event, size, B_TIMEOUT, 1 * 1000 * 1000);
+			event, size, B_TIMEOUT, 100000);
+
+		if (err == B_TIMED_OUT) {
+			// retry for a short time
+			err = write_port_etc(port, PACK_PORTCODE(BT_EVENT, ndev->index, -1),
+				event, size, B_TIMEOUT, 100000);
+		}
 
 		if (err != B_OK)
 			ERROR("%s: Error posting userland %s\n", __func__, strerror(err));
