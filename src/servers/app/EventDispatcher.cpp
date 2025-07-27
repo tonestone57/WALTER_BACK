@@ -645,6 +645,8 @@ bool
 EventDispatcher::_SendMessage(BMessenger& messenger, BMessage* message,
 	float importance)
 {
+	BAutolock locker(fMessageLock);
+
 	// TODO: add failed messages to a queue, and start dropping them by importance
 	//	(and use the same mechanism in ServerWindow::SendMessageToClient())
 

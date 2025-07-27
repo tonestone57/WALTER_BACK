@@ -155,6 +155,7 @@ class EventDispatcher : public BLocker {
 		BPoint			fDragOffset;
 
 		BLocker			fCursorLock;
+	BLocker				fMessageLock;
 		HWInterface*	fHWInterface;
 		Desktop*		fDesktop;
 };

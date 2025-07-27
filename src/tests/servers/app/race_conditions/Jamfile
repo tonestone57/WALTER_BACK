@@ -1,0 +1,7 @@
+SubDir HAIKU_TOP src tests servers app race_conditions ;
+
+Application race_conditions :
+	main.cpp
+	:
+	be test_app_server
+;
