@@ -9,6 +9,7 @@
 #include <string.h>
 #include <time.h>
 
+#include <support/mutex.h>
 #include <syscalls.h>
 
 #include <StorageDefs.h>
@@ -40,16 +41,25 @@ extern "C" time_t __mktime_fallback(struct tm* tmp);
 extern "C" time_t __timegm_fallback(struct tm* tmp);
 
 
+static mutex sTimezoneLock = MUTEX_INITIALIZER("timezone lock");
+
+
 extern "C" void
 tzset(void)
 {
-	if (GetCurrentLocaleBackend() == NULL && LocaleBackend::LoadBackend() != B_OK)
+	mutex_lock(&sTimezoneLock);
+
+	if (GetCurrentLocaleBackend() == NULL && LocaleBackend::LoadBackend() != B_OK) {
+		mutex_unlock(&sTimezoneLock);
 		return;
+	}
 
 	char timeZoneID[B_FILE_NAME_LENGTH] = { "GMT" };
 	_kern_get_timezone(NULL, timeZoneID, sizeof(timeZoneID));
 
 	GetCurrentLocaleBackend()->TZSet(timeZoneID, getenv("TZ"));
+
+	mutex_unlock(&sTimezoneLock);
 }
 
 

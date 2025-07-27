@@ -1,0 +1,7 @@
+SubDir HAIKU_TOP src tests system libroot posix time ;
+
+SimpleTest RaceTest :
+	RaceTest.cpp
+	:
+	be
+;

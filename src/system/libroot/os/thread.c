@@ -111,6 +111,9 @@ spawn_thread(thread_func entry, const char *name, int32 priority, void *data)
 	if (thread == NULL)
 		return B_NO_MEMORY;
 
+	if (thread == NULL)
+		return B_NO_MEMORY;
+
 	_single_threaded = false;
 		// used for I/O locking - BeOS compatibility issue
 
