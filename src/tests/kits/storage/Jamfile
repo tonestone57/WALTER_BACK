@@ -36,6 +36,7 @@ UnitTestLib libstoragetest.so
 	Depends libstoragetest.so : $(resdir) ;
 }
 
+SubInclude HAIKU_TOP src tests kits storage bfile ;
 SubInclude HAIKU_TOP src tests kits storage disk_device ;
 SubInclude HAIKU_TOP src tests kits storage testapps ;
 SubInclude HAIKU_TOP src tests kits storage virtualdrive ;

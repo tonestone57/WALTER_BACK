@@ -1,0 +1,7 @@
+SubDir HAIKU_TOP src tests kits storage bfile ;
+
+Application RaceTest :
+	RaceTest.cpp
+	:
+	be
+;

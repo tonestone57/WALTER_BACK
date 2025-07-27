@@ -103,3 +103,8 @@ SimpleBAppTestApp AppQuitTestApp4.cpp : : $(commonObjects) ;
 #
 
 SimpleBAppTestApp AppQuitRequestedTestApp1.cpp : : $(commonObjects) ;
+
+# BApplication race condition test
+#
+
+SimpleBAppTestApp RaceTest.cpp ;

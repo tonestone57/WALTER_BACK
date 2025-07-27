@@ -160,6 +160,7 @@ private:
 			void*				fServerReadOnlyMemory;
 			uint32				_reserved[12];
 
+			BLocker				fInitLocker;
 			bool				fReadyToRunCalled;
 };
 

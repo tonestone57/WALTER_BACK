@@ -97,6 +97,7 @@ BFile::~BFile()
 status_t
 BFile::SetTo(const entry_ref* ref, uint32 openMode)
 {
+	BAutolock locker(&fInitLocker);
 	Unset();
 
 	if (!ref)
@@ -126,6 +127,7 @@ BFile::SetTo(const entry_ref* ref, uint32 openMode)
 status_t
 BFile::SetTo(const BEntry* entry, uint32 openMode)
 {
+	BAutolock locker(&fInitLocker);
 	Unset();
 
 	if (!entry)
@@ -153,6 +155,7 @@ BFile::SetTo(const BEntry* entry, uint32 openMode)
 status_t
 BFile::SetTo(const char* path, uint32 openMode)
 {
+	BAutolock locker(&fInitLocker);
 	Unset();
 
 	if (!path)
@@ -178,6 +181,7 @@ BFile::SetTo(const char* path, uint32 openMode)
 status_t
 BFile::SetTo(const BDirectory* dir, const char* path, uint32 openMode)
 {
+	BAutolock locker(&fInitLocker);
 	Unset();
 
 	if (!dir)

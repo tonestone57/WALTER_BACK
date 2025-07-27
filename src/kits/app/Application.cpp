@@ -352,6 +352,7 @@ BApplication::~BApplication()
 void
 BApplication::_InitData(const char* signature, bool initGUI, status_t* _error)
 {
+	BAutolock locker(fInitLocker);
 	DBG(OUT("BApplication::InitData(`%s', %p)\n", signature, _error));
 	// check whether there exists already an application
 	if (be_app != NULL)

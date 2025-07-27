@@ -2724,6 +2724,7 @@ void
 BWindow::_InitData(BRect frame, const char* title, window_look look,
 	window_feel feel, uint32 flags,	uint32 workspace, int32 bitmapToken)
 {
+	BAutolock locker(fInitLocker);
 	STRACE(("BWindow::InitData()\n"));
 
 	if (be_app == NULL) {

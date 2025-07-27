@@ -62,6 +62,7 @@ class BFile : public BNode, public BPositionIO {
 	private:
 		// The file's open mode.
 		uint32 fMode;
+		BLocker fInitLocker;
 };
 
 #endif	// _FILE_H

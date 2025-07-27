@@ -407,6 +407,7 @@ private:
 			BMessageRunner*		fPulseRunner;
 			BRect				fPreviousFrame;
 
+			BLocker				fInitLocker;
 			uint32				_reserved[9];
 };
 
