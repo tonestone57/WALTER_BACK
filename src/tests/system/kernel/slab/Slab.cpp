@@ -522,6 +522,48 @@ void test5()
 }
 
 
+void test6()
+{
+	object_depot depot;
+	object_depot_init(&depot, 16, 16, 0, NULL, NULL);
+
+	// allocate a magazine and put it in a per-CPU store
+	depot_cpu_store* store = &depot.stores[0];
+	store->loaded = alloc_magazine(&depot, 0);
+
+	object_depot_destroy(&depot, 0);
+}
+
+
+void test7()
+{
+	MemoryManager::Init(NULL);
+
+	// allocate an area
+	MemoryManager::Area* area;
+	MemoryManager::_AllocateArea(0, area);
+
+	// free the area
+	MemoryManager::_FreeArea(area, false, 0);
+}
+
+
+void test8()
+{
+	HashedObjectCache* cache = HashedObjectCache::Create("test", 16, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL);
+
+	// add some slabs to the cache
+	for (int i = 0; i < 10; i++) {
+		cache->CreateSlab(0);
+	}
+
+	// resize the hash table
+	cache->_ResizeHashTableIfNeeded(0);
+
+	cache->Delete();
+}
+
+
 int main()
 {
 	//test1();
@@ -529,5 +571,8 @@ int main()
 	test3();
 	//test4();
 	//test5();
+	test6();
+	test7();
+	test8();
 	return 0;
 }

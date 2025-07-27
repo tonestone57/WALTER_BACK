@@ -190,6 +190,13 @@ HashedObjectCache::_ResizeHashTableIfNeeded(uint32 flags)
 	}
 
 	if (buffer != NULL) {
+		// free the slabs in the old hash table
+		HashedSlab** oldTable = (HashedSlab**)buffer;
+		for (size_t i = 0; i < hash_table.Capacity(); i++) {
+			if (oldTable[i] != NULL)
+				free_slab(oldTable[i], flags);
+		}
+
 		Unlock();
 		slab_internal_free(buffer, flags);
 		Lock();

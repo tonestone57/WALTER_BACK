@@ -236,6 +236,16 @@ object_depot_destroy(object_depot* depot, uint32 flags)
 {
 	object_depot_make_empty(depot, flags);
 
+	// free the magazines in the per-CPU stores
+	int cpuCount = smp_get_num_cpus();
+	for (int i = 0; i < cpuCount; i++) {
+		depot_cpu_store& store = depot->stores[i];
+		if (store.loaded != NULL)
+			free_magazine(store.loaded, flags);
+		if (store.previous != NULL)
+			free_magazine(store.previous, flags);
+	}
+
 	slab_internal_free(depot->stores, flags);
 
 	rw_lock_destroy(&depot->outer_lock);

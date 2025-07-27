@@ -1437,6 +1437,11 @@ MemoryManager::_FreeArea(Area* area, bool areaRemoved, uint32 flags)
 	delete_area(area->vmArea->id);
 	vm_unreserve_memory(memoryToUnreserve);
 
+	// free the meta chunks
+	for (int32 i = 0; i < SLAB_META_CHUNKS_PER_AREA; i++) {
+		slab_internal_free(&area->metaChunks[i], flags);
+	}
+
 	mutex_lock(&sLock);
 }
 
