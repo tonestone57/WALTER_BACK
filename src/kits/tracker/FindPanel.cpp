@@ -3869,6 +3869,7 @@ MostUsedNames::~MostUsedNames()
 		list_entry* entry = fList.ItemAt(i);
 		delete entry;
 	}
+	fList.MakeEmpty();
 }
 
 

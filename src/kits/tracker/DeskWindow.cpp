@@ -238,6 +238,9 @@ BDeskWindow::~BDeskWindow()
 		// prevent double-saving, this would slow down quitting
 	PoseView()->StopSettingsWatch();
 	stop_watching(this);
+
+	delete[] fNodeRef;
+	delete[] fShortcutsSettings;
 }
 
 

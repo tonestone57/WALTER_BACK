@@ -156,3 +156,5 @@ if $(TARGET_PLATFORM) = libbe_test {
 	HaikuInstall install-test-apps : $(HAIKU_APP_TEST_LIB_DIR) : libtracker.so
 		: tests!apps ;
 }
+
+Application TrackerTests : TrackerTests.cpp : be tracker ;
