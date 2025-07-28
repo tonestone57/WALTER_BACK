@@ -1,0 +1,4 @@
+SubDir HAIKU_TOP src tests tools ;
+
+SubInclude HAIKU_TOP src tests tools anyboot ;
+SubInclude HAIKU_TOP src tests tools bfs_shell ;

@@ -108,14 +108,17 @@ createPartition(int handle, int index, bool active, uint8_t type,
 	uint32_t offset, uint32_t size)
 {
 	uint8_t bootable = active ? 0x80 : 0x0;
-	uint8_t partition[16] = {
-		bootable,				// bootable
-		0xff, 0xff, 0xff,		// CHS first block (default to LBA)
-		type,					// partition type
-		0xff, 0xff, 0xff,		// CHS last block (default to LBA)
-		0x00, 0x00, 0x00, 0x00,	// imageOffset in blocks (written below)
-		0x00, 0x00, 0x00, 0x00	// imageSize in blocks (written below)
-	};
+	uint8_t* partition = (uint8_t*)malloc(16);
+	partition[0] = bootable;
+	partition[1] = 0xff;
+	partition[2] = 0xff;
+	partition[3] = 0xff;
+	partition[4] = type;
+	partition[5] = 0xff;
+	partition[6] = 0xff;
+	partition[7] = 0xff;
+	*(uint32_t*)(partition + 8) = 0;
+	*(uint32_t*)(partition + 12) = 0;
 
 	// fill in LBA values
 	uint32_t partitionOffset = (uint32_t)(offset / kBlockSize);

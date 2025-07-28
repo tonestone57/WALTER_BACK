@@ -1,0 +1,7 @@
+SubDir HAIKU_TOP src tests tools anyboot ;
+
+Application OverflowTest :
+	OverflowTest.cpp
+	:
+	be
+;

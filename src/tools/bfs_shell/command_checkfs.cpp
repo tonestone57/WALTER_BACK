@@ -32,6 +32,10 @@ command_checkfs(int argc, const char* const* argv)
 		return rootDir;
 
 	struct check_control result;
+	if (sizeof(result) > 1024) {
+		fssh_dprintf("check_control structure is too large!\n");
+		return B_ERROR;
+	}
 	memset(&result, 0, sizeof(result));
 	result.magic = BFS_IOCTL_CHECK_MAGIC;
 	result.flags = 0;
