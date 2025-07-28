@@ -50,6 +50,7 @@ ClipboardHandler::~ClipboardHandler()
 		it != fClipboards->end();
 		++it)
 		delete it->second;
+	delete fClipboards;
 }
 
 

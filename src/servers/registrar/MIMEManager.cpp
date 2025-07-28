@@ -427,7 +427,6 @@ MIMEManager::HandleSetParam(BMessage *message)
 					}
 				}
 				break;
-				// End temporary fix code
 			}
 
 			case B_REG_MIME_PREFERRED_APP:

@@ -404,7 +404,9 @@ Registrar::_HandleShutDown(BMessage *request)
 	if (error == B_OK) {
 		// create a ShutdownProcess
 		fShutdownProcess = new(nothrow) ShutdownProcess(fRoster, fEventQueue);
-		if (fShutdownProcess) {
+		if (fShutdownProcess == NULL) {
+			error = B_NO_MEMORY;
+		} else {
 			error = fShutdownProcess->Init(request);
 			if (error == B_OK) {
 				DetachCurrentMessage();
@@ -414,8 +416,7 @@ Registrar::_HandleShutDown(BMessage *request)
 				delete fShutdownProcess;
 				fShutdownProcess = NULL;
 			}
-		} else
-			error = B_NO_MEMORY;
+		}
 	}
 
 	if (needsReply)

@@ -1159,9 +1159,7 @@ TRoster::HandleRestartAppServer(BMessage* request)
 	argv[1] = NULL;
 
 	thread_id threadId = load_image(1, argv, (const char**)environ);
-	int i;
-	for (i = 0; i < 1; i++)
-		delete argv[i];
+	free((void*)argv[0]);
 	delete [] argv;
 
 	resume_thread(threadId);
@@ -1918,9 +1916,9 @@ TRoster::_LoadRosterSettings(const char* path)
 	if (!error) {
 		// Clear the current lists as
 		// we'll be manually building them up
-		fRecentDocuments.Clear();
-		fRecentFolders.Clear();
-		fRecentApps.Clear();
+		ClearRecentDocuments();
+		ClearRecentFolders();
+		ClearRecentApps();
 
 		// Now we just walk through the file and read in the info
 		while (true) {
