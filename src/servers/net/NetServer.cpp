@@ -729,6 +729,8 @@ NetServer::_ConfigureDevices(const char* startPath,
 				suggestedInterface);
 		}
 	}
+
+	delete suggestedInterface;
 }
 
 
@@ -1100,8 +1102,6 @@ NetServer::_JoinNetwork(const BMessage& message, const BNetworkAddress* address,
 			return status;
 
 		wpaSupplicant.SetTo(kWPASupplicantSignature);
-		if (!wpaSupplicant.IsValid())
-			return B_ERROR;
 	}
 
 	// TODO: listen to notifications from the supplicant!

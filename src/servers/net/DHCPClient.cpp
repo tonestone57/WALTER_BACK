@@ -706,7 +706,8 @@ DHCPClient::_StateTransition(int socket, dhcp_state& state)
 		BNetworkDevice device(Device());
 		int index = device.Index();
 
-		setsockopt(socket, SOL_SOCKET, SO_BINDTODEVICE, &index, sizeof(int));
+		if (setsockopt(socket, SOL_SOCKET, SO_BINDTODEVICE, &index, sizeof(int)) < 0)
+			return errno;
 	}
 
 	BNetworkAddress broadcast;

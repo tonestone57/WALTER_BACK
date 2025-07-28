@@ -27,3 +27,5 @@ Application net_server :
 	# for PPP
 	#libppp.a
 ;
+
+Application NetServerTests : NetServerTests.cpp : be network bnetapi ;
