@@ -95,11 +95,9 @@ panic(const char *format, ...)
 	vprintf(format, list);
 	va_end(list);
 
-	puts("\nPress key to reboot.");
+	puts("\nHalting.");
 
-	clear_key_buffer();
-	wait_for_key();
-	platform_exit();
+	while (true);
 }
 
 

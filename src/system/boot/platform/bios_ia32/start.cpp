@@ -99,8 +99,12 @@ smp_start_kernel(void)
 
 	// Set up gdt
 	struct gdt_idt_descr gdt_descr;
-	gdt_descr.limit = sizeof(gBootGDT) - 1;
-	gdt_descr.base = gBootGDT;
+	gdt_descr.limit = smp_get_num_cpus() * 8 * sizeof(uint64) - 1;
+	gdt_descr.base = (addr_t)malloc(smp_get_num_cpus() * 8 * sizeof(uint64));
+	if (gdt_descr.base == 0)
+		panic("Could not allocate GDT!");
+
+	memcpy((void*)gdt_descr.base, gBootGDT, sizeof(gBootGDT));
 
 	asm("lgdt	%0;"
 		: : "m" (gdt_descr));

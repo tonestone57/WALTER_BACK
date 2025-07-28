@@ -157,3 +157,13 @@ SEARCH on [ FGristFiles intel.cpp PartitionMap.cpp PartitionMapParser.cpp ]
 
 
 SubInclude HAIKU_TOP src tests system boot loader file_systems ;
+
+SimpleTest PanicTest :
+	PanicTest.cpp
+	: be
+;
+
+SimpleTest ElfLoadTest :
+	ElfLoadTest.cpp
+	: be
+;
