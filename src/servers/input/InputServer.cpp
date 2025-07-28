@@ -1557,8 +1557,11 @@ InputServer::_EventLoop()
 		// Block until we find the size of the next message
 		ssize_t length = port_buffer_size(fEventLooperPort);
 		if (length < B_OK) {
-			PRINT(("[Event Looper] port gone, exiting.\n"));
-			return;
+			if (length == B_BAD_PORT_ID) {
+				PRINT(("[Event Looper] port gone, exiting.\n"));
+				return;
+			}
+			continue;
 		}
 
 		PRINT(("[Event Looper] BMessage Size = %lu\n", length));
