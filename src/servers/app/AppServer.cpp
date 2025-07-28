@@ -138,10 +138,14 @@ AppServer::MessageReceived(BMessage* message)
 		}
 
 		default:
+		{
 			// We don't allow application scripting
 			STRACE(("AppServer received unexpected code %" B_PRId32 "\n",
 				message->what));
+			BMessage reply(B_BAD_VALUE);
+			message->SendReply(&reply);
 			break;
+		}
 	}
 }
 
