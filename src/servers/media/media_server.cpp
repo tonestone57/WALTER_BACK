@@ -961,9 +961,12 @@ ServerApp::MessageReceived(BMessage* msg)
 		}
 
 		default:
-			BApplication::MessageReceived(msg);
+		{
+			BMessage reply(B_BAD_VALUE);
+			msg->SendReply(&reply);
 			TRACE("\nmedia_server: unknown message received!\n");
 			break;
+		}
 	}
 	TRACE("ServerApp::MessageReceived %" B_PRIu32 " leave\n", msg->what);
 }
