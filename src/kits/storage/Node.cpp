@@ -409,7 +409,11 @@ BNode::operator=(const BNode& node)
 	// We have to manually dup the node, because R5::BNode::Dup()
 	// is not declared to be const (which IMO is retarded).
 	fFd = _kern_dup(node.fFd);
-	fCStatus = (fFd < 0) ? B_NO_INIT : B_OK ;
+	if (fFd < 0) {
+		fCStatus = B_NO_INIT;
+		fFd = -1;
+	} else
+		fCStatus = B_OK;
 
 	return *this;
 }

@@ -78,8 +78,10 @@ entry_ref::set_name(const char* name)
 		this->name = NULL;
 	} else {
 		this->name = strdup(name);
-		if (!this->name)
+		if (!this->name) {
+			this->name = NULL;
 			return B_NO_MEMORY;
+		}
 	}
 
 	return B_OK;

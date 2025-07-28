@@ -324,8 +324,10 @@ BFile::operator=(const BFile &file)
 				fFd = fd;
 				fMode = file.fMode;
 				fCStatus = B_OK;
-			} else
+			} else {
 				fCStatus = fd;
+				fFd = -1;
+			}
 		}
 	}
 	return *this;

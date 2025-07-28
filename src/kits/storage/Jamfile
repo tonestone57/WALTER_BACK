@@ -102,3 +102,5 @@ for architectureObject in [ MultiArchSubDirSetup ] {
 }
 
 HaikuSubInclude mime ;
+
+Application StorageTests : StorageTests.cpp : be ;

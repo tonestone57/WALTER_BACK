@@ -571,8 +571,10 @@ create_directory(const char* path, mode_t mode)
 		// get the next path component
 		status_t error = BPrivate::Storage::parse_first_path_component(path,
 			component, nextComponent);
-		if (error != B_OK)
+		if (error != B_OK) {
+			delete[] component;
 			return error;
+		}
 
 		// append it to the BPath
 		if (dirPath.InitCheck() == B_NO_INIT)	// first component
