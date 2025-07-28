@@ -2906,9 +2906,12 @@ normalize_path(char* path, size_t pathSize, bool traverseLink, bool kernel)
 	for (int i = 0; i < B_MAX_SYMLINKS; i++) {
 		// get dir vnode + leaf name
 		char leaf[B_FILE_NAME_LENGTH];
-		error = vnode_and_path_to_dir_vnode(dir.Detach(), path, dir, leaf, kernel);
+		error = vnode_and_path_to_dir_vnode(dir.Detach(), path, dir, leaf,
+			kernel);
 		if (error != B_OK)
 			return error;
+		if (!dir.IsSet())
+			return B_ENTRY_NOT_FOUND;
 		strcpy(path, leaf);
 
 		// get file vnode, if we shall resolve links
@@ -2935,7 +2938,8 @@ normalize_path(char* path, size_t pathSize, bool traverseLink, bool kernel)
 			}
 
 			// get the directory path
-			error = dir_vnode_to_path(dir.Get(), path, B_PATH_NAME_LENGTH, kernel);
+			error = dir_vnode_to_path(dir.Get(), path, B_PATH_NAME_LENGTH,
+				kernel);
 			if (error != B_OK)
 				return error;
 

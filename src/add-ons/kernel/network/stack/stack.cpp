@@ -65,6 +65,7 @@ struct family {
 	struct family*	next;
 	int				type;
 	int32			ref_count;
+	mutex			lock;
 	ChainList		chains;
 };
 
@@ -175,21 +176,26 @@ family::family(int _type)
 	type(_type),
 	ref_count(0)
 {
+	mutex_init(&lock, "family lock");
 }
 
 
 void
 family::Acquire()
 {
-	atomic_add(&ref_count, 1);
+	MutexLocker _(lock);
+	ref_count++;
 }
 
 
 void
 family::Release()
 {
-	if (atomic_add(&ref_count, -1) > 1)
+	MutexLocker locker(lock);
+	if (--ref_count > 0)
 		return;
+
+	locker.Unlock();
 
 	TRACE(("family %d unused, uninit chains\n", type));
 	MutexLocker _(sChainLock);

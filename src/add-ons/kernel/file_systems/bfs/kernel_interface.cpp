@@ -201,6 +201,15 @@ bfs_unmount(fs_volume* _volume)
 	FUNCTION();
 	Volume* volume = (Volume*)_volume->private_volume;
 
+	// wait for all vnodes to be freed
+	int32 tries = 0;
+	while (volume->VnodeCount() > 0 && tries++ < 10) {
+		snooze(100000);
+	}
+
+	if (volume->VnodeCount() > 0)
+		return B_BUSY;
+
 	status_t status = volume->Unmount();
 	delete volume;
 
