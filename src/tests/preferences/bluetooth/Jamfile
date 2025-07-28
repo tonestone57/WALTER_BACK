@@ -1,0 +1,7 @@
+SubDir HAIKU_TOP src tests preferences bluetooth ;
+
+Application BluetoothTest :
+	BluetoothTest.cpp
+	:
+	be
+;

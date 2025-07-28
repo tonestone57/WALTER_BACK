@@ -1,0 +1,5 @@
+SubDir HAIKU_TOP src tests preferences ;
+
+SubInclude HAIKU_TOP src tests preferences appearance ;
+SubInclude HAIKU_TOP src tests preferences bluetooth ;
+SubInclude HAIKU_TOP src tests preferences datatranslations ;

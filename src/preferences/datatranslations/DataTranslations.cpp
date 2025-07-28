@@ -66,14 +66,38 @@ status_t
 DataTranslationsApplication::_Install(BDirectory& target, BEntry& entry)
 {
 	// Find out whether we need to copy it
-	status_t status = entry.MoveTo(&target, NULL, true);
-	if (status == B_OK)
-		return B_OK;
+	dev_t sourceDevice = entry.Device();
+	dev_t targetDevice = target.Device();
+
+	if (sourceDevice == targetDevice) {
+		status_t status = entry.MoveTo(&target, NULL, true);
+		if (status == B_OK)
+			return B_OK;
+	}
 
 	// we need to copy the file
+	BFile source(&entry, B_READ_ONLY);
+	if (source.InitCheck() != B_OK)
+		return source.InitCheck();
 
-	// TODO!
-	return B_ERROR;
+	char name[B_FILE_NAME_LENGTH];
+	entry.GetName(name);
+
+	BFile destination(&target, name, B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE);
+	if (destination.InitCheck() != B_OK)
+		return destination.InitCheck();
+
+	char buffer[4096];
+	ssize_t bytesRead;
+	while ((bytesRead = source.Read(buffer, sizeof(buffer))) > 0) {
+		ssize_t bytesWritten = destination.Write(buffer, bytesRead);
+		if (bytesWritten < 0)
+			return bytesWritten;
+		if (bytesWritten != bytesRead)
+			return B_IO_ERROR;
+	}
+
+	return bytesRead < 0 ? bytesRead : B_OK;
 }
 
 

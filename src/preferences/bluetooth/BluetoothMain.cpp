@@ -49,8 +49,9 @@ BluetoothApplication::ReadyToRun()
 				// a BMessenger to yourself and the BT server could
 				// use that messenger to send back a reply indicating
 				// when it's ready and you could just create window
-				BMessageRunner::StartSending(be_app_messenger,
-					new BMessage('Xtmp'), 2 * 1000000, 1);
+				if (BMessageRunner::StartSending(be_app_messenger,
+					new BMessage('Xtmp'), 2 * 1000000, 1) != B_OK)
+					PostMessage(B_QUIT_REQUESTED);
 				break;
 			}
 			case 1:

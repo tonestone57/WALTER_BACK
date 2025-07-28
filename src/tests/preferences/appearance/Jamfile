@@ -1,0 +1,7 @@
+SubDir HAIKU_TOP src tests preferences appearance ;
+
+Application AppearanceTest :
+	AppearanceTest.cpp
+	:
+	be
+;

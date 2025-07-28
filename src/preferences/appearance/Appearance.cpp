@@ -16,6 +16,10 @@ AppearanceApplication::AppearanceApplication(void)
  :	BApplication("application/x-vnd.Haiku-Appearance")
 {
 	fWindow = new AppearanceWindow(BRect(100, 100, 550, 420));
+	if (fWindow == NULL) {
+		PostMessage(B_QUIT_REQUESTED);
+		return;
+	}
 	fWindow->Show();
 }
 
