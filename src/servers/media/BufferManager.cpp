@@ -220,11 +220,15 @@ BufferManager::_CloneArea(area_id area)
 	info.clone = clonedArea;
 	info.ref_count = 1;
 
-	if (fCloneInfoMap.Put(area, info) == B_OK) {
-		if (fSourceInfoMap.Put(clonedArea, area) == B_OK)
-			return clonedArea;
+	if (fCloneInfoMap.Put(area, info) != B_OK) {
+		delete_area(clonedArea);
+		return B_NO_MEMORY;
+	}
 
+	if (fSourceInfoMap.Put(clonedArea, area) != B_OK) {
 		fCloneInfoMap.Remove(area);
+		delete_area(clonedArea);
+		return B_NO_MEMORY;
 	}
 
 	delete_area(clonedArea);

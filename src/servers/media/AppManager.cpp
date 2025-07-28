@@ -93,9 +93,8 @@ AppManager::UnregisterTeam(team_id team)
 {
 	TRACE("AppManager::UnregisterTeam %" B_PRId32 "\n", team);
 
-	Lock();
+	BAutolock lock(this);
 	bool isRemoved = fMap.erase(team) != 0;
-	Unlock();
 
 	_CleanupTeam(team);
 

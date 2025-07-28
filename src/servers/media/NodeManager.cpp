@@ -878,6 +878,9 @@ NodeManager::InvalidateDormantFlavorInfo(media_addon_id addOnID)
 {
 	BAutolock _(this);
 
+	if (fDormantFlavors.empty())
+		return B_ERROR;
+
 	for (DormantFlavorList::iterator iterator = fDormantFlavors.begin();
 			iterator != fDormantFlavors.end(); iterator++) {
 		dormant_add_on_flavor_info& info = *iterator;

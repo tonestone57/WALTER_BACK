@@ -26,3 +26,5 @@ Application media_server :
 SEARCH on [ FGristFiles AddOnMonitor.cpp AddOnMonitorHandler.cpp
 		NodeMonitorHandler.cpp ]
 	+= [ FDirName $(SUBDIR) $(DOTDOT) $(DOTDOT) kits storage ] ;
+
+Application MediaServerTests : MediaServerTests.cpp : be libmedia.so ;
