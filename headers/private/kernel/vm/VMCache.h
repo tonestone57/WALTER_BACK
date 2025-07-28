@@ -366,7 +366,7 @@ VMCache::IncrementWiredPagesCount()
 {
 	ASSERT(fWiredPagesCount < page_count);
 
-	fWiredPagesCount++;
+	atomic_add((int32*)&fWiredPagesCount, 1);
 }
 
 
@@ -375,7 +375,7 @@ VMCache::DecrementWiredPagesCount()
 {
 	ASSERT(fWiredPagesCount > 0);
 
-	fWiredPagesCount--;
+	atomic_add((int32*)&fWiredPagesCount, -1);
 }
 
 

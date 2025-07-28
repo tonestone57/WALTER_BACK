@@ -122,6 +122,7 @@ public:
 
 private:
 	DoublyLinkedListLink<VMArea> fCacheLink;
+	mutex					fWiredRangesLock;
 
 public:
 	typedef DoublyLinkedList<VMArea,

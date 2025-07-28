@@ -35,6 +35,7 @@ VMArea::VMArea(VMAddressSpace* addressSpace, uint32 wiring, uint32 protection)
 	page_protections(NULL),
 	address_space(addressSpace)
 {
+	mutex_init(&fWiredRangesLock, "area wired ranges");
 	new (&mappings) VMAreaMappings;
 }
 
@@ -64,6 +65,8 @@ VMArea::Init(const char* name, uint32 allocationFlags)
 bool
 VMArea::IsWired(addr_t base, size_t size) const
 {
+	MutexLocker locker(const_cast<VMArea*>(this)->fWiredRangesLock);
+
 	for (VMAreaWiredRangeList::ConstIterator it = fWiredRanges.GetIterator();
 			VMAreaWiredRange* range = it.Next();) {
 		if (range->IntersectsWith(base, size))
@@ -82,6 +85,7 @@ VMArea::Wire(VMAreaWiredRange* range)
 {
 	ASSERT(range->area == NULL);
 
+	MutexLocker locker(fWiredRangesLock);
 	range->area = this;
 	fWiredRanges.Add(range);
 }
@@ -97,8 +101,10 @@ VMArea::Unwire(VMAreaWiredRange* range)
 	ASSERT(range->area == this);
 
 	// remove the range
+	MutexLocker locker(fWiredRangesLock);
 	range->area = NULL;
 	fWiredRanges.Remove(range);
+	locker.Unlock();
 
 	// wake up waiters
 	for (VMAreaUnwiredWaiterList::Iterator it = range->waiters.GetIterator();
@@ -143,6 +149,8 @@ VMArea::Unwire(addr_t base, size_t size, bool writable)
 bool
 VMArea::AddWaiterIfWired(VMAreaUnwiredWaiter* waiter)
 {
+	MutexLocker locker(fWiredRangesLock);
+
 	VMAreaWiredRange* range = fWiredRanges.Head();
 	if (range == NULL)
 		return false;
@@ -174,6 +182,8 @@ bool
 VMArea::AddWaiterIfWired(VMAreaUnwiredWaiter* waiter, addr_t base, size_t size,
 	uint32 flags)
 {
+	MutexLocker locker(fWiredRangesLock);
+
 	for (VMAreaWiredRangeList::ConstIterator it = fWiredRanges.GetIterator();
 			VMAreaWiredRange* range = it.Next();) {
 		if ((flags & IGNORE_WRITE_WIRED_RANGES) != 0 && range->writable)

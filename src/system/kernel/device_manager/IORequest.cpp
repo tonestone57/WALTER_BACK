@@ -251,7 +251,7 @@ IOBuffer::LockMemory(team_id team, bool isWrite)
 void
 IOBuffer::_UnlockMemory(team_id team, size_t count, bool isWrite)
 {
-	for (uint32 i = 0; i < count; i++) {
+	for (int32 i = count - 1; i >= 0; i--) {
 		unlock_memory_etc(team, (void*)(addr_t)fVecs[i].base, fVecs[i].length,
 			isWrite ? 0 : B_READ_DEVICE);
 	}

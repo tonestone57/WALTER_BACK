@@ -497,8 +497,11 @@ VMAnonymousCache::SetCanSwapPages(off_t base, size_t size, bool canSwap)
 
 	const page_num_t pageCount = PAGE_ALIGN(virtual_end) >> PAGE_SHIFT;
 
-	if (fNoSwapPages->Resize(pageCount) != B_OK)
+	if (fNoSwapPages->Resize(pageCount) != B_OK) {
+		// Revert the bitmap to its original size on failure.
+		fNoSwapPages->Resize(virtual_end >> PAGE_SHIFT);
 		return B_NO_MEMORY;
+	}
 
 	for (size_t i = 0; i < count; i++) {
 		if (canSwap)

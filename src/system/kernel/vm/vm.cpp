@@ -1338,6 +1338,14 @@ template<typename LockerType1, typename LockerType2>
 static inline bool
 wait_if_area_is_wired(VMArea* area, LockerType1* locker1, LockerType2* locker2)
 {
+	MutexLocker locker(area->fWiredRangesLock);
+	return wait_if_area_is_wired_locked(area, locker1, locker2);
+}
+
+template<typename LockerType1, typename LockerType2>
+static inline bool
+wait_if_area_is_wired_locked(VMArea* area, LockerType1* locker1, LockerType2* locker2)
+{
 	area->cache->AssertLocked();
 
 	VMAreaUnwiredWaiter waiter;
@@ -1379,6 +1387,15 @@ wait_if_area_is_wired(VMArea* area, LockerType1* locker1, LockerType2* locker2)
 template<typename LockerType1, typename LockerType2>
 static inline bool
 wait_if_area_range_is_wired(VMArea* area, addr_t base, size_t size,
+	LockerType1* locker1, LockerType2* locker2)
+{
+	MutexLocker locker(area->fWiredRangesLock);
+	return wait_if_area_range_is_wired_locked(area, base, size, locker1, locker2);
+}
+
+template<typename LockerType1, typename LockerType2>
+static inline bool
+wait_if_area_range_is_wired_locked(VMArea* area, addr_t base, size_t size,
 	LockerType1* locker1, LockerType2* locker2)
 {
 	area->cache->AssertLocked();
@@ -4584,9 +4601,8 @@ vm_soft_fault(VMAddressSpace* addressSpace, addr_t originalAddress,
 			// ignore ranges wired for writing (our own and other concurrent
 			// wiring attempts in progress) and in fact have to do that to avoid
 			// a deadlock.
-			VMAreaUnwiredWaiter waiter;
-			if (area->AddWaiterIfWired(&waiter, address, B_PAGE_SIZE,
-					VMArea::IGNORE_WRITE_WIRED_RANGES)) {
+			if (wait_if_area_range_is_wired(area, address, B_PAGE_SIZE,
+					(addr_t*)NULL, (addr_t*)NULL)) {
 				// unlock everything and wait
 				if (context.pageAllocated) {
 					// ... but since we allocated a page and inserted it into
