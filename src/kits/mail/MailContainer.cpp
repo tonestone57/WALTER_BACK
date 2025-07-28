@@ -109,6 +109,7 @@ status_t BMIMEMultipartMailContainer::AddComponent(BMailComponent *component) {
 		return B_OK;
 
 	_components_in_code.RemoveItem(component);
+	delete component;
 	return B_ERROR;
 }
 

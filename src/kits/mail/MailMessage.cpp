@@ -215,7 +215,8 @@ BEmailMessage::ForwardMessage(bool accountFromMail, bool includeAttachments)
 			BMailComponent* clone = component->WhatIsThis();
 			io.Seek(0, SEEK_SET);
 			clone->SetToRFC822(&io, io.BufferLength(), true);
-			message->AddComponent(clone);
+			if (message->AddComponent(clone) != B_OK)
+				delete clone;
 		}
 	}
 	if (accountFromMail)

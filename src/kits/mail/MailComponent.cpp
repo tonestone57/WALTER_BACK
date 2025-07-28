@@ -78,17 +78,23 @@ BMailComponent::ComponentType()
 BMailComponent*
 BMailComponent::WhatIsThis()
 {
+	BMailComponent* component = NULL;
 	switch (ComponentType()) {
 		case B_MAIL_SIMPLE_ATTACHMENT:
-			return new BSimpleMailAttachment;
+			component = new BSimpleMailAttachment;
+			break;
 		case B_MAIL_ATTRIBUTED_ATTACHMENT:
-			return new BAttributedMailAttachment;
+			component = new BAttributedMailAttachment;
+			break;
 		case B_MAIL_MULTIPART_CONTAINER:
-			return new BMIMEMultipartMailContainer (NULL, NULL, _charSetForTextDecoding);
+			component = new BMIMEMultipartMailContainer (NULL, NULL, _charSetForTextDecoding);
+			break;
 		case B_MAIL_PLAIN_TEXT_BODY:
 		default:
-			return new BTextMailComponent (NULL, _charSetForTextDecoding);
+			component = new BTextMailComponent (NULL, _charSetForTextDecoding);
+			break;
 	}
+	return component;
 }
 
 

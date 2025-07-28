@@ -61,3 +61,5 @@ DoCatalogs libmail.so :
 	FileConfigView.cpp
 	ProtocolConfigView.cpp
 ;
+
+Application MailTests : MailTests.cpp : be mail ;
