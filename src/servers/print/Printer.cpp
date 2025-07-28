@@ -536,7 +536,6 @@ Printer::PrintThread(Job* job)
 	if (failed)
 		job->SetStatus(kFailed);
 	fResource->Unlock();
-	job->Release();
 	atomic_add(&fProcessing, -1);
 	Release();
 		// Notify print_server to process next spooled job

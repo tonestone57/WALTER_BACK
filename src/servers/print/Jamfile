@@ -41,3 +41,4 @@ DoCatalogs print_server :
 	Transport.Scripting.cpp
 ;
 
+Application PrintServerTests : PrintServerTests.cpp : be libprint.a libprintutils.a ;

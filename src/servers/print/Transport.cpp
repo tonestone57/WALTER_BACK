@@ -166,12 +166,13 @@ Transport::ListAvailablePorts(BMessage* msg)
 		return id;
 
 	// Get pointer to addon function
-	if ((rc = get_image_symbol(id, B_TRANSPORT_LIST_PORTS_SYMBOL,
+	if (id >= 0 && (rc = get_image_symbol(id, B_TRANSPORT_LIST_PORTS_SYMBOL,
 			B_SYMBOL_TYPE_TEXT, (void**)&list_ports)) != B_OK)
 		goto done;
 
 	// run addon...
-	rc = (*list_ports)(msg);
+	if (id >= 0)
+		rc = (*list_ports)(msg);
 
 done:
 	// clean up if needed

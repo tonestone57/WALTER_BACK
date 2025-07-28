@@ -402,8 +402,11 @@ PrintServerApp::CreatePrinter(const char* printerName, const char* driverName,
 			BAlert *alert = new BAlert("Info", info.String(),
 				B_TRANSLATE("Cancel"), B_TRANSLATE("OK"));
 			alert->SetShortcut(0, B_ESCAPE);
-			if (alert->Go() == 0)
+			if (alert->Go() == 0) {
+				delete alert;
 				return status;
+			}
+			delete alert;
 		}
 	} else if (status != B_OK) {
 		return status;
