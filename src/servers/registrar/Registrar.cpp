@@ -382,8 +382,11 @@ Registrar::_MessageReceived(BMessage *message)
 		}
 
 		default:
-			BApplication::MessageReceived(message);
+		{
+			BMessage reply(B_BAD_VALUE);
+			message->SendReply(&reply);
 			break;
+		}
 	}
 }
 
