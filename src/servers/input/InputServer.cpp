@@ -287,7 +287,10 @@ InputServer::_LoadSystemKeymap()
 	memcpy(fChars, kSystemKeyChars, fCharsSize);
 
 	// TODO: why are we doing this?
-	return _SaveKeymap(true);
+	status_t status = _SaveKeymap(true);
+	if (status != B_OK)
+		delete[] fChars;
+	return status;
 }
 
 

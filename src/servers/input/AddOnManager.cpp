@@ -458,6 +458,7 @@ AddOnManager::_RegisterDevice(BInputServerDevice* device, const entry_ref& ref,
 
 	if (!fDeviceList.AddItem(info)) {
 		delete info;
+		delete device;
 		return B_NO_MEMORY;
 	}
 
@@ -496,6 +497,7 @@ AddOnManager::_RegisterFilter(BInputServerFilter* filter, const entry_ref& ref,
 
 	if (!fFilterList.AddItem(info)) {
 		delete info;
+		delete filter;
 		return B_NO_MEMORY;
 	}
 
@@ -503,6 +505,7 @@ AddOnManager::_RegisterFilter(BInputServerFilter* filter, const entry_ref& ref,
 	if (!InputServer::gInputFilterList.AddItem(filter)) {
 		fFilterList.RemoveItem(info, false);
 		delete info;
+		delete filter;
 		return B_NO_MEMORY;
 	}
 
@@ -541,6 +544,7 @@ AddOnManager::_RegisterMethod(BInputServerMethod* method, const entry_ref& ref,
 
 	if (!fMethodList.AddItem(info)) {
 		delete info;
+		delete method;
 		return B_NO_MEMORY;
 	}
 
@@ -548,6 +552,7 @@ AddOnManager::_RegisterMethod(BInputServerMethod* method, const entry_ref& ref,
 	if (!InputServer::gInputMethodList.AddItem(method)) {
 		fMethodList.RemoveItem(info);
 		delete info;
+		delete method;
 		return B_NO_MEMORY;
 	}
 

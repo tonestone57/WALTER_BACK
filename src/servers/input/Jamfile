@@ -70,3 +70,5 @@ SEARCH on [ FGristFiles AddOnMonitor.cpp
 		AddOnMonitorHandler.cpp
 		NodeMonitorHandler.cpp ]
 	+= [ FDirName $(SUBDIR) $(DOTDOT) $(DOTDOT) kits storage ] ;
+
+Application InputServerTests : InputServerTests.cpp : be ;
