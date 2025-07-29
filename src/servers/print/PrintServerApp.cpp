@@ -337,7 +337,11 @@ PrintServerApp::MessageReceived(BMessage* msg)
 			break;
 
 		default:
-			Inherited::MessageReceived(msg);
+		{
+			BMessage reply(B_BAD_VALUE);
+			msg->SendReply(&reply);
+			break;
+		}
 	}
 }
 
