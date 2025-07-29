@@ -70,7 +70,11 @@ NotificationServer::MessageReceived(BMessage* message)
 			break;
 		}
 		default:
-			BApplication::MessageReceived(message);
+		{
+			BMessage reply(B_BAD_VALUE);
+			message->SendReply(&reply);
+			break;
+		}
 	}
 }
 
