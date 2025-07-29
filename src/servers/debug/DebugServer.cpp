@@ -1049,11 +1049,11 @@ TeamDebugHandler::_HandlerThread()
 	DebugMessage *message;
 	status_t error = _PopMessage(message);
 	int32 debugAction = kActionKillTeam;
-	if (error == B_OK) {
+	if (error == B_OK && message != NULL) {
 		// handle the message
 		debugAction = _HandleMessage(message);
 		delete message;
-	} else {
+	} else if (error != B_OK) {
 		debug_printf("TeamDebugHandler::_HandlerThread(): Failed to pop "
 			"initial message: %s", strerror(error));
 	}
