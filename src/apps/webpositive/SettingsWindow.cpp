@@ -27,6 +27,7 @@
 #include <debugger.h>
 #include <SettingsMessage.h>
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -86,7 +87,8 @@ SettingsWindow::SettingsWindow(BRect frame, SettingsMessage* settings)
 	BWindow(frame, B_TRANSLATE("Settings"), B_TITLED_WINDOW_LOOK,
 		B_NORMAL_WINDOW_FEEL, B_AUTO_UPDATE_SIZE_LIMITS
 			| B_ASYNCHRONOUS_CONTROLS | B_NOT_ZOOMABLE),
-	fSettings(settings)
+	fSettings(settings),
+	fProxyPortValid(true)
 {
 	fApplyButton = new BButton(B_TRANSLATE("Apply"), new BMessage(MSG_APPLY));
 	fCancelButton = new BButton(B_TRANSLATE("Cancel"),
@@ -235,10 +237,14 @@ SettingsWindow::MessageReceived(BMessage* message)
 		case MSG_FIXED_FONT_CHANGED:
 		case MSG_USE_PROXY_CHANGED:
 		case MSG_PROXY_ADDRESS_CHANGED:
-		case MSG_PROXY_PORT_CHANGED:
 		case MSG_USE_PROXY_AUTH_CHANGED:
 		case MSG_PROXY_USERNAME_CHANGED:
 		case MSG_PROXY_PASSWORD_CHANGED:
+			_ValidateControlsEnabledStatus();
+			break;
+
+		case MSG_PROXY_PORT_CHANGED:
+			_ValidateProxyPort();
 			_ValidateControlsEnabledStatus();
 			break;
 
@@ -893,6 +899,7 @@ SettingsWindow::_RevertSettings()
 	fProxyPasswordControl->SetText(fSettings->GetValue(kSettingsKeyProxyPassword,
 		""));
 
+	_ValidateProxyPort();
 	_ValidateControlsEnabledStatus();
 }
 
@@ -928,7 +935,7 @@ void
 SettingsWindow::_ValidateControlsEnabledStatus()
 {
 	bool canApply = _CanApplySettings();
-	fApplyButton->SetEnabled(canApply);
+	fApplyButton->SetEnabled(canApply && fProxyPortValid);
 	fRevertButton->SetEnabled(canApply);
 	// Let the Cancel button be enabled always, as another way to close the
 	// window...
@@ -945,6 +952,27 @@ SettingsWindow::_ValidateControlsEnabledStatus()
 
 
 // #pragma mark -
+
+
+void
+SettingsWindow::_ValidateProxyPort()
+{
+	const char* text = fProxyPortControl->Text();
+	char* end;
+	errno = 0;
+	long port = strtoul(text, &end, 10);
+
+	if (errno != 0 || *end != '\0' || port < 0 || port > 65535) {
+		// Invalid input
+		fProxyPortControl->TextView()->SetViewColor(255, 200, 200);
+		fProxyPortValid = false;
+	} else {
+		// Valid input
+		fProxyPortControl->TextView()->SetViewUIColor(B_DOCUMENT_BACKGROUND_COLOR);
+		fProxyPortValid = true;
+	}
+	fProxyPortControl->TextView()->Invalidate();
+}
 
 
 uint32
@@ -1010,5 +1038,10 @@ SettingsWindow::_FindDefaultSerifFont() const
 uint32
 SettingsWindow::_ProxyPort() const
 {
-	return atoul(fProxyPortControl->Text());
+	const char* text = fProxyPortControl->Text();
+	char* end;
+	long port = strtoul(text, &end, 10);
+	if (*end != '\0' || port < 0 || port > 65535)
+		return 0;
+	return (uint32)port;
 }

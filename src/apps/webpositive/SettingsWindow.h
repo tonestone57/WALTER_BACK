@@ -56,10 +56,12 @@ private:
 
 			BFont				_FindDefaultSerifFont() const;
 
+			void				_ValidateProxyPort();
 			uint32				_ProxyPort() const;
 
 private:
 			SettingsMessage*	fSettings;
+			bool				fProxyPortValid;
 
 			BTextControl*		fStartPageControl;
 			BTextControl*		fSearchPageControl;
