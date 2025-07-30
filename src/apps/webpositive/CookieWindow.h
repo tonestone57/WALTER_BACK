@@ -21,6 +21,8 @@ class BStringView;
 class BString;
 
 
+class BButton;
+
 class CookieWindow : public BWindow {
 public:
 								CookieWindow(BRect frame,
@@ -39,6 +41,7 @@ private:
 	BOutlineListView*			fDomains;
 	BColumnListView*			fCookies;
 	BStringView*				fHeaderView;
+	BButton*					fDeleteButton;
 
 	BPrivate::Network::BNetworkCookieJar&	fCookieJar;
 };

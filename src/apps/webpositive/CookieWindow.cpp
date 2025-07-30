@@ -29,7 +29,8 @@ enum {
 	COOKIE_DELETE = 'cdel',
 	COOKIE_REFRESH = 'rfsh',
 
-	DOMAIN_SELECTED = 'dmsl'
+	DOMAIN_SELECTED = 'dmsl',
+	COOKIE_SELECTED = 'cmsl'
 };
 
 
@@ -137,6 +138,10 @@ CookieWindow::CookieWindow(BRect frame,
 	fCookies->AddColumn(new BStringColumn(B_TRANSLATE("Flags"),
 		flagsLength, flagsLength, flagsLength, 0), 4);
 
+	fDeleteButton = new BButton("delete", B_TRANSLATE("Delete"),
+		new BMessage(COOKIE_DELETE));
+	fDeleteButton->SetEnabled(false);
+
 	root->AddItem(BGroupLayoutBuilder(B_VERTICAL, B_USE_DEFAULT_SPACING)
 		.SetInsets(5, 5, 5, 5)
 		.AddGroup(B_HORIZONTAL, B_USE_DEFAULT_SPACING)
@@ -153,10 +158,10 @@ CookieWindow::CookieWindow(BRect frame,
 				NULL))
 #endif
 			.AddGlue()
-			.Add(new BButton("delete", B_TRANSLATE("Delete"),
-				new BMessage(COOKIE_DELETE))), 3);
+			.Add(fDeleteButton), 3);
 
 	fDomains->SetSelectionMessage(new BMessage(DOMAIN_SELECTED));
+	fCookies->SetSelectionMessage(new BMessage(COOKIE_SELECTED));
 }
 
 
@@ -167,11 +172,18 @@ CookieWindow::MessageReceived(BMessage* message)
 		case DOMAIN_SELECTED:
 		{
 			int32 index = message->FindInt32("index");
-			BStringItem* item = (BStringItem*)fDomains->ItemAt(index);
+			DomainItem* item = (DomainItem*)fDomains->ItemAt(index);
 			if (item != NULL) {
 				BString domain = item->Text();
 				_ShowCookiesForDomain(domain);
 			}
+			fDeleteButton->SetEnabled(false);
+			return;
+		}
+
+		case COOKIE_SELECTED:
+		{
+			fDeleteButton->SetEnabled(fCookies->CurrentSelection(0) != NULL);
 			return;
 		}
 
@@ -376,40 +388,13 @@ CookieWindow::_ShowCookiesForDomain(BString domain)
 void
 CookieWindow::_DeleteCookies()
 {
-	CookieRow* row;
-	CookieRow* prevRow;
-
-	for (prevRow = NULL; ; prevRow = row) {
-		row = (CookieRow*)fCookies->CurrentSelection(prevRow);
-
-		if (prevRow != NULL) {
-			fCookies->RemoveRow(prevRow);
-			delete prevRow;
-		}
-
-		if (row == NULL)
-			break;
-
-		// delete this cookie
-		BPrivate::Network::BNetworkCookie& cookie = row->Cookie();
+	BRow* row;
+	while ((row = fCookies->CurrentSelection(NULL)) != NULL) {
+		CookieRow* cookieRow = static_cast<CookieRow*>(row);
+		BPrivate::Network::BNetworkCookie& cookie = cookieRow->Cookie();
 		cookie.SetExpirationDate(0);
 		fCookieJar.AddCookie(cookie);
-	}
-
-	// A domain was selected in the domain list
-	if (prevRow == NULL) {
-		while (true) {
-			// Clear the first cookie continuously
-			row = (CookieRow*)fCookies->RowAt(0);
-
-			if (row == NULL)
-				break;
-
-			BPrivate::Network::BNetworkCookie& cookie = row->Cookie();
-			cookie.SetExpirationDate(0);
-			fCookieJar.AddCookie(cookie);
-			fCookies->RemoveRow(row);
-			delete row;
-		}
+		fCookies->RemoveRow(row);
+		delete row;
 	}
 }
