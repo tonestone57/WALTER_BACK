@@ -1,0 +1,42 @@
+Analyzing src/apps/webpositive/AuthenticationPanel.cpp
+cppcheck: error: unrecognized platform: 'haiku'.
+Analyzing src/apps/webpositive/URLInputGroup.cpp
+cppcheck: error: unrecognized platform: 'haiku'.
+Analyzing src/apps/webpositive/CookieWindow.cpp
+cppcheck: error: unrecognized platform: 'haiku'.
+Analyzing src/apps/webpositive/SettingsWindow.cpp
+cppcheck: error: unrecognized platform: 'haiku'.
+Analyzing src/apps/webpositive/SettingsKeys.cpp
+cppcheck: error: unrecognized platform: 'haiku'.
+Analyzing src/apps/webpositive/DownloadWindow.cpp
+cppcheck: error: unrecognized platform: 'haiku'.
+Analyzing src/apps/webpositive/BrowserApp.cpp
+cppcheck: error: unrecognized platform: 'haiku'.
+Analyzing src/apps/webpositive/tabview/TabView.cpp
+cppcheck: error: unrecognized platform: 'haiku'.
+Analyzing src/apps/webpositive/tabview/TabContainerView.cpp
+cppcheck: error: unrecognized platform: 'haiku'.
+Analyzing src/apps/webpositive/tabview/TabManager.cpp
+cppcheck: error: unrecognized platform: 'haiku'.
+Analyzing src/apps/webpositive/support/FontSelectionView.cpp
+cppcheck: error: unrecognized platform: 'haiku'.
+Analyzing src/apps/webpositive/support/BaseURL.cpp
+cppcheck: error: unrecognized platform: 'haiku'.
+Analyzing src/apps/webpositive/DownloadProgressView.cpp
+cppcheck: error: unrecognized platform: 'haiku'.
+Analyzing src/apps/webpositive/BrowsingHistory.cpp
+cppcheck: error: unrecognized platform: 'haiku'.
+Analyzing src/apps/webpositive/BrowserWindow.cpp
+cppcheck: error: unrecognized platform: 'haiku'.
+Analyzing src/apps/webpositive/BookmarkBar.cpp
+cppcheck: error: unrecognized platform: 'haiku'.
+Analyzing src/apps/webpositive/ConsoleWindow.cpp
+cppcheck: error: unrecognized platform: 'haiku'.
+Analyzing src/apps/webpositive/CredentialsStorage.cpp
+cppcheck: error: unrecognized platform: 'haiku'.
+Analyzing src/apps/webpositive/autocompletion/TextViewCompleter.cpp
+cppcheck: error: unrecognized platform: 'haiku'.
+Analyzing src/apps/webpositive/autocompletion/AutoCompleterDefaultImpl.cpp
+cppcheck: error: unrecognized platform: 'haiku'.
+Analyzing src/apps/webpositive/autocompletion/AutoCompleter.cpp
+cppcheck: error: unrecognized platform: 'haiku'.
