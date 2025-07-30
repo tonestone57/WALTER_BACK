@@ -586,9 +586,6 @@ public:
 			fileName.ReplaceAll('/', '-');
 			fileName.Truncate(B_FILE_NAME_LENGTH - 1);
 
-			BBitmap miniIcon(BRect(0, 0, 15, 15), B_BITMAP_NO_SERVER_LINK,
-				B_CMAP8);
-			miniIcon.ImportBits(fIcon);
 			// TODO:  obtain and send the large icon in addition to the mini icon.
 			// Currently PageUserData does not provide a function that returns this.
 
@@ -604,7 +601,9 @@ public:
 				// The title may differ from the validated filename
 			if (fPageIconSet == true) {
 				// Don't bother sending the placeholder web icon, if that is all we have.
-				data.AddData("miniIcon", B_COLOR_8_BIT_TYPE, &miniIcon, sizeof(miniIcon));
+				BMessage miniIconArchive;
+				if (fIcon->Archive(&miniIconArchive, true) == B_OK)
+					data.AddMessage("miniIcon", &miniIconArchive);
 			}
 			drag.AddMessage("be:originator-data", &data);
 

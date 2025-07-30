@@ -1943,7 +1943,7 @@ BrowserWindow::_BookmarkPath(BPath& path) const
 */
 void
 BrowserWindow::_CreateBookmark(const BPath& path, BString fileName, const BString& title,
-	const BString& url, const BBitmap* miniIcon, const BBitmap* largeIcon)
+	const BString& url, BBitmap* miniIcon, BBitmap* largeIcon)
 {
 	// Determine the file name if one was not provided
 	bool presetFileName = true;
@@ -2023,8 +2023,15 @@ BrowserWindow::_CreateBookmark(const BPath& path, BString fileName, const BStrin
 			if (miniIcon != NULL) {
 				ret = nodeInfo.SetIcon(miniIcon, B_MINI_ICON);
 				if (ret != B_OK) {
-					fprintf(stderr, "Failed to store mini icon for bookmark: "
-						"%s\n", strerror(ret));
+					BString message(B_TRANSLATE_COMMENT("There was an error "
+						"storing the mini icon for the bookmark.\n\nError: "
+						"%error", "Don't translate variable %error"));
+					message.ReplaceFirst("%error", strerror(ret));
+					BAlert* alert = new BAlert(B_TRANSLATE("Bookmark error"),
+						message.String(), B_TRANSLATE("OK"), NULL, NULL,
+						B_WIDTH_AS_USUAL, B_STOP_ALERT);
+					alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
+					alert->Go();
 				}
 			}
 			if (largeIcon != NULL && ret == B_OK)
@@ -2057,8 +2064,15 @@ BrowserWindow::_CreateBookmark(const BPath& path, BString fileName, const BStrin
 			} else
 				ret = B_OK;
 			if (ret != B_OK) {
-				fprintf(stderr, "Failed to store large icon for bookmark: "
-					"%s\n", strerror(ret));
+				BString message(B_TRANSLATE_COMMENT("There was an error "
+					"storing the large icon for the bookmark.\n\nError: "
+					"%error", "Don't translate variable %error"));
+				message.ReplaceFirst("%error", strerror(ret));
+				BAlert* alert = new BAlert(B_TRANSLATE("Bookmark error"),
+					message.String(), B_TRANSLATE("OK"), NULL, NULL,
+					B_WIDTH_AS_USUAL, B_STOP_ALERT);
+				alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
+				alert->Go();
 			}
 		}
 	}
@@ -2097,17 +2111,21 @@ BrowserWindow::_CreateBookmark(BMessage* message)
 			// This string is only present if the message originated from Tracker (drag and drop).
 			fileName = "";
 		}
-		const BBitmap* miniIcon = NULL;
-		const BBitmap* largeIcon = NULL;
-		originatorData.FindData("miniIcon", B_COLOR_8_BIT_TYPE,
-			reinterpret_cast<const void**>(&miniIcon), NULL);
-		originatorData.FindData("largeIcon", B_COLOR_8_BIT_TYPE,
-			reinterpret_cast<const void**>(&largeIcon), NULL);
+		BBitmap* miniIcon = NULL;
+		BBitmap* largeIcon = NULL;
+		BMessage miniIconArchive;
+		if (originatorData.FindMessage("miniIcon", &miniIconArchive) == B_OK)
+			miniIcon = new(std::nothrow) BBitmap(&miniIconArchive);
+		BMessage largeIconArchive;
+		if (originatorData.FindMessage("largeIcon", &largeIconArchive) == B_OK)
+			largeIcon = new(std::nothrow) BBitmap(&largeIconArchive);
 
 		if (validData == true) {
 			_CreateBookmark(BPath(&ref), BString(fileName), BString(title), BString(url),
 				miniIcon, largeIcon);
 		} else {
+			delete miniIcon;
+			delete largeIcon;
 			BString message(B_TRANSLATE("There was an error setting up "
 				"the bookmark."));
 			BAlert* alert = new BAlert(B_TRANSLATE("Bookmark error"),
