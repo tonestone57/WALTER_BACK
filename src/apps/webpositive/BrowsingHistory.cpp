@@ -190,18 +190,18 @@ BrowsingHistory::AddItem(const BrowsingHistoryItem& item)
 
 
 int32
-BrowsingHistory::BrowsingHistory::CountItems() const
+BrowsingHistory::BrowsingHistory::CountItems()
 {
-	BAutolock _(const_cast<BrowsingHistory*>(this));
+	BAutolock _(this);
 
 	return fHistoryItems.CountItems();
 }
 
 
 BrowsingHistoryItem
-BrowsingHistory::HistoryItemAt(int32 index) const
+BrowsingHistory::HistoryItemAt(int32 index)
 {
-	BAutolock _(const_cast<BrowsingHistory*>(this));
+	BAutolock _(this);
 
 	BrowsingHistoryItem* existingItem = reinterpret_cast<BrowsingHistoryItem*>(
 		fHistoryItems.ItemAt(index));

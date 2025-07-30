@@ -59,8 +59,8 @@ public:
 			bool				AddItem(const BrowsingHistoryItem& item);
 
 	// Should Lock() the object when using these in some loop or so:
-			int32				CountItems() const;
-			BrowsingHistoryItem	HistoryItemAt(int32 index) const;
+			int32				CountItems();
+			BrowsingHistoryItem	HistoryItemAt(int32 index);
 			void				Clear();
 
 			void				SetMaxHistoryItemAge(int32 days);
