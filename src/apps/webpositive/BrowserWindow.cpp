@@ -2073,8 +2073,9 @@ BrowserWindow::_CreateBookmark(const BPath& path, BString fileName, const BStrin
 			B_WIDTH_AS_USUAL, B_STOP_ALERT);
 		alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
 		alert->Go();
-		return;
 	}
+	delete miniIcon;
+	delete largeIcon;
 }
 
 
@@ -2141,6 +2142,8 @@ BrowserWindow::_CreateBookmark()
 	if (status == B_OK)
 		_CreateBookmark(path, fileName, title, url, miniIcon, largeIcon);
 	else {
+		delete miniIcon;
+		delete largeIcon;
 		BString message(B_TRANSLATE_COMMENT("There was an error retrieving "
 			"the bookmark folder.\n\nError: %error", "Don't translate the "
 			"variable %error"));
@@ -2301,9 +2304,10 @@ addOrDeleteMenu(BMenu* menu, BMenu* toMenu)
 void
 BrowserWindow::_UpdateHistoryMenu()
 {
-	BMenuItem* menuItem;
-	while ((menuItem = fHistoryMenu->RemoveItem(fHistoryMenuFixedItemCount)))
+	for (int32 i = fHistoryMenu->CountItems() - 1; i >= fHistoryMenuFixedItemCount; i--) {
+		BMenuItem* menuItem = fHistoryMenu->RemoveItem(i);
 		delete menuItem;
+	}
 
 	BrowsingHistory* history = BrowsingHistory::DefaultInstance();
 	if (!history->Lock())
