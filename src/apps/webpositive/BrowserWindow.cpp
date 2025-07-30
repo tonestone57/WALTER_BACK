@@ -636,19 +636,22 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 
 	// Layout
 	BGroupView* topView = new BGroupView(B_VERTICAL, 0.0);
+	AddChild(topView);
+
+	BGroupView* container = new BGroupView(B_VERTICAL, 0.0);
+	container->SetName("interface_container");
+	topView->AddChild(container);
 
 #if !INTEGRATE_MENU_INTO_TAB_BAR
-	topView->AddChild(fMenuGroup);
+	container->AddChild(fMenuGroup);
 #endif
-	topView->AddChild(fTabManager->TabGroup());
-	topView->AddChild(navigationGroup);
+	container->AddChild(fTabManager->TabGroup());
+	container->AddChild(navigationGroup);
 	if (fBookmarkBar != NULL)
-		topView->AddChild(fBookmarkBar);
+		container->AddChild(fBookmarkBar);
 	topView->AddChild(fTabManager->ContainerView());
-	topView->AddChild(findGroup);
-	topView->AddChild(statusGroup);
-
-	AddChild(topView);
+	container->AddChild(findGroup);
+	container->AddChild(statusGroup);
 
 	fURLInputGroup->MakeFocus(true);
 
@@ -2098,7 +2101,7 @@ BrowserWindow::_CreateBookmark(BMessage* message)
 		originatorData.FindData("miniIcon", B_COLOR_8_BIT_TYPE,
 			reinterpret_cast<const void**>(&miniIcon), NULL);
 		originatorData.FindData("largeIcon", B_COLOR_8_BIT_TYPE,
-			reinterpret_cast<const void**>(&miniIcon), NULL);
+			reinterpret_cast<const void**>(&largeIcon), NULL);
 
 		if (validData == true) {
 			_CreateBookmark(BPath(&ref), BString(fileName), BString(title), BString(url),
@@ -2183,15 +2186,21 @@ bool BrowserWindow::_CheckBookmarkExists(BDirectory& directory,
 {
 	BEntry entry;
 	while (directory.GetNextEntry(&entry) == B_OK) {
-		char entryName[B_FILE_NAME_LENGTH];
-		if (entry.GetName(entryName) != B_OK || bookmarkName != entryName)
-			continue;
-		BString storedURL;
-		BFile file(&entry, B_READ_ONLY);
-		if (_ReadURLAttr(file, storedURL)) {
-			// Just bail if the bookmark already exists
-			if (storedURL == url)
+		if (entry.IsDirectory()) {
+			BDirectory subDir(&entry);
+			if (_CheckBookmarkExists(subDir, bookmarkName, url))
 				return true;
+		} else {
+			char entryName[B_FILE_NAME_LENGTH];
+			if (entry.GetName(entryName) != B_OK || bookmarkName != entryName)
+				continue;
+			BString storedURL;
+			BFile file(&entry, B_READ_ONLY);
+			if (_ReadURLAttr(file, storedURL)) {
+				// Just bail if the bookmark already exists
+				if (storedURL == url)
+					return true;
+			}
 		}
 	}
 	return false;
@@ -2454,14 +2463,8 @@ BrowserWindow::_SetAutoHideInterfaceInFullscreen(bool doIt)
 			doIt);
 	}
 
-	if (fAutoHideInterfaceInFullscreenMode) {
-		BMessage message(CHECK_AUTO_HIDE_INTERFACE);
-		fPulseRunner = new BMessageRunner(BMessenger(this), &message, 300000);
-	} else {
-		delete fPulseRunner;
-		fPulseRunner = NULL;
+	if (!fAutoHideInterfaceInFullscreenMode)
 		_ShowInterface(true);
-	}
 }
 
 
@@ -2477,7 +2480,7 @@ BrowserWindow::_CheckAutoHideInterface()
 		_ShowInterface(true);
 	else if (fNavigationGroup->IsVisible()
 		&& fLastMousePos.y > fNavigationGroup->Frame().bottom
-		&& system_time() - fLastMouseMovedTime > 1000000) {
+		&& system_time() - fLastMouseMovedTime > fAppSettings->GetValue("auto_hide_timeout", 1000000)) {
 		// NOTE: Do not re-use navigationGroupBottom in the above
 		// check, since we only want to hide the interface when it is visible.
 		_ShowInterface(false);
@@ -2493,7 +2496,12 @@ BrowserWindow::_ShowInterface(bool show)
 
 	fInterfaceVisible = show;
 
+	BView* container = FindView("interface_container");
+	if (!container)
+		return;
+
 	if (show) {
+		container->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
 #if !INTEGRATE_MENU_INTO_TAB_BAR
 		fMenuGroup->SetVisible(
 			(fVisibleInterfaceElements & INTERFACE_ELEMENT_MENU) != 0);
@@ -2504,10 +2512,9 @@ BrowserWindow::_ShowInterface(bool show)
 		fStatusGroup->SetVisible(
 			(fVisibleInterfaceElements & INTERFACE_ELEMENT_STATUS) != 0);
 	} else {
-		fMenuGroup->SetVisible(false);
-		fTabGroup->SetVisible(false);
-		fNavigationGroup->SetVisible(false);
-		fStatusGroup->SetVisible(false);
+		rgb_color color = ui_color(B_PANEL_BACKGROUND_COLOR);
+		color.alpha = 0;
+		container->SetViewColor(color);
 	}
 	// TODO: Setting the group visible seems to unhide the status bar.
 	// Fix in Haiku?
@@ -2753,15 +2760,22 @@ BrowserWindow::_HandlePageSourceResult(const BMessage* message)
 		pathToPageSource.SetTo(url.String());
 	} else {
 		// Something else, store it.
-		// TODO: What if it isn't HTML, but for example SVG?
 		BString source;
 		ret = message->FindString("source", &source);
 
 		if (ret == B_OK)
 			ret = find_directory(B_SYSTEM_TEMP_DIRECTORY, &pathToPageSource);
 
+		BString mimeType;
+		if (message->FindString("mime type", &mimeType) != B_OK)
+			mimeType = "text/html";
+
+		BString extension = ".html";
+		if (mimeType == "image/svg+xml")
+			extension = ".svg";
+
 		BString tmpFileName("PageSource_");
-		tmpFileName << system_time() << ".html";
+		tmpFileName << system_time() << extension;
 		if (ret == B_OK)
 			ret = pathToPageSource.Append(tmpFileName.String());
 
@@ -2778,9 +2792,7 @@ BrowserWindow::_HandlePageSourceResult(const BMessage* message)
 		}
 
 		if (ret == B_OK) {
-			const char* type = "text/html";
-			size_t size = strlen(type);
-			pageSourceFile.WriteAttr("BEOS:TYPE", B_STRING_TYPE, 0, type, size);
+			pageSourceFile.WriteAttrString("BEOS:TYPE", mimeType);
 				// If it fails we don't care.
 		}
 	}
@@ -2814,11 +2826,18 @@ BrowserWindow::_HandlePageSourceResult(const BMessage* message)
 void
 BrowserWindow::_ShowBookmarkBar(bool show)
 {
-	// It is not allowed to show the bookmark bar when it is empty
-	if (show && (fBookmarkBar == NULL || fBookmarkBar->CountItems() <= 1))
-	{
-		fBookmarkBarMenuItem->SetMarked(false);
-		return;
+	if (show) {
+		BPath path;
+		entry_ref ref;
+		if (_BookmarkPath(path) == B_OK
+			&& path.Append(kBookmarkBarSubdir) == B_OK
+			&& get_ref_for_path(path.Path(), &ref) == B_OK) {
+			BDirectory dir(&ref);
+			if (dir.CountEntries() == 0) {
+				fBookmarkBarMenuItem->SetMarked(false);
+				return;
+			}
+		}
 	}
 
 	fBookmarkBarMenuItem->SetMarked(show);

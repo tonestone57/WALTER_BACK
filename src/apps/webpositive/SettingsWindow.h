@@ -88,6 +88,8 @@ private:
 			BCheckBox*			fAutoHidePointer;
 			BCheckBox*			fShowHomeButton;
 
+			BSpinner*			fAutoHideTimeout;
+
 			FontSelectionView*	fStandardFontView;
 			FontSelectionView*	fSerifFontView;
 			FontSelectionView*	fSansSerifFontView;

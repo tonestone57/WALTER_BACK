@@ -1,0 +1,12 @@
+./src/tools/translation/inspector/ImageView.cpp:			// HACK: Need to fix case where window un-zooms
+./src/apps/mediaconverter/MediaConverterWindow.cpp:		// HACK: get the fInfoView to update the duration "synchronously"
+./src/apps/text_search/GrepWindow.cpp:	// HACK-HACK-HACK:
+./src/system/boot/platform/amiga_m68k/cpu.cpp:static bigtime_t gSystemTimeCounter = 0; //HACK
+./src/system/boot/platform/atari_m68k/cpu.cpp:static bigtime_t gSystemTimeCounter = 0; //HACK
+./src/system/boot/platform/next_m68k/cpu.cpp:static bigtime_t gSystemTimeCounter = 0; //HACK
+./src/system/kernel/debug/debug.cpp:					/* HACK ALERT!!!
+./src/add-ons/media/media-add-ons/radeon/RadeonProducer.cpp:	// HACK: (see HandleHardware())
+./src/add-ons/media/media-add-ons/radeon/RadeonProducer.cpp:	// HACK: store end instead of start time
+./src/add-ons/media/media-add-ons/usb_webcam/sensors/tas5130d1b.cpp:		/* HACK: TEST IMAGE */
+./src/add-ons/media/media-add-ons/usb_webcam/sensors/tas5110c1b.cpp:		/* HACK: TEST IMAGE */
+./src/libs/compat/freebsd_iflib/kthread.cpp:	thread_id id = spawn_kernel_thread((status_t (*)(void *))func, /* HACK! */

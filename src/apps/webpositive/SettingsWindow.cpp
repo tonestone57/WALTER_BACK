@@ -227,6 +227,8 @@ SettingsWindow::MessageReceived(BMessage* message)
 		case MSG_AUTO_HIDE_INTERFACE_BEHAVIOR_CHANGED:
 		case MSG_AUTO_HIDE_POINTER_BEHAVIOR_CHANGED:
 		case MSG_SHOW_HOME_BUTTON_CHANGED:
+			_ApplySettings();
+			break;
 		case MSG_STANDARD_FONT_CHANGED:
 		case MSG_SERIF_FONT_CHANGED:
 		case MSG_SANS_SERIF_FONT_CHANGED:
@@ -237,7 +239,6 @@ SettingsWindow::MessageReceived(BMessage* message)
 		case MSG_USE_PROXY_AUTH_CHANGED:
 		case MSG_PROXY_USERNAME_CHANGED:
 		case MSG_PROXY_PASSWORD_CHANGED:
-			// TODO: Some settings could change live, some others not?
 			_ValidateControlsEnabledStatus();
 			break;
 
@@ -400,6 +401,12 @@ SettingsWindow::_CreateGeneralPage(float spacing)
 		new BMessage(MSG_SHOW_HOME_BUTTON_CHANGED));
 	fShowHomeButton->SetValue(B_CONTROL_ON);
 
+	fAutoHideTimeout = new BSpinner("auto hide timeout",
+		B_TRANSLATE("Auto-hide interface in full screen mode after (seconds):"),
+		new BMessage(MSG_AUTO_HIDE_INTERFACE_BEHAVIOR_CHANGED));
+	fAutoHideTimeout->SetRange(1, 10);
+	fAutoHideTimeout->SetValue(1);
+
 	BView* view = BGroupLayoutBuilder(B_VERTICAL, 0)
 		.Add(BGridLayoutBuilder(spacing / 2, spacing / 2)
 			.Add(fStartPageControl->CreateLabelLayoutItem(), 0, 0)
@@ -435,6 +442,10 @@ SettingsWindow::_CreateGeneralPage(float spacing)
 
 		.AddGroup(B_HORIZONTAL)
 			.Add(fDaysInHistory)
+			.AddGlue()
+			.End()
+		.AddGroup(B_HORIZONTAL)
+			.Add(fAutoHideTimeout)
 			.AddGlue()
 			.End()
 		.AddGlue()
@@ -612,6 +623,9 @@ SettingsWindow::_CanApplySettings() const
 	canApply = canApply || ((fShowHomeButton->Value() == B_CONTROL_ON)
 		!= fSettings->GetValue(kSettingsKeyShowHomeButton, true));
 
+	canApply = canApply || (fAutoHideTimeout->Value() * 1000000
+		!= fSettings->GetValue("auto_hide_timeout", 1000000));
+
 	canApply = canApply || (fDaysInHistory->Value()
 		!= BrowsingHistory::DefaultInstance()->MaxHistoryItemAge());
 
@@ -689,6 +703,8 @@ SettingsWindow::_ApplySettings()
 		fAutoHidePointer->Value() == B_CONTROL_ON);
 	fSettings->SetValue(kSettingsKeyShowHomeButton,
 		fShowHomeButton->Value() == B_CONTROL_ON);
+
+	fSettings->SetValue("auto_hide_timeout", fAutoHideTimeout->Value() * 1000000);
 
 	// New page policies
 	fSettings->SetValue(kSettingsKeyStartUpPolicy, _StartUpPolicy());
@@ -789,6 +805,9 @@ SettingsWindow::_RevertSettings()
 		fSettings->GetValue(kSettingsKeyAutoHidePointer, false));
 	fShowHomeButton->SetValue(
 		fSettings->GetValue(kSettingsKeyShowHomeButton, true));
+
+	fAutoHideTimeout->SetValue(
+		fSettings->GetValue("auto_hide_timeout", 1000000) / 1000000);
 
 	fDaysInHistory->SetValue(
 		BrowsingHistory::DefaultInstance()->MaxHistoryItemAge());
