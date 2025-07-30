@@ -425,15 +425,7 @@ DownloadProgressView::MessageReceived(BMessage* message)
 		}
 		case RESTART_DOWNLOAD:
 		{
-			// We can't create a download without a full web context (mainly
-			// because it needs to access the cookie jar), and when we get here
-			// the original context is long gone (possibly the browser was
-			// restarted). So we create a new window to restart the download
-			// in a fresh context.
-			// FIXME this has of course the huge downside of leaving the new
-			// window open with a blank page. I can't think of a better
-			// solution right now...
-			BMessage* request = new BMessage(NEW_WINDOW);
+			BMessage* request = new BMessage(START_DOWNLOAD);
 			request->AddString("url", fURL);
 			be_app->PostMessage(request);
 			break;

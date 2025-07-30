@@ -20,6 +20,7 @@ class BTextControl;
 class FontSelectionView;
 class SettingsMessage;
 class BFilePanel;
+struct Setting;
 
 
 class SettingsWindow : public BWindow {
@@ -61,6 +62,8 @@ private:
 
 private:
 			SettingsMessage*	fSettings;
+			Setting*			fSettingsData;
+			int32				fSettingsCount;
 			bool				fProxyPortValid;
 
 			BTextControl*		fStartPageControl;

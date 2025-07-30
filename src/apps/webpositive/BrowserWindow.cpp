@@ -2152,8 +2152,7 @@ BrowserWindow::_CreateBookmark()
 	BBitmap* largeIcon = NULL;
 	PageUserData* userData = static_cast<PageUserData*>(CurrentWebView()->GetUserData());
 	if (userData != NULL && userData->PageIcon() != NULL) {
-		miniIcon = new BBitmap(BRect(0, 0, 15, 15), B_BITMAP_NO_SERVER_LINK, B_CMAP8);
-		miniIcon->ImportBits(userData->PageIcon());
+		miniIcon = new BBitmap(userData->PageIcon());
 		// TODO:  retrieve the large icon too, once PageUserData can provide it.
 	}
 
@@ -2678,27 +2677,19 @@ BrowserWindow::_IsValidDomainChar(char ch)
 void
 BrowserWindow::_SmartURLHandler(const BString& url)
 {
-	// First test if the URL has a protocol field
-	int32 at = url.FindFirst(":");
-
-	if (at != B_ERROR) {
-		// There is a protocol, let's see if we can handle it
-		BString proto;
-		url.CopyInto(proto, 0, at);
-
+	BUrl urlObject(url);
+	if (urlObject.IsValid() && urlObject.Protocol().Length() > 0) {
+		// This is a valid URL with a protocol. Let's see if we can handle it.
 		bool handled = false;
-
-		// First try the built-in supported ones
 		for (unsigned int i = 0; i < sizeof(kHandledProtocols) / sizeof(char*);
 				i++) {
-			handled = (proto == kHandledProtocols[i]);
-			if (handled)
+			if (urlObject.Protocol() == kHandledProtocols[i]) {
+				handled = true;
 				break;
+			}
 		}
 
 		if (handled) {
-			// This is the easy case, a complete and well-formed URL, we can
-			// navigate to it without further efforts.
 			_VisitURL(url);
 			return;
 		} else {
@@ -2707,7 +2698,7 @@ BrowserWindow::_SmartURLHandler(const BString& url)
 			// can handle it.
 			BString temp;
 			temp = "application/x-vnd.Be.URL.";
-			temp += proto;
+			temp += urlObject.Protocol();
 
 			const char* argv[] = { url.String(), NULL };
 
@@ -2716,52 +2707,16 @@ BrowserWindow::_SmartURLHandler(const BString& url)
 		}
 	}
 
-	// There is no protocol or only an unsupported one. So let's try harder to
-	// guess what the request is.
-
-	// "localhost" is a special case, it is a valid domain name but has no dots.
-	// Handle it separately.
-	if (url == "localhost")
-		_VisitURL("http://localhost/");
-	else {
-		// Also handle URLs starting with "localhost" followed by a path.
-		const char* localhostPrefix = "localhost/";
-
-		if (url.Compare(localhostPrefix, strlen(localhostPrefix)) == 0)
-			_VisitURL(url);
-		else {
-			// In all other cases we try to detect a valid domain name. There
-			// must be at least one dot and no spaces until the first / in the
-			// URL.
-			bool isURL = false;
-
-			for (int32 i = 0; i < url.CountChars(); i++) {
-				if (url[i] == '.')
-					isURL = true;
-				else if (url[i] == '/')
-					break;
-				else if (!_IsValidDomainChar(url[i])) {
-					isURL = false;
-
-					break;
-				}
-			}
-
-			if (isURL) {
-				// This is apparently an URL missing the protocol part. In that
-				// case we default to http.
-				BString prefixed = "http://";
-				prefixed << url;
-				_VisitURL(prefixed);
-				return;
-			} else {
-				// We couldn't find anything that looks like an URL. Let's
-				// assume what we have is a search request and go to the search
-				// engine.
-				_VisitSearchEngine(url);
-			}
-		}
+	// If the URL is not valid or has no protocol, try to prepend "http://"
+	BString urlWithHttp = BString("http://").Append(url);
+	BUrl httpUrl(urlWithHttp);
+	if (httpUrl.IsValid() && httpUrl.Host().Length() > 0) {
+		_VisitURL(urlWithHttp);
+		return;
 	}
+
+	// If all else fails, treat it as a search query.
+	_VisitSearchEngine(url);
 }
 
 

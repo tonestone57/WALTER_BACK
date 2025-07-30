@@ -91,7 +91,8 @@ enum {
 	SHOW_DOWNLOAD_WINDOW			= 'sdwd',
 	SHOW_SETTINGS_WINDOW			= 'sswd',
 	SHOW_CONSOLE_WINDOW				= 'scwd',
-	SHOW_COOKIE_WINDOW				= 'skwd'
+	SHOW_COOKIE_WINDOW				= 'skwd',
+	START_DOWNLOAD					= 'stod'
 };
 
 

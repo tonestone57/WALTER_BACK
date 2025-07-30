@@ -26,6 +26,7 @@
 #include <TextControl.h>
 #include <debugger.h>
 #include <SettingsMessage.h>
+#include <Variant.h>
 
 #include <errno.h>
 #include <stdio.h>
@@ -37,6 +38,14 @@
 #include "FontSelectionView.h"
 #include "SettingsKeys.h"
 #include "WebSettings.h"
+
+
+struct Setting {
+	BControl* control;
+	const char* key;
+	BVariant::Type type;
+	BVariant defaultValue;
+};
 
 
 #undef B_TRANSLATION_CONTEXT
@@ -90,6 +99,15 @@ SettingsWindow::SettingsWindow(BRect frame, SettingsMessage* settings)
 	fSettings(settings),
 	fProxyPortValid(true)
 {
+	fSettingsCount = 5;
+	fSettingsData = new Setting[fSettingsCount];
+
+	fSettingsData[0] = { fStartPageControl, kSettingsKeyStartPageURL, B_STRING_TYPE, BVariant(kDefaultStartPageURL) };
+	fSettingsData[1] = { fSearchPageControl, kSettingsKeySearchPageURL, B_STRING_TYPE, BVariant(kDefaultSearchPageURL) };
+	fSettingsData[2] = { fDownloadFolderControl, kSettingsKeyDownloadPath, B_STRING_TYPE, BVariant(kDefaultDownloadPath) };
+	fSettingsData[3] = { fShowTabsIfOnlyOnePage, kSettingsKeyShowTabsIfSinglePageOpen, B_BOOL_TYPE, BVariant(true) };
+	fSettingsData[4] = { fAutoHideInterfaceInFullscreenMode, kSettingsKeyAutoHideInterfaceInFullscreenMode, B_BOOL_TYPE, BVariant(false) };
+
 	fApplyButton = new BButton(B_TRANSLATE("Apply"), new BMessage(MSG_APPLY));
 	fCancelButton = new BButton(B_TRANSLATE("Cancel"),
 		new BMessage(MSG_CANCEL));
@@ -141,11 +159,21 @@ SettingsWindow::SettingsWindow(BRect frame, SettingsMessage* settings)
 	// Start hidden
 	Hide();
 	Show();
+
+	fSettingsCount = 5;
+	fSettingsData = new Setting[fSettingsCount];
+
+	fSettingsData[0] = { fStartPageControl, kSettingsKeyStartPageURL, B_STRING_TYPE, BVariant(kDefaultStartPageURL) };
+	fSettingsData[1] = { fSearchPageControl, kSettingsKeySearchPageURL, B_STRING_TYPE, BVariant(kDefaultSearchPageURL) };
+	fSettingsData[2] = { fDownloadFolderControl, kSettingsKeyDownloadPath, B_STRING_TYPE, BVariant(kDefaultDownloadPath) };
+	fSettingsData[3] = { fShowTabsIfOnlyOnePage, kSettingsKeyShowTabsIfSinglePageOpen, B_BOOL_TYPE, BVariant(true) };
+	fSettingsData[4] = { fAutoHideInterfaceInFullscreenMode, kSettingsKeyAutoHideInterfaceInFullscreenMode, B_BOOL_TYPE, BVariant(false) };
 }
 
 
 SettingsWindow::~SettingsWindow()
 {
+	delete[] fSettingsData;
 	RemoveHandler(fStandardFontView);
 	delete fStandardFontView;
 	RemoveHandler(fSerifFontView);
@@ -599,6 +627,32 @@ SettingsWindow::_SetupFontSelectionView(FontSelectionView* view,
 bool
 SettingsWindow::_CanApplySettings() const
 {
+	for (int32 i = 0; i < fSettingsCount; i++) {
+		const Setting& setting = fSettingsData[i];
+		BVariant value = fSettings->GetValue(setting.key, setting.defaultValue);
+		switch (setting.type) {
+			case B_STRING_TYPE:
+			{
+				BTextControl* textControl
+					= dynamic_cast<BTextControl*>(setting.control);
+				if (textControl && textControl->Text() != value.ToString())
+					return true;
+				break;
+			}
+			case B_BOOL_TYPE:
+			{
+				BCheckBox* checkBox
+					= dynamic_cast<BCheckBox*>(setting.control);
+				if (checkBox && (checkBox->Value() == B_CONTROL_ON) != value.ToBool())
+					return true;
+				break;
+			}
+			default:
+				break;
+		}
+	}
+
+#if 0
 	bool canApply = false;
 
 	// General settings
@@ -689,12 +743,38 @@ SettingsWindow::_CanApplySettings() const
 		fSettings->GetValue(kSettingsKeyProxyPassword, "")) != 0);
 
 	return canApply;
+#endif
+	return false;
 }
 
 
 void
 SettingsWindow::_ApplySettings()
 {
+	for (int32 i = 0; i < fSettingsCount; i++) {
+		const Setting& setting = fSettingsData[i];
+		switch (setting.type) {
+			case B_STRING_TYPE:
+			{
+				BTextControl* textControl
+					= dynamic_cast<BTextControl*>(setting.control);
+				if (textControl)
+					fSettings->SetValue(setting.key, textControl->Text());
+				break;
+			}
+			case B_BOOL_TYPE:
+			{
+				BCheckBox* checkBox
+					= dynamic_cast<BCheckBox*>(setting.control);
+				if (checkBox)
+					fSettings->SetValue(setting.key, checkBox->Value() == B_CONTROL_ON);
+				break;
+			}
+			default:
+				break;
+		}
+	}
+#if 0
 	// Store general settings
 	BrowsingHistory::DefaultInstance()->SetMaxHistoryItemAge(
 		(uint32)fDaysInHistory->Value());
@@ -741,7 +821,7 @@ SettingsWindow::_ApplySettings()
 		fProxyUsernameControl->Text());
 	fSettings->SetValue(kSettingsKeyProxyPassword,
 		fProxyPasswordControl->Text());
-
+#endif
 	fSettings->Save();
 
 	// Apply settings to default web page settings.
@@ -749,17 +829,17 @@ SettingsWindow::_ApplySettings()
 	BWebSettings::Default()->SetSerifFont(fSerifFontView->Font());
 	BWebSettings::Default()->SetSansSerifFont(fSansSerifFontView->Font());
 	BWebSettings::Default()->SetFixedFont(fFixedFontView->Font());
-	BWebSettings::Default()->SetDefaultStandardFontSize(standardFontSize);
-	BWebSettings::Default()->SetDefaultFixedFontSize(fixedFontSize);
+	BWebSettings::Default()->SetDefaultStandardFontSize(fStandardSizesSpinner->Value());
+	BWebSettings::Default()->SetDefaultFixedFontSize(fFixedSizesSpinner->Value());
 
 	if (fUseProxyCheckBox->Value() == B_CONTROL_ON) {
 		if (fUseProxyAuthCheckBox->Value() == B_CONTROL_ON) {
 			BWebSettings::Default()->SetProxyInfo(fProxyAddressControl->Text(),
-				proxyPort, B_PROXY_TYPE_HTTP, fProxyUsernameControl->Text(),
+				_ProxyPort(), B_PROXY_TYPE_HTTP, fProxyUsernameControl->Text(),
 				fProxyPasswordControl->Text());
 		} else {
 			BWebSettings::Default()->SetProxyInfo(fProxyAddressControl->Text(),
-				proxyPort, B_PROXY_TYPE_HTTP, "", "");
+				_ProxyPort(), B_PROXY_TYPE_HTTP, "", "");
 		}
 	} else
 		BWebSettings::Default()->SetProxyInfo();
@@ -772,9 +852,41 @@ SettingsWindow::_ApplySettings()
 }
 
 
+struct Setting {
+	BControl* control;
+	const char* key;
+	BVariant::Type type;
+	BVariant defaultValue;
+};
+
 void
 SettingsWindow::_RevertSettings()
 {
+	for (int32 i = 0; i < fSettingsCount; i++) {
+		const Setting& setting = fSettingsData[i];
+		BVariant value = fSettings->GetValue(setting.key, setting.defaultValue);
+		switch (setting.type) {
+			case B_STRING_TYPE:
+			{
+				BTextControl* textControl
+					= dynamic_cast<BTextControl*>(setting.control);
+				if (textControl)
+					textControl->SetText(value.ToString());
+				break;
+			}
+			case B_BOOL_TYPE:
+			{
+				BCheckBox* checkBox
+					= dynamic_cast<BCheckBox*>(setting.control);
+				if (checkBox)
+					checkBox->SetValue(value.ToBool());
+				break;
+			}
+			default:
+				break;
+		}
+	}
+#if 0
 	fStartPageControl->SetText(
 		fSettings->GetValue(kSettingsKeyStartPageURL, kDefaultStartPageURL));
 
@@ -898,7 +1010,7 @@ SettingsWindow::_RevertSettings()
 		""));
 	fProxyPasswordControl->SetText(fSettings->GetValue(kSettingsKeyProxyPassword,
 		""));
-
+#endif
 	_ValidateProxyPort();
 	_ValidateControlsEnabledStatus();
 }

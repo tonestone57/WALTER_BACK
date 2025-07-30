@@ -78,19 +78,12 @@ BookmarkBar::MouseDown(BPoint where)
 		if (message->FindInt32("buttons", &buttons) == B_OK) {
 			if (buttons & B_SECONDARY_MOUSE_BUTTON) {
 
-				bool foundItem = false;
-				for (int32 i = 0; i < CountItems(); i++) {
-					BRect itemBounds = ItemAt(i)->Frame();
-					if (itemBounds.Contains(where)) {
-						foundItem = true;
-						fSelectedItemIndex = i;
-						break;
-					}
-				}
-				if (foundItem) {
+				BMenuItem* item = FindItem(where);
+				if (item) {
+					fSelectedItemIndex = IndexOf(item);
 					BPoint screenWhere(where);
 					ConvertToScreen(&screenWhere);
-					if (ItemAt(fSelectedItemIndex)->Message()->what == kFolderMsg) {
+					if (item->Message()->what == kFolderMsg) {
 						// This is a directory item, disable "open in new tab"
 						fPopUpMenu->ItemAt(0)->SetEnabled(false);
 					} else
@@ -306,15 +299,24 @@ BookmarkBar::MessageReceived(BMessage* message)
 			if (index >= 0 && index < CountItems()) {
 				BMenuItem* selectedItem = ItemAt(index);
 				BString oldName = selectedItem->Label();
-				BMessage* message = new BMessage(kRenameBookmarkMsg);
-				message->AddPointer("item", selectedItem);
-				BString request;
-				request.SetToFormat(B_TRANSLATE("Old name: %s"), oldName.String());
-				// Create a text control to get the new name from the user
-				PromptWindow* prompt = new PromptWindow(B_TRANSLATE("Rename bookmark"),
-					B_TRANSLATE("New name:"), request, this, message);
-				prompt->Show();
-				prompt->CenterOnScreen();
+				BMessage* renameMessage = new BMessage(kRenameBookmarkMsg);
+				ino_t inode = -1;
+				for (auto const& [key, val] : fItemsMap) {
+					if (val == selectedItem) {
+						inode = key;
+						break;
+					}
+				}
+				if (inode != -1) {
+					renameMessage->AddInt64("inode", inode);
+					BString request;
+					request.SetToFormat(B_TRANSLATE("Old name: %s"), oldName.String());
+					// Create a text control to get the new name from the user
+					PromptWindow* prompt = new PromptWindow(B_TRANSLATE("Rename bookmark"),
+						B_TRANSLATE("New name:"), request, this, renameMessage);
+					prompt->Show();
+					prompt->CenterOnScreen();
+				}
 			}
 			break;
 		}
@@ -322,17 +324,18 @@ BookmarkBar::MessageReceived(BMessage* message)
 		{
 			// User clicked OK, get the new name
 			BString newName = message->FindString("text");
-			BMenuItem* selectedItem = NULL;
-			message->FindPointer("item", (void**)&selectedItem);
+			ino_t inode;
+			if (message->FindInt64("inode", &inode) == B_OK) {
+				BMenuItem* selectedItem = fItemsMap[inode];
+				// Rename the bookmark file
+				entry_ref ref;
+				if (selectedItem->Message()->FindRef("refs", &ref) == B_OK) {
+					BEntry entry(&ref);
+					entry.Rename(newName.String());
 
-			// Rename the bookmark file
-			entry_ref ref;
-			if (selectedItem->Message()->FindRef("refs", &ref) == B_OK) {
-				BEntry entry(&ref);
-				entry.Rename(newName.String());
-
-				// Update the menu item label
-				selectedItem->SetLabel(newName);
+					// Update the menu item label
+					selectedItem->SetLabel(newName);
+				}
 			}
 			break;
 		}

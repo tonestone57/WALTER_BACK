@@ -364,6 +364,14 @@ BrowserApp::MessageReceived(BMessage* message)
 		fConsoleWindow->PostMessage(message);
 		break;
 
+	case START_DOWNLOAD:
+	{
+		BString url;
+		if (message->FindString("url", &url) == B_OK)
+			_CreateNewPage(url);
+		break;
+	}
+
 	default:
 		BApplication::MessageReceived(message);
 		break;
