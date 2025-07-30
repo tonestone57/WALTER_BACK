@@ -132,7 +132,9 @@ public:
 	NewTabButton(BMessage* message)
 		: TabButton(message)
 	{
-		SetToolTip("New tab (Cmd-T)");
+		BString toolTip(B_TRANSLATE("New tab (%shortcut%)"));
+		toolTip.ReplaceFirst("%shortcut%", "Cmd-T");
+		SetToolTip(toolTip.String());
 	}
 
 	virtual BSize MinSize()
