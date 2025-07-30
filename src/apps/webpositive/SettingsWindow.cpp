@@ -297,14 +297,6 @@ SettingsWindow::MessageReceived(BMessage* message)
 		case MSG_SHOW_HOME_BUTTON_CHANGED:
 			_ValidateControlsEnabledStatus();
 			break;
-		case MSG_START_PAGE_CHANGED:
-			_ValidateStartPage();
-			_ValidateControlsEnabledStatus();
-			break;
-		case MSG_SEARCH_PAGE_CHANGED:
-			_ValidateSearchPage();
-			_ValidateControlsEnabledStatus();
-			break;
 		case MSG_STANDARD_FONT_CHANGED:
 		case MSG_SERIF_FONT_CHANGED:
 		case MSG_SANS_SERIF_FONT_CHANGED:
@@ -678,7 +670,19 @@ SettingsWindow::_CanApplySettings() const
 {
 	for (int32 i = 0; i < fSettingsCount; i++) {
 		const Setting& setting = fSettingsData[i];
-		BVariant value = fSettings->GetValue(setting.key, setting.defaultValue);
+		BVariant value;
+		switch (setting.type) {
+			case B_STRING_TYPE:
+				value.SetTo(fSettings->GetValue(setting.key,
+					setting.defaultValue.ToString()));
+				break;
+			case B_BOOL_TYPE:
+				value.SetTo(fSettings->GetValue(setting.key,
+					setting.defaultValue.ToBool()));
+				break;
+			default:
+				break;
+		}
 		switch (setting.type) {
 			case B_STRING_TYPE:
 			{
@@ -881,7 +885,19 @@ SettingsWindow::_RevertSettings()
 {
 	for (int32 i = 0; i < fSettingsCount; i++) {
 		const Setting& setting = fSettingsData[i];
-		BVariant value = fSettings->GetValue(setting.key, setting.defaultValue);
+		BVariant value;
+		switch (setting.type) {
+			case B_STRING_TYPE:
+				value.SetTo(fSettings->GetValue(setting.key,
+					setting.defaultValue.ToString()));
+				break;
+			case B_BOOL_TYPE:
+				value.SetTo(fSettings->GetValue(setting.key,
+					setting.defaultValue.ToBool()));
+				break;
+			default:
+				break;
+		}
 		switch (setting.type) {
 			case B_STRING_TYPE:
 			{
