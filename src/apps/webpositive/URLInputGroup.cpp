@@ -676,6 +676,7 @@ URLInputGroup::URLInputGroup(BMessage* goMessage)
 
 URLInputGroup::~URLInputGroup()
 {
+	delete fIcon;
 }
 
 
