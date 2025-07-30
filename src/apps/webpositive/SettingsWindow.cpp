@@ -97,7 +97,10 @@ SettingsWindow::SettingsWindow(BRect frame, SettingsMessage* settings)
 		B_NORMAL_WINDOW_FEEL, B_AUTO_UPDATE_SIZE_LIMITS
 			| B_ASYNCHRONOUS_CONTROLS | B_NOT_ZOOMABLE),
 	fSettings(settings),
-	fProxyPortValid(true)
+	fProxyPortValid(true),
+	fStartPageValid(true),
+	fSearchPageValid(true),
+	fProxyAddressValid(true)
 {
 	fSettingsCount = 5;
 	fSettingsData = new Setting[fSettingsCount];
@@ -257,14 +260,21 @@ SettingsWindow::MessageReceived(BMessage* message)
 		case MSG_AUTO_HIDE_INTERFACE_BEHAVIOR_CHANGED:
 		case MSG_AUTO_HIDE_POINTER_BEHAVIOR_CHANGED:
 		case MSG_SHOW_HOME_BUTTON_CHANGED:
-			_ApplySettings();
+			_ValidateControlsEnabledStatus();
+			break;
+		case MSG_START_PAGE_CHANGED:
+			_ValidateStartPage();
+			_ValidateControlsEnabledStatus();
+			break;
+		case MSG_SEARCH_PAGE_CHANGED:
+			_ValidateSearchPage();
+			_ValidateControlsEnabledStatus();
 			break;
 		case MSG_STANDARD_FONT_CHANGED:
 		case MSG_SERIF_FONT_CHANGED:
 		case MSG_SANS_SERIF_FONT_CHANGED:
 		case MSG_FIXED_FONT_CHANGED:
 		case MSG_USE_PROXY_CHANGED:
-		case MSG_PROXY_ADDRESS_CHANGED:
 		case MSG_USE_PROXY_AUTH_CHANGED:
 		case MSG_PROXY_USERNAME_CHANGED:
 		case MSG_PROXY_PASSWORD_CHANGED:
@@ -273,6 +283,10 @@ SettingsWindow::MessageReceived(BMessage* message)
 
 		case MSG_PROXY_PORT_CHANGED:
 			_ValidateProxyPort();
+			_ValidateControlsEnabledStatus();
+			break;
+		case MSG_PROXY_ADDRESS_CHANGED:
+			_ValidateProxyAddress();
 			_ValidateControlsEnabledStatus();
 			break;
 
@@ -652,98 +666,73 @@ SettingsWindow::_CanApplySettings() const
 		}
 	}
 
-#if 0
-	bool canApply = false;
+	if (fDaysInHistory->Value()
+		!= BrowsingHistory::DefaultInstance()->MaxHistoryItemAge())
+		return true;
 
-	// General settings
-	canApply = canApply || (strcmp(fStartPageControl->Text(),
-		fSettings->GetValue(kSettingsKeyStartPageURL,
-			kDefaultStartPageURL)) != 0);
-
-	canApply = canApply || (strcmp(fSearchPageControl->Text(),
-		fSettings->GetValue(kSettingsKeySearchPageURL,
-			kDefaultSearchPageURL)) != 0);
-
-	canApply = canApply || (strcmp(fDownloadFolderControl->Text(),
-		fSettings->GetValue(kSettingsKeyDownloadPath,
-			kDefaultDownloadPath)) != 0);
-
-	canApply = canApply || ((fShowTabsIfOnlyOnePage->Value() == B_CONTROL_ON)
-		!= fSettings->GetValue(kSettingsKeyShowTabsIfSinglePageOpen, true));
-
-	canApply = canApply || (
-		(fAutoHideInterfaceInFullscreenMode->Value() == B_CONTROL_ON)
-		!= fSettings->GetValue(kSettingsKeyAutoHideInterfaceInFullscreenMode,
-			false));
-
-	canApply = canApply || (
-		(fAutoHidePointer->Value() == B_CONTROL_ON)
-		!= fSettings->GetValue(kSettingsKeyAutoHidePointer, false));
-
-	canApply = canApply || ((fShowHomeButton->Value() == B_CONTROL_ON)
-		!= fSettings->GetValue(kSettingsKeyShowHomeButton, true));
-
-	canApply = canApply || (fAutoHideTimeout->Value() * 1000000
-		!= fSettings->GetValue("auto_hide_timeout", 1000000));
-
-	canApply = canApply || (fDaysInHistory->Value()
-		!= BrowsingHistory::DefaultInstance()->MaxHistoryItemAge());
-
-	// Start up policy
-	canApply = canApply || (_StartUpPolicy()
+	if (_StartUpPolicy()
 		!= fSettings->GetValue(kSettingsKeyStartUpPolicy,
-			(uint32)ResumePriorSession));
+			(uint32)ResumePriorSession))
+		return true;
 
-	// New window policy
-	canApply = canApply || (_NewWindowPolicy()
+	if (_NewWindowPolicy()
 		!= fSettings->GetValue(kSettingsKeyNewWindowPolicy,
-			(uint32)OpenStartPage));
+			(uint32)OpenStartPage))
+		return true;
 
-	// New tab policy
-	canApply = canApply || (_NewTabPolicy()
+	if (_NewTabPolicy()
 		!= fSettings->GetValue(kSettingsKeyNewTabPolicy,
-			(uint32)OpenBlankPage));
+			(uint32)OpenBlankPage))
+		return true;
 
-	// Font settings
-	canApply = canApply || (fStandardFontView->Font()
-		!= fSettings->GetValue("standard font", *be_plain_font));
+	if (fStandardFontView->Font()
+		!= fSettings->GetValue("standard font", *be_plain_font))
+		return true;
 
-	canApply = canApply || (fSerifFontView->Font()
-		!= fSettings->GetValue("serif font", _FindDefaultSerifFont()));
+	if (fSerifFontView->Font()
+		!= fSettings->GetValue("serif font", _FindDefaultSerifFont()))
+		return true;
 
-	canApply = canApply || (fSansSerifFontView->Font()
-		!= fSettings->GetValue("sans serif font", *be_plain_font));
+	if (fSansSerifFontView->Font()
+		!= fSettings->GetValue("sans serif font", *be_plain_font))
+		return true;
 
-	canApply = canApply || (fFixedFontView->Font()
-		!= fSettings->GetValue("fixed font", *be_fixed_font));
+	if (fFixedFontView->Font()
+		!= fSettings->GetValue("fixed font", *be_fixed_font))
+		return true;
 
-	canApply = canApply || (fStandardSizesSpinner->Value()
-		!= fSettings->GetValue("standard font size", kDefaultFontSize));
+	if (fStandardSizesSpinner->Value()
+		!= fSettings->GetValue("standard font size", kDefaultFontSize))
+		return true;
 
-	canApply = canApply || (fFixedSizesSpinner->Value()
-		!= fSettings->GetValue("fixed font size", kDefaultFontSize));
+	if (fFixedSizesSpinner->Value()
+		!= fSettings->GetValue("fixed font size", kDefaultFontSize))
+		return true;
 
-	// Proxy settings
-	canApply = canApply || ((fUseProxyCheckBox->Value() == B_CONTROL_ON)
-		!= fSettings->GetValue(kSettingsKeyUseProxy, false));
+	if ((fUseProxyCheckBox->Value() == B_CONTROL_ON)
+		!= fSettings->GetValue(kSettingsKeyUseProxy, false))
+		return true;
 
-	canApply = canApply || (strcmp(fProxyAddressControl->Text(),
-		fSettings->GetValue(kSettingsKeyProxyAddress, "")) != 0);
+	if (strcmp(fProxyAddressControl->Text(),
+		fSettings->GetValue(kSettingsKeyProxyAddress, "")) != 0)
+		return true;
 
-	canApply = canApply || (_ProxyPort()
-		!= fSettings->GetValue(kSettingsKeyProxyPort, (uint32)0));
+	if (_ProxyPort()
+		!= fSettings->GetValue(kSettingsKeyProxyPort, (uint32)0))
+		return true;
 
-	canApply = canApply || ((fUseProxyAuthCheckBox->Value() == B_CONTROL_ON)
-		!= fSettings->GetValue(kSettingsKeyUseProxyAuth, false));
+	if ((fUseProxyAuthCheckBox->Value() == B_CONTROL_ON)
+		!= fSettings->GetValue(kSettingsKeyUseProxyAuth, false))
+		return true;
 
-	canApply = canApply || (strcmp(fProxyUsernameControl->Text(),
-		fSettings->GetValue(kSettingsKeyProxyUsername, "")) != 0);
+	if (strcmp(fProxyUsernameControl->Text(),
+		fSettings->GetValue(kSettingsKeyProxyUsername, "")) != 0)
+		return true;
 
-	canApply = canApply || (strcmp(fProxyPasswordControl->Text(),
-		fSettings->GetValue(kSettingsKeyProxyPassword, "")) != 0);
+	if (strcmp(fProxyPasswordControl->Text(),
+		fSettings->GetValue(kSettingsKeyProxyPassword, "")) != 0)
+		return true;
 
-	return canApply;
-#endif
 	return false;
 }
 
@@ -1012,6 +1001,9 @@ SettingsWindow::_RevertSettings()
 		""));
 #endif
 	_ValidateProxyPort();
+	_ValidateStartPage();
+	_ValidateSearchPage();
+	_ValidateProxyAddress();
 	_ValidateControlsEnabledStatus();
 }
 
@@ -1047,7 +1039,7 @@ void
 SettingsWindow::_ValidateControlsEnabledStatus()
 {
 	bool canApply = _CanApplySettings();
-	fApplyButton->SetEnabled(canApply && fProxyPortValid);
+	fApplyButton->SetEnabled(canApply && fProxyPortValid && fStartPageValid && fSearchPageValid && fProxyAddressValid);
 	fRevertButton->SetEnabled(canApply);
 	// Let the Cancel button be enabled always, as another way to close the
 	// window...
@@ -1064,6 +1056,66 @@ SettingsWindow::_ValidateControlsEnabledStatus()
 
 
 // #pragma mark -
+
+
+void
+SettingsWindow::_ValidateProxyAddress()
+{
+	BUrl url(fProxyAddressControl->Text());
+	if (url.Host().Length() == 0) {
+		fProxyAddressControl->TextView()->SetViewColor(255, 200, 200);
+		fProxyAddressValid = false;
+	} else {
+		fProxyAddressControl->TextView()->SetViewUIColor(B_DOCUMENT_BACKGROUND_COLOR);
+		fProxyAddressValid = true;
+	}
+	fProxyAddressControl->TextView()->Invalidate();
+}
+
+
+void
+SettingsWindow::_ValidateProxyAddress()
+{
+	BUrl url(fProxyAddressControl->Text());
+	if (url.Host().Length() == 0) {
+		fProxyAddressControl->TextView()->SetViewColor(255, 200, 200);
+		fProxyAddressValid = false;
+	} else {
+		fProxyAddressControl->TextView()->SetViewUIColor(B_DOCUMENT_BACKGROUND_COLOR);
+		fProxyAddressValid = true;
+	}
+	fProxyAddressControl->TextView()->Invalidate();
+}
+
+
+void
+SettingsWindow::_ValidateSearchPage()
+{
+	BString url(fSearchPageControl->Text());
+	if (url.FindFirst("%s") < 0) {
+		fSearchPageControl->TextView()->SetViewColor(255, 200, 200);
+		fSearchPageValid = false;
+	} else {
+		fSearchPageControl->TextView()->SetViewUIColor(B_DOCUMENT_BACKGROUND_COLOR);
+		fSearchPageValid = true;
+	}
+	fSearchPageControl->TextView()->Invalidate();
+}
+
+
+void
+SettingsWindow::_ValidateStartPage()
+{
+	BUrl url(fStartPageControl->Text());
+	if (!url.IsValid()) {
+		fStartPageControl->TextView()->SetViewColor(255, 200, 200);
+		fStartPageValid = false;
+	} else {
+		fStartPageControl->TextView()->SetViewUIColor(B_DOCUMENT_BACKGROUND_COLOR);
+		fStartPageValid = true;
+	}
+	fStartPageControl->TextView()->Invalidate();
+}
 
 
 void

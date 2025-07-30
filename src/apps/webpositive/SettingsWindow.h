@@ -59,12 +59,18 @@ private:
 
 			void				_ValidateProxyPort();
 			uint32				_ProxyPort() const;
+			void				_ValidateStartPage();
+			void				_ValidateSearchPage();
+			void				_ValidateProxyAddress();
 
 private:
 			SettingsMessage*	fSettings;
 			Setting*			fSettingsData;
 			int32				fSettingsCount;
 			bool				fProxyPortValid;
+			bool				fStartPageValid;
+			bool				fSearchPageValid;
+			bool				fProxyAddressValid;
 
 			BTextControl*		fStartPageControl;
 			BTextControl*		fSearchPageControl;
