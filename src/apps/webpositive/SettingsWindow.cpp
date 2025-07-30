@@ -43,7 +43,7 @@
 struct Setting {
 	BControl* control;
 	const char* key;
-	BVariant::Type type;
+	type_code type;
 	BVariant defaultValue;
 };
 
@@ -105,11 +105,30 @@ SettingsWindow::SettingsWindow(BRect frame, SettingsMessage* settings)
 	fSettingsCount = 5;
 	fSettingsData = new Setting[fSettingsCount];
 
-	fSettingsData[0] = { fStartPageControl, kSettingsKeyStartPageURL, B_STRING_TYPE, BVariant(kDefaultStartPageURL) };
-	fSettingsData[1] = { fSearchPageControl, kSettingsKeySearchPageURL, B_STRING_TYPE, BVariant(kDefaultSearchPageURL) };
-	fSettingsData[2] = { fDownloadFolderControl, kSettingsKeyDownloadPath, B_STRING_TYPE, BVariant(kDefaultDownloadPath) };
-	fSettingsData[3] = { fShowTabsIfOnlyOnePage, kSettingsKeyShowTabsIfSinglePageOpen, B_BOOL_TYPE, BVariant(true) };
-	fSettingsData[4] = { fAutoHideInterfaceInFullscreenMode, kSettingsKeyAutoHideInterfaceInFullscreenMode, B_BOOL_TYPE, BVariant(false) };
+	fSettingsData[0].control = fStartPageControl;
+	fSettingsData[0].key = kSettingsKeyStartPageURL;
+	fSettingsData[0].type = B_STRING_TYPE;
+	fSettingsData[0].defaultValue.SetTo(kDefaultStartPageURL);
+
+	fSettingsData[1].control = fSearchPageControl;
+	fSettingsData[1].key = kSettingsKeySearchPageURL;
+	fSettingsData[1].type = B_STRING_TYPE;
+	fSettingsData[1].defaultValue.SetTo(kDefaultSearchPageURL);
+
+	fSettingsData[2].control = fDownloadFolderControl;
+	fSettingsData[2].key = kSettingsKeyDownloadPath;
+	fSettingsData[2].type = B_STRING_TYPE;
+	fSettingsData[2].defaultValue.SetTo(kDefaultDownloadPath);
+
+	fSettingsData[3].control = fShowTabsIfOnlyOnePage;
+	fSettingsData[3].key = kSettingsKeyShowTabsIfSinglePageOpen;
+	fSettingsData[3].type = B_BOOL_TYPE;
+	fSettingsData[3].defaultValue.SetTo(true);
+
+	fSettingsData[4].control = fAutoHideInterfaceInFullscreenMode;
+	fSettingsData[4].key = kSettingsKeyAutoHideInterfaceInFullscreenMode;
+	fSettingsData[4].type = B_BOOL_TYPE;
+	fSettingsData[4].defaultValue.SetTo(false);
 
 	fApplyButton = new BButton(B_TRANSLATE("Apply"), new BMessage(MSG_APPLY));
 	fCancelButton = new BButton(B_TRANSLATE("Cancel"),
@@ -163,14 +182,30 @@ SettingsWindow::SettingsWindow(BRect frame, SettingsMessage* settings)
 	Hide();
 	Show();
 
-	fSettingsCount = 5;
-	fSettingsData = new Setting[fSettingsCount];
+	fSettingsData[0].control = fStartPageControl;
+	fSettingsData[0].key = kSettingsKeyStartPageURL;
+	fSettingsData[0].type = B_STRING_TYPE;
+	fSettingsData[0].defaultValue.SetTo(kDefaultStartPageURL);
 
-	fSettingsData[0] = { fStartPageControl, kSettingsKeyStartPageURL, B_STRING_TYPE, BVariant(kDefaultStartPageURL) };
-	fSettingsData[1] = { fSearchPageControl, kSettingsKeySearchPageURL, B_STRING_TYPE, BVariant(kDefaultSearchPageURL) };
-	fSettingsData[2] = { fDownloadFolderControl, kSettingsKeyDownloadPath, B_STRING_TYPE, BVariant(kDefaultDownloadPath) };
-	fSettingsData[3] = { fShowTabsIfOnlyOnePage, kSettingsKeyShowTabsIfSinglePageOpen, B_BOOL_TYPE, BVariant(true) };
-	fSettingsData[4] = { fAutoHideInterfaceInFullscreenMode, kSettingsKeyAutoHideInterfaceInFullscreenMode, B_BOOL_TYPE, BVariant(false) };
+	fSettingsData[1].control = fSearchPageControl;
+	fSettingsData[1].key = kSettingsKeySearchPageURL;
+	fSettingsData[1].type = B_STRING_TYPE;
+	fSettingsData[1].defaultValue.SetTo(kDefaultSearchPageURL);
+
+	fSettingsData[2].control = fDownloadFolderControl;
+	fSettingsData[2].key = kSettingsKeyDownloadPath;
+	fSettingsData[2].type = B_STRING_TYPE;
+	fSettingsData[2].defaultValue.SetTo(kDefaultDownloadPath);
+
+	fSettingsData[3].control = fShowTabsIfOnlyOnePage;
+	fSettingsData[3].key = kSettingsKeyShowTabsIfSinglePageOpen;
+	fSettingsData[3].type = B_BOOL_TYPE;
+	fSettingsData[3].defaultValue.SetTo(true);
+
+	fSettingsData[4].control = fAutoHideInterfaceInFullscreenMode;
+	fSettingsData[4].key = kSettingsKeyAutoHideInterfaceInFullscreenMode;
+	fSettingsData[4].type = B_BOOL_TYPE;
+	fSettingsData[4].defaultValue.SetTo(false);
 }
 
 
@@ -841,13 +876,6 @@ SettingsWindow::_ApplySettings()
 }
 
 
-struct Setting {
-	BControl* control;
-	const char* key;
-	BVariant::Type type;
-	BVariant defaultValue;
-};
-
 void
 SettingsWindow::_RevertSettings()
 {
@@ -1056,21 +1084,6 @@ SettingsWindow::_ValidateControlsEnabledStatus()
 
 
 // #pragma mark -
-
-
-void
-SettingsWindow::_ValidateProxyAddress()
-{
-	BUrl url(fProxyAddressControl->Text());
-	if (url.Host().Length() == 0) {
-		fProxyAddressControl->TextView()->SetViewColor(255, 200, 200);
-		fProxyAddressValid = false;
-	} else {
-		fProxyAddressControl->TextView()->SetViewUIColor(B_DOCUMENT_BACKGROUND_COLOR);
-		fProxyAddressValid = true;
-	}
-	fProxyAddressControl->TextView()->Invalidate();
-}
 
 
 void
