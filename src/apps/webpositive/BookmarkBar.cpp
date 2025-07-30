@@ -78,7 +78,14 @@ BookmarkBar::MouseDown(BPoint where)
 		if (message->FindInt32("buttons", &buttons) == B_OK) {
 			if (buttons & B_SECONDARY_MOUSE_BUTTON) {
 
-				BMenuItem* item = FindItem(where);
+				BMenuItem* item = NULL;
+				for (int32 i = 0; i < CountItems(); i++) {
+					BMenuItem* anItem = ItemAt(i);
+					if (anItem != NULL && anItem->Frame().Contains(where)) {
+						item = anItem;
+						break;
+					}
+				}
 				if (item) {
 					fSelectedItemIndex = IndexOf(item);
 					BPoint screenWhere(where);
