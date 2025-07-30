@@ -2280,6 +2280,35 @@ BrowserWindow::_SetPageIcon(BWebView* view, const BBitmap* icon)
 
 
 static void
+addItemToMenuOrSubmenu(BMenu* menu, BMenuItem* newItem)
+{
+	BString baseURLLabel = baseURL(BString(newItem->Label()));
+	for (int32 i = menu->CountItems() - 1; i >= 0; i--) {
+		BMenuItem* item = menu->ItemAt(i);
+		BString label = item->Label();
+		if (label.FindFirst(baseURLLabel) >= 0) {
+			if (item->Submenu()) {
+				// Submenu was already added in previous iteration.
+				item->Submenu()->AddItem(newItem);
+				return;
+			} else {
+				menu->RemoveItem(item);
+				BMenu* subMenu = new BMenu(baseURLLabel.String());
+				subMenu->AddItem(item);
+				subMenu->AddItem(newItem);
+				// Add common submenu for this base URL, clickable.
+				BMessage* message = new BMessage(GOTO_URL);
+				message->AddString("url", baseURLLabel.String());
+				menu->AddItem(new BMenuItem(subMenu, message), i);
+				return;
+			}
+		}
+	}
+	menu->AddItem(newItem);
+}
+
+
+static void
 addOrDeleteMenu(BMenu* menu, BMenu* toMenu)
 {
 	if (menu->CountItems() > 0)
@@ -2648,7 +2677,7 @@ BrowserWindow::_IsValidDomainChar(char ch)
 void
 BrowserWindow::_SmartURLHandler(const BString& url)
 {
-	BUrl urlObject(url.String());
+	BUrl urlObject(url.String(), true);
 	if (urlObject.IsValid() && urlObject.Protocol().Length() > 0) {
 		// This is a valid URL with a protocol. Let's see if we can handle it.
 		bool handled = false;
@@ -2680,7 +2709,7 @@ BrowserWindow::_SmartURLHandler(const BString& url)
 
 	// If the URL is not valid or has no protocol, try to prepend "http://"
 	BString urlWithHttp = BString("http://").Append(url);
-	BUrl httpUrl(urlWithHttp.String());
+	BUrl httpUrl(urlWithHttp.String(), true);
 	if (httpUrl.IsValid() && httpUrl.Host().Length() > 0) {
 		_VisitURL(urlWithHttp);
 		return;
