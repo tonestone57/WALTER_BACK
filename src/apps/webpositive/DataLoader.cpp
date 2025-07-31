@@ -53,7 +53,7 @@ int32
 DataLoader::_LoadData()
 {
 	// Load the browsing history.
-	BObjectList<BrowsingHistoryItem>* historyItems = new BObjectList<BrowsingHistoryItem>(20, true);
+	BObjectList<BrowsingHistoryItem, true>* historyItems = new BObjectList<BrowsingHistoryItem, true>(20);
 	BrowsingHistory* history = BrowsingHistory::DefaultInstance();
 	if (history->Lock()) {
 		for (int32 i = 0; i < history->CountItems(); i++)
