@@ -643,6 +643,8 @@ SettingsWindow::_CanApplySettings() const
 {
 	for (int32 i = 0; i < fSettingsCount; i++) {
 		const Setting& setting = fSettingsData[i];
+		if (setting.control == NULL)
+			continue;
 		BVariant value = fSettings->GetValue(setting.key, setting.defaultValue);
 		switch (setting.type) {
 			case B_STRING_TYPE:
@@ -1056,21 +1058,6 @@ SettingsWindow::_ValidateControlsEnabledStatus()
 
 
 // #pragma mark -
-
-
-void
-SettingsWindow::_ValidateProxyAddress()
-{
-	BUrl url(fProxyAddressControl->Text());
-	if (url.Host().Length() == 0) {
-		fProxyAddressControl->TextView()->SetViewColor(255, 200, 200);
-		fProxyAddressValid = false;
-	} else {
-		fProxyAddressControl->TextView()->SetViewUIColor(B_DOCUMENT_BACKGROUND_COLOR);
-		fProxyAddressValid = true;
-	}
-	fProxyAddressControl->TextView()->Invalidate();
-}
 
 
 void
