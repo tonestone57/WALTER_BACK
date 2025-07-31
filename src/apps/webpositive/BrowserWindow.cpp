@@ -1619,8 +1619,10 @@ BrowserWindow::MainDocumentError(const BString& failingURL,
 
 	BrowsingHistory* history = BrowsingHistory::DefaultInstance();
 	if (history->Lock()) {
-		BObjectList<BrowsingHistoryItem> items(history->CountItems(), true);
-		history->GetItems(&items);
+		BObjectList<BrowsingHistoryItem> items;
+		for (int32 i = 0; i < history->CountItems(); i++)
+			items.AddItem(new BrowsingHistoryItem(history->HistoryItemAt(i)));
+
 		history->Clear();
 		for (int32 i = 0; i < items.CountItems(); i++) {
 			BrowsingHistoryItem* item = items.ItemAt(i);

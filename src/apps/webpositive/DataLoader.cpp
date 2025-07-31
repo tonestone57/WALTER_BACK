@@ -54,7 +54,12 @@ DataLoader::_LoadData()
 {
 	// Load the browsing history.
 	BObjectList<BrowsingHistoryItem>* historyItems = new BObjectList<BrowsingHistoryItem>(20, true);
-	BrowsingHistory::DefaultInstance()->GetItems(historyItems);
+	BrowsingHistory* history = BrowsingHistory::DefaultInstance();
+	if (history->Lock()) {
+		for (int32 i = 0; i < history->CountItems(); i++)
+			historyItems->AddItem(new BrowsingHistoryItem(history->HistoryItemAt(i)));
+		history->Unlock();
+	}
 
 	// Create a message with the loaded data.
 	BMessage* message = new BMessage(MSG_DATA_LOADED);
