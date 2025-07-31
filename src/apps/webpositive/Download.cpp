@@ -1,13 +1,12 @@
 #include "Download.h"
 
-#include <Messenger.h>
 #include <private/netservices/UrlContext.h>
 
 
 BDownload::BDownload(const BUrl& url)
 	:
 	BHandler(),
-	BUrlProtocolListener(),
+	BPrivate::Network::BUrlProtocolListener(),
 	fUrl(url),
 	fRequest(NULL),
 	fPaused(false),
@@ -24,8 +23,8 @@ BDownload::~BDownload()
 
 
 void
-BDownload::DownloadProgress(BUrlRequest* caller, off_t bytesReceived,
-	off_t bytesTotal)
+BDownload::DownloadProgress(BPrivate::Network::BUrlRequest* caller,
+	off_t bytesReceived, off_t bytesTotal)
 {
 	if (fListener.IsValid()) {
 		BMessage progress(B_DOWNLOAD_PROGRESS);
@@ -38,7 +37,8 @@ BDownload::DownloadProgress(BUrlRequest* caller, off_t bytesReceived,
 
 
 void
-BDownload::RequestCompleted(BUrlRequest* caller, bool success)
+BDownload::RequestCompleted(BPrivate::Network::BUrlRequest* caller,
+	bool success)
 {
 	if (fListener.IsValid()) {
 		BMessage completed(B_DOWNLOAD_REMOVED);
@@ -83,7 +83,7 @@ BDownload::Start(const BPath& target)
 {
 	fTarget = target;
 	BPrivate::Network::BUrlContext* context = new BPrivate::Network::BUrlContext();
-	fRequest = BUrlRequest::RequestUrl(fUrl, this, context);
+	fRequest = BPrivate::Network::BUrlRequest::RequestUrl(fUrl, this, context);
 	if (!fRequest) {
 		delete context;
 		return B_ERROR;

@@ -2,21 +2,21 @@
 #define DOWNLOAD_H
 
 #include <Handler.h>
+#include <Messenger.h>
 #include <Path.h>
 #include <Url.h>
 #include <UrlRequest.h>
-#include <private/netservices/UrlProtocolListener.h>
 
 
-class BDownload : public BHandler, public BUrlProtocolListener {
+class BDownload : public BHandler, public BPrivate::Network::BUrlProtocolListener {
 public:
 								BDownload(const BUrl& url);
 	virtual						~BDownload();
 
 	// BUrlProtocolListener hooks
-	virtual	void				DownloadProgress(BUrlRequest* caller,
+	virtual	void				DownloadProgress(BPrivate::Network::BUrlRequest* caller,
 									off_t bytesReceived, off_t bytesTotal);
-	virtual void				RequestCompleted(BUrlRequest* caller,
+	virtual void				RequestCompleted(BPrivate::Network::BUrlRequest* caller,
 									bool success);
 
 	// BHandler hooks
@@ -39,7 +39,7 @@ private:
 			BUrl				fUrl;
 			BPath				fTarget;
 			BMessenger			fListener;
-			BUrlRequest*		fRequest;
+			BPrivate::Network::BUrlRequest*		fRequest;
 			bool				fPaused;
 			off_t				fBytesReceived;
 };
