@@ -726,13 +726,13 @@ URLInputGroup::TextView() const
 
 
 void
-URLInputGroup::SetText(const char* text)
+URLInputGroup::SetText(const BString& text)
 {
 	// Ignore setting the text, if the input is locked.
 	if (fURLLocked)
 		return;
 
-	if (!text || !Text() || strcmp(Text(), text) != 0) {
+	if (Text() != text) {
 		fTextView->SetUpdateAutoCompleterChoices(false);
 		fTextView->SetText(text);
 		fTextView->SetUpdateAutoCompleterChoices(true);
@@ -740,10 +740,10 @@ URLInputGroup::SetText(const char* text)
 }
 
 
-const char*
+BString
 URLInputGroup::Text() const
 {
-	return fTextView->Text();
+	return BString(fTextView->Text());
 }
 
 

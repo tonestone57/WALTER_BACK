@@ -20,7 +20,8 @@ class SmallButton;
 
 
 enum {
-	SAVE_SETTINGS = 'svst'
+	SAVE_SETTINGS = 'svst',
+	PAUSE_RESUME_DOWNLOAD = 'prdl'
 };
 
 
@@ -64,6 +65,7 @@ private:
 			BStatusBar*			fStatusBar;
 			BStringView*		fInfoView;
 			SmallButton*		fTopButton;
+			SmallButton*		fPauseButton;
 			SmallButton*		fBottomButton;
 			BWebDownload*		fDownload;
 			BString				fURL;

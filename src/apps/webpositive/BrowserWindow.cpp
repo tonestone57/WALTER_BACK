@@ -764,7 +764,7 @@ BrowserWindow::DispatchMessage(BMessage* message, BHandler* target)
 			} else if (bytes[0] == B_ESCAPE) {
 				// Replace edited text with the current URL.
 				fURLInputGroup->LockURLInput(false);
-				fURLInputGroup->SetText(CurrentWebView()->MainFrameURL());
+				fURLInputGroup->SetText(BString(CurrentWebView()->MainFrameURL()));
 			}
 		} else if (target == fFindTextControl->TextView()) {
 			// Handle B_RETURN when the find text control has focus.
@@ -1408,7 +1408,7 @@ BrowserWindow::SetCurrentWebView(BWebView* webView)
 			if (userData->URLInputContents().Length())
 				fURLInputGroup->SetText(userData->URLInputContents());
 			else
-				fURLInputGroup->SetText(webView->MainFrameURL());
+				fURLInputGroup->SetText(BString(webView->MainFrameURL()));
 			if (userData->URLInputSelectionStart() >= 0) {
 				fURLInputGroup->TextView()->Select(
 					userData->URLInputSelectionStart(),
@@ -1416,7 +1416,7 @@ BrowserWindow::SetCurrentWebView(BWebView* webView)
 			}
 		} else {
 			fURLInputGroup->SetPageIcon(NULL);
-			fURLInputGroup->SetText(webView->MainFrameURL());
+			fURLInputGroup->SetText(BString(webView->MainFrameURL()));
 		}
 
 		fURLInputGroup->LockURLInput(state);
@@ -2348,6 +2348,8 @@ BrowserWindow::_UpdateHistoryMenu()
 		return;
 
 	int32 count = history->CountItems();
+	if (count > 20)
+		count = 20;
 	BMenuItem* clearHistoryItem = new BMenuItem(B_TRANSLATE("Clear history"),
 		new BMessage(CLEAR_HISTORY));
 	clearHistoryItem->SetEnabled(count > 0);
@@ -2421,6 +2423,10 @@ BrowserWindow::_UpdateHistoryMenu()
 	addOrDeleteMenu(fourDaysAgoMenu, fHistoryMenu);
 	addOrDeleteMenu(fiveDaysAgoMenu, fHistoryMenu);
 	addOrDeleteMenu(earlierMenu, fHistoryMenu);
+
+	fHistoryMenu->AddSeparatorItem();
+	fHistoryMenu->AddItem(new BMenuItem(B_TRANSLATE("Show all history"),
+		new BMessage(SHOW_HISTORY_WINDOW)));
 }
 
 

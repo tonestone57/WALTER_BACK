@@ -50,7 +50,7 @@ enum {
 	OPEN_CONTAINING_FOLDER	= 'opfd',
 };
 
-const bigtime_t kMaxUpdateInterval = 100000LL;
+const bigtime_t kMaxUpdateInterval = 1000000LL;
 const bigtime_t kSpeedReferenceInterval = 500000LL;
 const bigtime_t kShowSpeedInterval = 8000000LL;
 const bigtime_t kShowEstimatedFinishInterval = 4000000LL;
@@ -252,6 +252,8 @@ DownloadProgressView::Init(BMessage* archive)
 		fTopButton->SetEnabled(fDownload == NULL);
 	}
 	if (fDownload) {
+		fPauseButton = new SmallButton(B_TRANSLATE("Pause"),
+			new BMessage(PAUSE_RESUME_DOWNLOAD));
 		fBottomButton = new SmallButton(B_TRANSLATE("Cancel"),
 			new BMessage(CANCEL_DOWNLOAD));
 	} else {
@@ -283,6 +285,7 @@ DownloadProgressView::Init(BMessage* archive)
 
 	verticalGroup = BGroupLayoutBuilder(B_VERTICAL, 3)
 		.Add(fTopButton)
+		.Add(fPauseButton)
 		.Add(fBottomButton)
 		.TopView()
 	;
@@ -330,6 +333,8 @@ DownloadProgressView::AttachedToWindow()
 	}
 
 	fTopButton->SetTarget(this);
+	if (fPauseButton)
+		fPauseButton->SetTarget(this);
 	fBottomButton->SetTarget(this);
 }
 
@@ -430,6 +435,18 @@ DownloadProgressView::MessageReceived(BMessage* message)
 			be_app->PostMessage(request);
 			break;
 		}
+
+		case PAUSE_RESUME_DOWNLOAD:
+			if (fDownload) {
+				if (fDownload->IsPaused()) {
+					fDownload->Resume();
+					fPauseButton->SetLabel(B_TRANSLATE("Pause"));
+				} else {
+					fDownload->Pause();
+					fPauseButton->SetLabel(B_TRANSLATE("Resume"));
+				}
+			}
+			break;
 
 		case CANCEL_DOWNLOAD:
 			CancelDownload();
@@ -621,6 +638,8 @@ DownloadProgressView::DownloadFinished()
 		fStatusBar->SetTo(100.0);
 		fExpectedSize = fCurrentSize;
 	}
+	if (fPauseButton)
+		fPauseButton->SetEnabled(false);
 	fTopButton->SetEnabled(true);
 	fBottomButton->SetLabel(B_TRANSLATE("Remove"));
 	fBottomButton->SetMessage(new BMessage(REMOVE_DOWNLOAD));
@@ -664,6 +683,8 @@ DownloadProgressView::CancelDownload()
 	}
 
 	fDownload = NULL;
+	if (fPauseButton)
+		fPauseButton->SetEnabled(false);
 	fTopButton->SetLabel(B_TRANSLATE("Restart"));
 	fTopButton->SetMessage(new BMessage(RESTART_DOWNLOAD));
 	fTopButton->SetEnabled(true);

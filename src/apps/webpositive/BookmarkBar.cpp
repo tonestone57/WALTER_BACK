@@ -138,12 +138,12 @@ BookmarkBar::MessageReceived(BMessage* message)
 				case B_ENTRY_CREATED:
 				{
 					entry_ref ref;
-					const char* name;
+					BString name;
 
 					message->FindInt32("device", &ref.device);
 					message->FindInt64("directory", &ref.directory);
 					message->FindString("name", &name);
-					ref.set_name(name);
+					ref.set_name(name.String());
 
 					BEntry entry(&ref);
 					if (entry.InitCheck() == B_OK)
@@ -153,12 +153,12 @@ BookmarkBar::MessageReceived(BMessage* message)
 				case B_ENTRY_MOVED:
 				{
 					entry_ref ref;
-					const char* name;
+					BString name;
 
 					message->FindInt32("device", &ref.device);
 					message->FindInt64("to directory", &ref.directory);
 					message->FindString("name", &name);
-					ref.set_name(name);
+					ref.set_name(name.String());
 
 					BEntry entry(&ref);
 					BEntry followedEntry(&ref, true); // traverse in case it's a symlink

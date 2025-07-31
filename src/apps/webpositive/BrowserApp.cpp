@@ -170,12 +170,12 @@ BrowserApp::ArgvReceived(int32 argc, char** argv)
 {
 	BMessage message(B_REFS_RECEIVED);
 	for (int i = 1; i < argc; i++) {
-		if (strcmp("-f", argv[i]) == 0
-			|| strcmp("--fullscreen", argv[i]) == 0) {
+		BString arg(argv[i]);
+		if (arg == "-f" || arg == "--fullscreen") {
 			message.AddBool("fullscreen", true);
 			continue;
 		}
-		const char* url = argv[i];
+		BString url(argv[i]);
 		BEntry entry(argv[i], true);
 		BPath path;
 		if (entry.Exists() && entry.GetPath(&path) == B_OK)

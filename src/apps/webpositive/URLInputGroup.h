@@ -22,8 +22,8 @@ public:
 	virtual	void				MakeFocus(bool focus = true);
 
 			BTextView*			TextView() const;
-			void				SetText(const char* text);
-			const char*			Text() const;
+			void				SetText(const BString& text);
+			BString				Text() const;
 
 			BButton*			GoButton() const;
 
