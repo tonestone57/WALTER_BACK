@@ -33,7 +33,7 @@ BDownload::DownloadProgress(BPrivate::Network::BUrlRequest* caller,
 	off_t bytesReceived, off_t bytesTotal)
 {
 	if (fListener.IsValid()) {
-		BMessage progress(B_URL_PROTOCOL_DOWNLOAD_PROGRESS);
+		BMessage progress(BPrivate::Network::B_URL_PROTOCOL_DOWNLOAD_PROGRESS);
 		progress.AddInt64("current size", bytesReceived);
 		progress.AddInt64("expected size", bytesTotal);
 		fListener.SendMessage(&progress);

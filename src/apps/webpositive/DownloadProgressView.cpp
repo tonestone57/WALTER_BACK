@@ -396,7 +396,7 @@ DownloadProgressView::MessageReceived(BMessage* message)
 				= fEstimatedFinishReferenceTime = system_time();
 			break;
 		}
-		case B_URL_PROTOCOL_DOWNLOAD_PROGRESS:
+		case BPrivate::Network::B_URL_PROTOCOL_DOWNLOAD_PROGRESS:
 		{
 			int64 currentSize;
 			int64 expectedSize;
