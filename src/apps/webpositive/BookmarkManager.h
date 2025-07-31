@@ -13,6 +13,7 @@ class BBitmap;
 class BDirectory;
 class BFile;
 class BMessage;
+class BrowserWindow;
 
 
 class BookmarkManager {

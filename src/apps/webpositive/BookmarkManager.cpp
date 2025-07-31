@@ -21,6 +21,10 @@
 #include "BrowserApp.h"
 
 
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "BookmarkManager"
+
+
 BookmarkManager::BookmarkManager()
 {
 }
