@@ -569,7 +569,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	else
 		_ShowBookmarkBar(false);
 
-	fSavePanel = std::make_unique<BFilePanel>(B_SAVE_PANEL, new BMessenger(this), NULL, 0,
+	fSavePanel = std::make_unique<BFilePanel>(B_SAVE_PANEL, new BMessenger(this), nullptr, 0,
 		false);
 
 	// Layout
@@ -1617,7 +1617,18 @@ BrowserWindow::MainDocumentError(const BString& failingURL,
 
 	BWebWindow::MainDocumentError(failingURL, localizedDescription, view);
 
-	BrowsingHistory::DefaultInstance()->RemoveItem(failingURL);
+	BrowsingHistory* history = BrowsingHistory::DefaultInstance();
+	if (history->Lock()) {
+		BObjectList<BrowsingHistoryItem> items(history->CountItems(), true);
+		history->GetItems(&items);
+		history->Clear();
+		for (int32 i = 0; i < items.CountItems(); i++) {
+			BrowsingHistoryItem* item = items.ItemAt(i);
+			if (item->URL() != failingURL)
+				history->AddItem(*item);
+		}
+		history->Unlock();
+	}
 }
 
 
