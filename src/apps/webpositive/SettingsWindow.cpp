@@ -240,8 +240,6 @@ SettingsWindow::MessageReceived(BMessage* message)
 			break;
 		}
 
-		case MSG_START_PAGE_CHANGED:
-		case MSG_SEARCH_PAGE_CHANGED:
 		case MSG_DOWNLOAD_FOLDER_CHANGED:
 		case MSG_START_UP_BEHAVIOR_CHANGED:
 		case MSG_NEW_WINDOWS_BEHAVIOR_CHANGED:
@@ -636,22 +634,25 @@ SettingsWindow::_CanApplySettings() const
 		const Setting& setting = fSettingsData[i];
 		if (setting.control == NULL)
 			continue;
-		BVariant value = fSettings->GetValue(setting.key, setting.defaultValue);
 		switch (setting.type) {
 			case B_STRING_TYPE:
 			{
 				BTextControl* textControl
 					= dynamic_cast<BTextControl*>(setting.control);
-				if (textControl && textControl->Text() != value.ToString())
+				if (textControl && textControl->Text() != fSettings->GetValue(setting.key,
+						setting.defaultValue.ToString())) {
 					return true;
+				}
 				break;
 			}
 			case B_BOOL_TYPE:
 			{
 				BCheckBox* checkBox
 					= dynamic_cast<BCheckBox*>(setting.control);
-				if (checkBox && (checkBox->Value() == B_CONTROL_ON) != value.ToBool())
+				if (checkBox && (checkBox->Value() == B_CONTROL_ON) != fSettings->GetValue(
+						setting.key, setting.defaultValue.ToBool())) {
 					return true;
+				}
 				break;
 			}
 			default:
@@ -839,22 +840,25 @@ SettingsWindow::_RevertSettings()
 {
 	for (int32 i = 0; i < fSettingsCount; i++) {
 		const Setting& setting = fSettingsData[i];
-		BVariant value = fSettings->GetValue(setting.key, setting.defaultValue);
 		switch (setting.type) {
 			case B_STRING_TYPE:
 			{
 				BTextControl* textControl
 					= dynamic_cast<BTextControl*>(setting.control);
-				if (textControl)
-					textControl->SetText(value.ToString());
+				if (textControl) {
+					textControl->SetText(fSettings->GetValue(setting.key,
+						setting.defaultValue.ToString()));
+				}
 				break;
 			}
 			case B_BOOL_TYPE:
 			{
 				BCheckBox* checkBox
 					= dynamic_cast<BCheckBox*>(setting.control);
-				if (checkBox)
-					checkBox->SetValue(value.ToBool());
+				if (checkBox) {
+					checkBox->SetValue(fSettings->GetValue(setting.key,
+						setting.defaultValue.ToBool()));
+				}
 				break;
 			}
 			default:
