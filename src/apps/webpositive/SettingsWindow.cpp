@@ -43,7 +43,7 @@
 struct Setting {
 	BControl* control;
 	const char* key;
-	BVariant::Type type;
+	type_code type;
 	BVariant defaultValue;
 };
 
@@ -102,15 +102,6 @@ SettingsWindow::SettingsWindow(BRect frame, SettingsMessage* settings)
 	fSearchPageValid(true),
 	fProxyAddressValid(true)
 {
-	fSettingsCount = 5;
-	fSettingsData = new Setting[fSettingsCount];
-
-	fSettingsData[0] = { fStartPageControl, kSettingsKeyStartPageURL, B_STRING_TYPE, BVariant(kDefaultStartPageURL) };
-	fSettingsData[1] = { fSearchPageControl, kSettingsKeySearchPageURL, B_STRING_TYPE, BVariant(kDefaultSearchPageURL) };
-	fSettingsData[2] = { fDownloadFolderControl, kSettingsKeyDownloadPath, B_STRING_TYPE, BVariant(kDefaultDownloadPath) };
-	fSettingsData[3] = { fShowTabsIfOnlyOnePage, kSettingsKeyShowTabsIfSinglePageOpen, B_BOOL_TYPE, BVariant(true) };
-	fSettingsData[4] = { fAutoHideInterfaceInFullscreenMode, kSettingsKeyAutoHideInterfaceInFullscreenMode, B_BOOL_TYPE, BVariant(false) };
-
 	fApplyButton = new BButton(B_TRANSLATE("Apply"), new BMessage(MSG_APPLY));
 	fCancelButton = new BButton(B_TRANSLATE("Cancel"),
 		new BMessage(MSG_CANCEL));
@@ -166,11 +157,11 @@ SettingsWindow::SettingsWindow(BRect frame, SettingsMessage* settings)
 	fSettingsCount = 5;
 	fSettingsData = new Setting[fSettingsCount];
 
-	fSettingsData[0] = { fStartPageControl, kSettingsKeyStartPageURL, B_STRING_TYPE, BVariant(kDefaultStartPageURL) };
-	fSettingsData[1] = { fSearchPageControl, kSettingsKeySearchPageURL, B_STRING_TYPE, BVariant(kDefaultSearchPageURL) };
-	fSettingsData[2] = { fDownloadFolderControl, kSettingsKeyDownloadPath, B_STRING_TYPE, BVariant(kDefaultDownloadPath) };
-	fSettingsData[3] = { fShowTabsIfOnlyOnePage, kSettingsKeyShowTabsIfSinglePageOpen, B_BOOL_TYPE, BVariant(true) };
-	fSettingsData[4] = { fAutoHideInterfaceInFullscreenMode, kSettingsKeyAutoHideInterfaceInFullscreenMode, B_BOOL_TYPE, BVariant(false) };
+	fSettingsData[0] = Setting{ fStartPageControl, kSettingsKeyStartPageURL, B_STRING_TYPE, BVariant(kDefaultStartPageURL) };
+	fSettingsData[1] = Setting{ fSearchPageControl, kSettingsKeySearchPageURL, B_STRING_TYPE, BVariant(kDefaultSearchPageURL) };
+	fSettingsData[2] = Setting{ fDownloadFolderControl, kSettingsKeyDownloadPath, B_STRING_TYPE, BVariant(kDefaultDownloadPath) };
+	fSettingsData[3] = Setting{ fShowTabsIfOnlyOnePage, kSettingsKeyShowTabsIfSinglePageOpen, B_BOOL_TYPE, BVariant(true) };
+	fSettingsData[4] = Setting{ fAutoHideInterfaceInFullscreenMode, kSettingsKeyAutoHideInterfaceInFullscreenMode, B_BOOL_TYPE, BVariant(false) };
 }
 
 
@@ -842,13 +833,6 @@ SettingsWindow::_ApplySettings()
 	_ValidateControlsEnabledStatus();
 }
 
-
-struct Setting {
-	BControl* control;
-	const char* key;
-	BVariant::Type type;
-	BVariant defaultValue;
-};
 
 void
 SettingsWindow::_RevertSettings()
