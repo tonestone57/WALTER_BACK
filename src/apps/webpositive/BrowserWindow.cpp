@@ -2065,28 +2065,18 @@ BrowserWindow::_CreateBookmark(const BPath& path, BString fileName, const BStrin
 				ret = nodeInfo.SetIcon(largeIcon, B_LARGE_ICON);
 			else if (largeIcon == NULL && miniIcon != NULL && ret == B_OK) {
 				// If largeIcon is not available but miniIcon is, use a magnified miniIcon instead.
-				BBitmap substituteLargeIcon(BRect(0, 0, 31, 31), B_BITMAP_NO_SERVER_LINK,
-					B_CMAP8);
-				const uint8* src = (const uint8*)miniIcon->Bits();
-				uint32 srcBPR = miniIcon->BytesPerRow();
-				uint8* dst = (uint8*)substituteLargeIcon.Bits();
-				uint32 dstBPR = substituteLargeIcon.BytesPerRow();
-				for (uint32 y = 0; y < 16; y++) {
-					const uint8* s = src;
-					uint8* d = dst;
-					for (uint32 x = 0; x < 16; x++) {
-						*d++ = *s;
-						*d++ = *s++;
-					}
-					dst += dstBPR;
-					s = src;
-					for (uint32 x = 0; x < 16; x++) {
-						*d++ = *s;
-						*d++ = *s++;
-					}
-					dst += dstBPR;
-					src += srcBPR;
+				BBitmap substituteLargeIcon(BRect(0, 0, 31, 31),
+					B_BITMAP_NO_SERVER_LINK, miniIcon->ColorSpace());
+				BView offscreenView(substituteLargeIcon.Bounds(), "offscreen",
+					0, 0);
+				substituteLargeIcon.AddChild(&offscreenView);
+				if (offscreenView.LockLooper()) {
+					offscreenView.DrawBitmap(miniIcon, miniIcon->Bounds(),
+						substituteLargeIcon.Bounds());
+					offscreenView.Sync();
+					offscreenView.UnlockLooper();
 				}
+				substituteLargeIcon.RemoveChild(&offscreenView);
 				ret = nodeInfo.SetIcon(&substituteLargeIcon, B_LARGE_ICON);
 			} else
 				ret = B_OK;
