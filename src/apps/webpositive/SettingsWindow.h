@@ -38,7 +38,6 @@ private:
 			BView*				_CreateGeneralPage(float spacing);
 			BView*				_CreateFontsPage(float spacing);
 			BView*				_CreateProxyPage(float spacing);
-			BView*				_CreateAdvancedPage(float spacing);
 			void				_SetupFontSelectionView(
 									FontSelectionView* view,
 									BMessage* message);
@@ -121,8 +120,6 @@ private:
 
 			BSpinner*			fStandardSizesSpinner;
 			BSpinner*			fFixedSizesSpinner;
-
-			BSpinner*			fMaxConnectionsSpinner;
 
 			BFilePanel*			fOpenFilePanel;
 };

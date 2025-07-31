@@ -100,6 +100,7 @@
 
 
 enum {
+	MSG_DATA_LOADED								= 'dtld',
 	OPEN_LOCATION								= 'open',
 	SAVE_PAGE									= 'save',
 	GO_BACK										= 'goba',
@@ -285,13 +286,36 @@ public:
 	virtual void Draw(BRect updateRect)
 	{
 		BRect frame = Bounds();
+		BRect closeRect(frame.InsetByCopy(4, 4));
 		rgb_color base = ui_color(B_PANEL_BACKGROUND_COLOR);
-		uint32 flags = be_control_look->Flags(this);
-		if (fOverCloseRect)
-			flags |= BControlLook::B_HOVER;
+		float tint = B_DARKEN_1_TINT;
 
-		be_control_look->DrawButton(this, frame, updateRect, base, 0.0, flags,
-			B_CLOSE_BUTTON);
+		if (fOverCloseRect)
+			tint *= 1.4;
+		else
+			tint *= 1.2;
+
+		if (Value() == B_CONTROL_ON && fOverCloseRect) {
+			// Draw the button frame
+			be_control_look->DrawButtonFrame(this, frame, updateRect,
+				base, base, BControlLook::B_ACTIVATED
+					| BControlLook::B_BLEND_FRAME);
+			be_control_look->DrawButtonBackground(this, frame,
+				updateRect, base, BControlLook::B_ACTIVATED);
+			closeRect.OffsetBy(1, 1);
+			tint *= 1.2;
+		} else {
+			SetHighColor(base);
+			FillRect(updateRect);
+		}
+
+		// Draw the ×
+		base = tint_color(base, tint);
+		SetHighColor(base);
+		SetPenSize(2);
+		StrokeLine(closeRect.LeftTop(), closeRect.RightBottom());
+		StrokeLine(closeRect.LeftBottom(), closeRect.RightTop());
+		SetPenSize(1);
 	}
 
 	virtual void MouseMoved(BPoint where, uint32 transit,
@@ -1282,7 +1306,7 @@ BrowserWindow::MenusBeginning()
 	}
 	fHistoryMenu->AddItem(new BMenuItem(B_TRANSLATE("Loading history" B_UTF8_ELLIPSIS), NULL));
 	fHistoryMenu->SetTargetForItems(this);
-	fHistoryMenu->SetTrackingHook(this, _HistoryMenuHook);
+	fHistoryMenu->SetTrackingHook(_HistoryMenuHook, this);
 
 	_UpdateClipboardItems();
 	fMenusRunning = true;

@@ -38,13 +38,12 @@
 #include "FontSelectionView.h"
 #include "SettingsKeys.h"
 #include "WebSettings.h"
-#include "CreateAdvancedPage.cpp"
 
 
 struct Setting {
 	BControl* control;
 	const char* key;
-	type_code type;
+	BVariant::Type type;
 	BVariant defaultValue;
 };
 
@@ -53,7 +52,6 @@ struct Setting {
 #define B_TRANSLATION_CONTEXT "Settings Window"
 
 enum {
-	MSG_MAX_CONNECTIONS_CHANGED					= 'mxcc',
 	MSG_APPLY									= 'aply',
 	MSG_CANCEL									= 'cncl',
 	MSG_REVERT									= 'rvrt',
@@ -107,30 +105,11 @@ SettingsWindow::SettingsWindow(BRect frame, SettingsMessage* settings)
 	fSettingsCount = 5;
 	fSettingsData = new Setting[fSettingsCount];
 
-	fSettingsData[0].control = fStartPageControl;
-	fSettingsData[0].key = kSettingsKeyStartPageURL;
-	fSettingsData[0].type = B_STRING_TYPE;
-	fSettingsData[0].defaultValue.SetTo(kDefaultStartPageURL);
-
-	fSettingsData[1].control = fSearchPageControl;
-	fSettingsData[1].key = kSettingsKeySearchPageURL;
-	fSettingsData[1].type = B_STRING_TYPE;
-	fSettingsData[1].defaultValue.SetTo(kDefaultSearchPageURL);
-
-	fSettingsData[2].control = fDownloadFolderControl;
-	fSettingsData[2].key = kSettingsKeyDownloadPath;
-	fSettingsData[2].type = B_STRING_TYPE;
-	fSettingsData[2].defaultValue.SetTo(kDefaultDownloadPath);
-
-	fSettingsData[3].control = fShowTabsIfOnlyOnePage;
-	fSettingsData[3].key = kSettingsKeyShowTabsIfSinglePageOpen;
-	fSettingsData[3].type = B_BOOL_TYPE;
-	fSettingsData[3].defaultValue.SetTo(true);
-
-	fSettingsData[4].control = fAutoHideInterfaceInFullscreenMode;
-	fSettingsData[4].key = kSettingsKeyAutoHideInterfaceInFullscreenMode;
-	fSettingsData[4].type = B_BOOL_TYPE;
-	fSettingsData[4].defaultValue.SetTo(false);
+	fSettingsData[0] = { fStartPageControl, kSettingsKeyStartPageURL, B_STRING_TYPE, BVariant(kDefaultStartPageURL) };
+	fSettingsData[1] = { fSearchPageControl, kSettingsKeySearchPageURL, B_STRING_TYPE, BVariant(kDefaultSearchPageURL) };
+	fSettingsData[2] = { fDownloadFolderControl, kSettingsKeyDownloadPath, B_STRING_TYPE, BVariant(kDefaultDownloadPath) };
+	fSettingsData[3] = { fShowTabsIfOnlyOnePage, kSettingsKeyShowTabsIfSinglePageOpen, B_BOOL_TYPE, BVariant(true) };
+	fSettingsData[4] = { fAutoHideInterfaceInFullscreenMode, kSettingsKeyAutoHideInterfaceInFullscreenMode, B_BOOL_TYPE, BVariant(false) };
 
 	fApplyButton = new BButton(B_TRANSLATE("Apply"), new BMessage(MSG_APPLY));
 	fCancelButton = new BButton(B_TRANSLATE("Cancel"),
@@ -160,7 +139,6 @@ SettingsWindow::SettingsWindow(BRect frame, SettingsMessage* settings)
 	tabView->AddTab(_CreateGeneralPage(spacing));
 	tabView->AddTab(_CreateFontsPage(spacing));
 	tabView->AddTab(_CreateProxyPage(spacing));
-	tabView->AddTab(_CreateAdvancedPage(spacing));
 
 	_SetupFontSelectionView(fStandardFontView,
 		new BMessage(MSG_STANDARD_FONT_CHANGED));
@@ -185,30 +163,14 @@ SettingsWindow::SettingsWindow(BRect frame, SettingsMessage* settings)
 	Hide();
 	Show();
 
-	fSettingsData[0].control = fStartPageControl;
-	fSettingsData[0].key = kSettingsKeyStartPageURL;
-	fSettingsData[0].type = B_STRING_TYPE;
-	fSettingsData[0].defaultValue.SetTo(kDefaultStartPageURL);
+	fSettingsCount = 5;
+	fSettingsData = new Setting[fSettingsCount];
 
-	fSettingsData[1].control = fSearchPageControl;
-	fSettingsData[1].key = kSettingsKeySearchPageURL;
-	fSettingsData[1].type = B_STRING_TYPE;
-	fSettingsData[1].defaultValue.SetTo(kDefaultSearchPageURL);
-
-	fSettingsData[2].control = fDownloadFolderControl;
-	fSettingsData[2].key = kSettingsKeyDownloadPath;
-	fSettingsData[2].type = B_STRING_TYPE;
-	fSettingsData[2].defaultValue.SetTo(kDefaultDownloadPath);
-
-	fSettingsData[3].control = fShowTabsIfOnlyOnePage;
-	fSettingsData[3].key = kSettingsKeyShowTabsIfSinglePageOpen;
-	fSettingsData[3].type = B_BOOL_TYPE;
-	fSettingsData[3].defaultValue.SetTo(true);
-
-	fSettingsData[4].control = fAutoHideInterfaceInFullscreenMode;
-	fSettingsData[4].key = kSettingsKeyAutoHideInterfaceInFullscreenMode;
-	fSettingsData[4].type = B_BOOL_TYPE;
-	fSettingsData[4].defaultValue.SetTo(false);
+	fSettingsData[0] = { fStartPageControl, kSettingsKeyStartPageURL, B_STRING_TYPE, BVariant(kDefaultStartPageURL) };
+	fSettingsData[1] = { fSearchPageControl, kSettingsKeySearchPageURL, B_STRING_TYPE, BVariant(kDefaultSearchPageURL) };
+	fSettingsData[2] = { fDownloadFolderControl, kSettingsKeyDownloadPath, B_STRING_TYPE, BVariant(kDefaultDownloadPath) };
+	fSettingsData[3] = { fShowTabsIfOnlyOnePage, kSettingsKeyShowTabsIfSinglePageOpen, B_BOOL_TYPE, BVariant(true) };
+	fSettingsData[4] = { fAutoHideInterfaceInFullscreenMode, kSettingsKeyAutoHideInterfaceInFullscreenMode, B_BOOL_TYPE, BVariant(false) };
 }
 
 
@@ -300,6 +262,14 @@ SettingsWindow::MessageReceived(BMessage* message)
 		case MSG_SHOW_HOME_BUTTON_CHANGED:
 			_ValidateControlsEnabledStatus();
 			break;
+		case MSG_START_PAGE_CHANGED:
+			_ValidateStartPage();
+			_ValidateControlsEnabledStatus();
+			break;
+		case MSG_SEARCH_PAGE_CHANGED:
+			_ValidateSearchPage();
+			_ValidateControlsEnabledStatus();
+			break;
 		case MSG_STANDARD_FONT_CHANGED:
 		case MSG_SERIF_FONT_CHANGED:
 		case MSG_SANS_SERIF_FONT_CHANGED:
@@ -317,10 +287,6 @@ SettingsWindow::MessageReceived(BMessage* message)
 			break;
 		case MSG_PROXY_ADDRESS_CHANGED:
 			_ValidateProxyAddress();
-			_ValidateControlsEnabledStatus();
-			break;
-
-		case MSG_MAX_CONNECTIONS_CHANGED:
 			_ValidateControlsEnabledStatus();
 			break;
 
@@ -677,19 +643,7 @@ SettingsWindow::_CanApplySettings() const
 {
 	for (int32 i = 0; i < fSettingsCount; i++) {
 		const Setting& setting = fSettingsData[i];
-		BVariant value;
-		switch (setting.type) {
-			case B_STRING_TYPE:
-				value.SetTo(fSettings->GetValue(setting.key,
-					setting.defaultValue.ToString()));
-				break;
-			case B_BOOL_TYPE:
-				value.SetTo(fSettings->GetValue(setting.key,
-					setting.defaultValue.ToBool()));
-				break;
-			default:
-				break;
-		}
+		BVariant value = fSettings->GetValue(setting.key, setting.defaultValue);
 		switch (setting.type) {
 			case B_STRING_TYPE:
 			{
@@ -883,31 +837,23 @@ SettingsWindow::_ApplySettings()
 	// the default values, unless the page settings have local overrides.
 	BWebSettings::Default()->Apply();
 
-	BWebSettings::Default()->SetMaximumConnectionsPerHost(
-		fMaxConnectionsSpinner->Value());
-
 	_ValidateControlsEnabledStatus();
 }
 
+
+struct Setting {
+	BControl* control;
+	const char* key;
+	BVariant::Type type;
+	BVariant defaultValue;
+};
 
 void
 SettingsWindow::_RevertSettings()
 {
 	for (int32 i = 0; i < fSettingsCount; i++) {
 		const Setting& setting = fSettingsData[i];
-		BVariant value;
-		switch (setting.type) {
-			case B_STRING_TYPE:
-				value.SetTo(fSettings->GetValue(setting.key,
-					setting.defaultValue.ToString()));
-				break;
-			case B_BOOL_TYPE:
-				value.SetTo(fSettings->GetValue(setting.key,
-					setting.defaultValue.ToBool()));
-				break;
-			default:
-				break;
-		}
+		BVariant value = fSettings->GetValue(setting.key, setting.defaultValue);
 		switch (setting.type) {
 			case B_STRING_TYPE:
 			{
@@ -1115,7 +1061,22 @@ SettingsWindow::_ValidateControlsEnabledStatus()
 void
 SettingsWindow::_ValidateProxyAddress()
 {
-	BUrl url(fProxyAddressControl->Text(), true);
+	BUrl url(fProxyAddressControl->Text());
+	if (url.Host().Length() == 0) {
+		fProxyAddressControl->TextView()->SetViewColor(255, 200, 200);
+		fProxyAddressValid = false;
+	} else {
+		fProxyAddressControl->TextView()->SetViewUIColor(B_DOCUMENT_BACKGROUND_COLOR);
+		fProxyAddressValid = true;
+	}
+	fProxyAddressControl->TextView()->Invalidate();
+}
+
+
+void
+SettingsWindow::_ValidateProxyAddress()
+{
+	BUrl url(fProxyAddressControl->Text());
 	if (url.Host().Length() == 0) {
 		fProxyAddressControl->TextView()->SetViewColor(255, 200, 200);
 		fProxyAddressValid = false;
@@ -1145,7 +1106,7 @@ SettingsWindow::_ValidateSearchPage()
 void
 SettingsWindow::_ValidateStartPage()
 {
-	BUrl url(fStartPageControl->Text(), true);
+	BUrl url(fStartPageControl->Text());
 	if (!url.IsValid()) {
 		fStartPageControl->TextView()->SetViewColor(255, 200, 200);
 		fStartPageValid = false;
