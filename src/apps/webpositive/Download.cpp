@@ -1,8 +1,7 @@
 #include "Download.h"
 
-#include "DownloadMessages.h"
-
 #include <File.h>
+#include <WebPage.h>
 #include <UrlProtocolRoster.h>
 #include <private/netservices/UrlContext.h>
 

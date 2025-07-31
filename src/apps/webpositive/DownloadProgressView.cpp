@@ -6,8 +6,7 @@
 
 #include "DownloadProgressView.h"
 
-#include "DownloadMessages.h"
-
+#include <WebPage.h>
 #include <cstdio>
 
 #include <Alert.h>
