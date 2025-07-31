@@ -33,7 +33,7 @@
 #include "DownloadProgressView.h"
 #include "SettingsKeys.h"
 #include "SettingsMessage.h"
-#include "WebDownload.h"
+#include <Download.h>
 #include "WebPage.h"
 
 
@@ -248,7 +248,7 @@ DownloadWindow::MessageReceived(BMessage* message)
 		}
 		case B_DOWNLOAD_ADDED:
 		{
-			BWebDownload* download;
+			BDownload* download;
 			if (message->FindPointer("download", reinterpret_cast<void**>(
 					&download)) == B_OK) {
 				_DownloadStarted(download);
@@ -257,7 +257,7 @@ DownloadWindow::MessageReceived(BMessage* message)
 		}
 		case B_DOWNLOAD_REMOVED:
 		{
-			BWebDownload* download;
+			BDownload* download;
 			if (message->FindPointer("download", reinterpret_cast<void**>(
 					&download)) == B_OK) {
 				_DownloadFinished(download);
@@ -362,7 +362,7 @@ DownloadWindow::SetMinimizeOnClose(bool minimize)
 
 
 void
-DownloadWindow::_DownloadStarted(BWebDownload* download)
+DownloadWindow::_DownloadStarted(BDownload* download)
 {
 	download->Start(BPath(fDownloadPath.String()));
 
@@ -375,7 +375,7 @@ DownloadWindow::_DownloadStarted(BWebDownload* download)
 			item->View());
 		if (!view)
 			continue;
-		if (view->URL() == download->URL()) {
+		if (BUrl(view->URL()) == download->Url()) {
 			index = i;
 			view->RemoveSelf();
 			delete view;
@@ -426,7 +426,7 @@ DownloadWindow::_DownloadStarted(BWebDownload* download)
 
 
 void
-DownloadWindow::_DownloadFinished(BWebDownload* download)
+DownloadWindow::_DownloadFinished(BDownload* download)
 {
 	int32 finishedCount = 0;
 	int32 missingCount = 0;

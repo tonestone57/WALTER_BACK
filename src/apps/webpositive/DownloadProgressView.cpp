@@ -32,8 +32,9 @@
 #include <StringView.h>
 #include <TimeFormat.h>
 
+#include <Download.h>
+
 #include "BrowserWindow.h"
-#include "WebDownload.h"
 #include "WebPage.h"
 #include "StringForSize.h"
 
@@ -178,12 +179,12 @@ public:
 // #pragma mark - DownloadProgressView
 
 
-DownloadProgressView::DownloadProgressView(BWebDownload* download)
+DownloadProgressView::DownloadProgressView(BDownload* download)
 	:
 	BGroupView(B_HORIZONTAL, 8),
 	fDownload(download),
-	fURL(download->URL()),
-	fPath(download->Path())
+	fURL(download->Url()),
+	fPath(download->Target())
 {
 }
 
@@ -323,7 +324,7 @@ void
 DownloadProgressView::AttachedToWindow()
 {
 	if (fDownload) {
-		fDownload->SetProgressListener(BMessenger(this));
+		fDownload->SetListener(BMessenger(this));
 		// Will start node monitor upon receiving the B_DOWNLOAD_STARTED
 		// message.
 	} else {
@@ -513,7 +514,7 @@ DownloadProgressView::MessageReceived(BMessage* message)
 
 					// Inform download of the new path
 					if (fDownload)
-						fDownload->HasMovedTo(fPath);
+						fDownload->SetTarget(fPath.Path());
 
 					float value = fStatusBar->CurrentValue();
 					fStatusBar->Reset(name);
@@ -602,7 +603,7 @@ DownloadProgressView::ShowContextMenu(BPoint screenWhere)
 }
 
 
-BWebDownload*
+BDownload*
 DownloadProgressView::Download() const
 {
 	return fDownload;
@@ -669,7 +670,7 @@ DownloadProgressView::CancelDownload()
 	// the download was finished, we don't want these things to happen.
 	if (fDownload) {
 		// Also cancel the download
-		fDownload->Cancel();
+		fDownload->Stop();
 		BNotification success(B_ERROR_NOTIFICATION);
 		success.SetGroup(B_TRANSLATE("WebPositive"));
 		success.SetTitle(B_TRANSLATE("Download aborted"));
