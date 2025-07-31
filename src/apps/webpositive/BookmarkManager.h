@@ -32,7 +32,7 @@ public:
 			void				CreateBookmark(BMessage* message);
 			void				ShowBookmarks();
 
-private:
+public:
 			bool				_CheckBookmarkExists(BDirectory& directory,
 									const BString& fileName,
 									const BString& url) const;

@@ -127,6 +127,7 @@ enum {
 	CHECK_AUTO_HIDE_INTERFACE					= 'cahi',
 
 	SHOW_PAGE_SOURCE							= 'spgs',
+	SHOW_HISTORY_WINDOW							= 'shhw',
 
 	EDIT_SHOW_FIND_GROUP						= 'sfnd',
 	EDIT_HIDE_FIND_GROUP						= 'hfnd',
@@ -866,12 +867,12 @@ BrowserWindow::MessageReceived(BMessage* message)
 				uint32 addedSubCount = 0;
 				if (entry.IsDirectory()) {
 					BDirectory directory(&entry);
-					_AddBookmarkURLsRecursively(directory, message,
-						addedSubCount);
+					fBookmarkManager->_AddBookmarkURLsRecursively(directory,
+						message, addedSubCount);
 				} else {
 					BFile file(&ref, B_READ_ONLY);
 					BString url;
-					if (_ReadURLAttr(file, url)) {
+					if (fBookmarkManager->_ReadURLAttr(file, url)) {
 						message->AddString("url", url.String());
 						addedSubCount++;
 					}
@@ -920,7 +921,7 @@ BrowserWindow::MessageReceived(BMessage* message)
 						message->AddRef("directory", &ref);
 							// Add under the same name that Tracker would use, if
 							// the ref had been added by dragging and dropping to Tracker.
-						_CreateBookmark(message);
+						fBookmarkManager->CreateBookmark(message);
 					}
 				}
 				break;
