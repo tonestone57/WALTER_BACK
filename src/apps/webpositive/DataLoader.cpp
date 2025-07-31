@@ -52,13 +52,13 @@ DataLoader::_ThreadFunction(void* data)
 int32
 DataLoader::_LoadData()
 {
-	// This is where the actual data loading happens.
-	// For now, we'll just simulate a delay.
-	snooze(2000000); // 2 seconds
+	// Load the browsing history.
+	BObjectList<BrowsingHistoryItem>* historyItems = new BObjectList<BrowsingHistoryItem>(20, true);
+	BrowsingHistory::DefaultInstance()->GetItems(historyItems);
 
 	// Create a message with the loaded data.
 	BMessage* message = new BMessage(MSG_DATA_LOADED);
-	// TODO: Add the actual loaded data to the message.
+	message->AddPointer("history", historyItems);
 
 	// Send the message to the target.
 	fTarget.SendMessage(message);

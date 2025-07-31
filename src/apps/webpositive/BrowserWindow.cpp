@@ -438,11 +438,13 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 		BDirectory barDir(&bookmarkRef);
 		BEntry bookmarkBar(&barDir, kBookmarkBarSubdir);
 		entry_ref bookmarkBarRef;
-		// TODO we could also check if the folder is empty here.
-		if (bookmarkBar.Exists() && bookmarkBar.GetRef(&bookmarkBarRef)
-				== B_OK) {
-			fBookmarkBar = new BookmarkBar("Bookmarks", this, &bookmarkBarRef);
-			fBookmarkBarMenuItem->SetEnabled(true);
+		if (bookmarkBar.Exists() && bookmarkBar.GetRef(&bookmarkBarRef) == B_OK) {
+			BDirectory dir(&bookmarkBarRef);
+			if (dir.CountEntries() > 0) {
+				fBookmarkBar = new BookmarkBar("Bookmarks", this, &bookmarkBarRef);
+				fBookmarkBarMenuItem->SetEnabled(true);
+			} else
+				fBookmarkBarMenuItem->SetEnabled(false);
 		} else
 			fBookmarkBarMenuItem->SetEnabled(false);
 	} else
@@ -609,7 +611,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	AddShortcut('F', B_COMMAND_KEY | B_SHIFT_KEY,
 		new BMessage(EDIT_HIDE_FIND_GROUP));
 	// TODO: Should be a different shortcut, H is usually for Find selection.
-	AddShortcut('H', B_COMMAND_KEY,	new BMessage(HOME));
+	AddShortcut('H', B_COMMAND_KEY | B_SHIFT_KEY, new BMessage(HOME));
 
 	// Add shortcuts to select a particular tab
 	for (int32 i = 1; i <= 9; i++) {
@@ -961,8 +963,8 @@ BrowserWindow::MessageReceived(BMessage* message)
 		case ZOOM_TEXT_ONLY:
 			fZoomTextOnly = !fZoomTextOnly;
 			fZoomTextOnlyMenuItem->SetMarked(fZoomTextOnly);
-			// TODO: Would be nice to have an instant update if the page is
-			// already zoomed.
+			if (CurrentWebView())
+				CurrentWebView()->Reload();
 			break;
 
 		case TOGGLE_FULLSCREEN:
@@ -1615,7 +1617,7 @@ BrowserWindow::MainDocumentError(const BString& failingURL,
 
 	BWebWindow::MainDocumentError(failingURL, localizedDescription, view);
 
-	// TODO: Remove the failing URL from the BrowsingHistory!
+	BrowsingHistory::DefaultInstance()->RemoveItem(failingURL);
 }
 
 
@@ -1701,39 +1703,32 @@ BrowserWindow::ResizeRequested(float width, float height, BWebView* view)
 void
 BrowserWindow::SetToolBarsVisible(bool flag, BWebView* view)
 {
-	if (CurrentWebView() == NULL)
+	if (CurrentWebView() == NULL || fTabManager->CountTabs() > 1)
 		return;
-	// TODO
-	// TODO: Ignore request when there is more than one BWebView embedded!
 }
 
 
 void
 BrowserWindow::SetStatusBarVisible(bool flag, BWebView* view)
 {
-	if (CurrentWebView() == NULL)
+	if (CurrentWebView() == NULL || fTabManager->CountTabs() > 1)
 		return;
-	// TODO
-	// TODO: Ignore request when there is more than one BWebView embedded!
 }
 
 
 void
 BrowserWindow::SetMenuBarVisible(bool flag, BWebView* view)
 {
-	if (CurrentWebView() == NULL)
+	if (CurrentWebView() == NULL || fTabManager->CountTabs() > 1)
 		return;
-	// TODO
-	// TODO: Ignore request when there is more than one BWebView embedded!
 }
 
 
 void
 BrowserWindow::SetResizable(bool flag, BWebView* view)
 {
-	if (CurrentWebView() == NULL)
+	if (CurrentWebView() == NULL || fTabManager->CountTabs() > 1)
 		return;
-	// TODO: Ignore request when there is more than one BWebView embedded!
 
 	if (flag)
 		SetFlags(Flags() & ~B_NOT_RESIZABLE);

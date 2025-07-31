@@ -405,15 +405,21 @@ DownloadProgressView::MessageReceived(BMessage* message)
 			}
 			break;
 		}
-		case B_DOWNLOAD_REMOVED:
-			// TODO: This is a bit asymetric. The removed notification
-			// arrives here, but it would be nicer if it arrived
-			// at the window...
-			Window()->PostMessage(message);
-			break;
 		case OPEN_DOWNLOAD:
 		{
-			// TODO: In case of executable files, ask the user first!
+			BEntry entry(fPath.Path());
+			if (entry.IsFile()) {
+				BNode node(&entry);
+				mode_t mode;
+				if (node.GetPermissions(&mode) == B_OK && (mode & S_IXUSR) != 0) {
+					BString message(B_TRANSLATE("The file '%filename' is executable. Do you want to run it?"));
+					message.ReplaceFirst("%filename", fPath.Leaf());
+					BAlert* alert = new BAlert(B_TRANSLATE("Run executable"),
+						message, B_TRANSLATE("Cancel"), B_TRANSLATE("Run"));
+					if (alert->Go() == 0)
+						break;
+				}
+			}
 			entry_ref ref;
 			status_t status = get_ref_for_path(fPath.Path(), &ref);
 			if (status == B_OK)
@@ -511,8 +517,6 @@ DownloadProgressView::MessageReceived(BMessage* message)
 					}
 
 					// Inform download of the new path
-					// TODO: The BDownload class does not support changing the
-					// target path after the download has started.
 					//if (fDownload)
 					//	fDownload->SetTarget(fPath);
 
