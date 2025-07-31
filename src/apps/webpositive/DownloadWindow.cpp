@@ -6,8 +6,6 @@
 
 #include "DownloadWindow.h"
 
-#include <cstdio>
-
 #include <Alert.h>
 #include <Button.h>
 #include <Catalog.h>
@@ -26,7 +24,6 @@
 #include <ScrollView.h>
 #include <SeparatorView.h>
 #include <SpaceLayoutItem.h>
-#include <UrlContext.h>
 
 #include "BrowserApp.h"
 #include "BrowserWindow.h"
@@ -34,7 +31,6 @@
 #include "SettingsKeys.h"
 #include "SettingsMessage.h"
 #include "Download.h"
-#include "WebPage.h"
 
 
 #undef B_TRANSLATION_CONTEXT

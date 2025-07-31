@@ -1445,6 +1445,8 @@ BrowserWindow::ToggleFullscreen()
 void
 BrowserWindow::NavigationRequested(const BString& url, BWebView* view)
 {
+	if (CurrentWebView() == NULL)
+		return;
 }
 
 
@@ -1495,6 +1497,9 @@ BrowserWindow::CloseWindowRequested(BWebView* view)
 void
 BrowserWindow::LoadNegotiating(const BString& url, BWebView* view)
 {
+	if (CurrentWebView() == NULL)
+		return;
+
 	if (view != CurrentWebView()) {
 		// Update the userData contents instead so the user sees
 		// the correct URL when they switch back to that tab.
@@ -1516,7 +1521,7 @@ BrowserWindow::LoadNegotiating(const BString& url, BWebView* view)
 void
 BrowserWindow::LoadCommitted(const BString& url, BWebView* view)
 {
-	if (view != CurrentWebView())
+	if (CurrentWebView() == NULL || view != CurrentWebView())
 		return;
 
 	// This hook is invoked when the load is committed.
@@ -1531,7 +1536,7 @@ BrowserWindow::LoadCommitted(const BString& url, BWebView* view)
 void
 BrowserWindow::LoadProgress(float progress, BWebView* view)
 {
-	if (view != CurrentWebView())
+	if (CurrentWebView() == NULL || view != CurrentWebView())
 		return;
 
 	if (progress < 100 && fLoadingProgressBar->IsHidden())
@@ -1545,7 +1550,7 @@ BrowserWindow::LoadProgress(float progress, BWebView* view)
 void
 BrowserWindow::LoadFailed(const BString& url, BWebView* view)
 {
-	if (view != CurrentWebView())
+	if (CurrentWebView() == NULL || view != CurrentWebView())
 		return;
 
 	BString status(B_TRANSLATE_COMMENT("%url failed", "Loading URL failed. "
@@ -1560,7 +1565,7 @@ BrowserWindow::LoadFailed(const BString& url, BWebView* view)
 void
 BrowserWindow::LoadFinished(const BString& url, BWebView* view)
 {
-	if (view != CurrentWebView())
+	if (CurrentWebView() == NULL || view != CurrentWebView())
 		return;
 
 	fURLInputGroup->SetText(url.String());
@@ -1586,6 +1591,9 @@ void
 BrowserWindow::MainDocumentError(const BString& failingURL,
 	const BString& localizedDescription, BWebView* view)
 {
+	if (CurrentWebView() == NULL)
+		return;
+
 	// Make sure we show the page that contains the view.
 	if (!_ShowPage(view))
 		return;
@@ -1620,6 +1628,9 @@ BrowserWindow::MainDocumentError(const BString& failingURL,
 void
 BrowserWindow::TitleChanged(const BString& title, BWebView* view)
 {
+	if (CurrentWebView() == NULL)
+		return;
+
 	int32 tabIndex = fTabManager->TabForView(view);
 	if (tabIndex < 0)
 		return;
@@ -1636,6 +1647,9 @@ BrowserWindow::TitleChanged(const BString& title, BWebView* view)
 void
 BrowserWindow::IconReceived(const BBitmap* icon, BWebView* view)
 {
+	if (CurrentWebView() == NULL)
+		return;
+
 	// The view may already be gone, since this notification arrives
 	// asynchronously.
 	if (!fTabManager->HasView(view))
@@ -1648,7 +1662,7 @@ BrowserWindow::IconReceived(const BBitmap* icon, BWebView* view)
 void
 BrowserWindow::ResizeRequested(float width, float height, BWebView* view)
 {
-	if (view != CurrentWebView())
+	if (CurrentWebView() == NULL || view != CurrentWebView())
 		return;
 
 	// Ignore request when there is more than one BWebView embedded.
@@ -1693,6 +1707,8 @@ BrowserWindow::ResizeRequested(float width, float height, BWebView* view)
 void
 BrowserWindow::SetToolBarsVisible(bool flag, BWebView* view)
 {
+	if (CurrentWebView() == NULL)
+		return;
 	// TODO
 	// TODO: Ignore request when there is more than one BWebView embedded!
 }
@@ -1701,6 +1717,8 @@ BrowserWindow::SetToolBarsVisible(bool flag, BWebView* view)
 void
 BrowserWindow::SetStatusBarVisible(bool flag, BWebView* view)
 {
+	if (CurrentWebView() == NULL)
+		return;
 	// TODO
 	// TODO: Ignore request when there is more than one BWebView embedded!
 }
@@ -1709,6 +1727,8 @@ BrowserWindow::SetStatusBarVisible(bool flag, BWebView* view)
 void
 BrowserWindow::SetMenuBarVisible(bool flag, BWebView* view)
 {
+	if (CurrentWebView() == NULL)
+		return;
 	// TODO
 	// TODO: Ignore request when there is more than one BWebView embedded!
 }
@@ -1717,6 +1737,8 @@ BrowserWindow::SetMenuBarVisible(bool flag, BWebView* view)
 void
 BrowserWindow::SetResizable(bool flag, BWebView* view)
 {
+	if (CurrentWebView() == NULL)
+		return;
 	// TODO: Ignore request when there is more than one BWebView embedded!
 
 	if (flag)
@@ -1729,7 +1751,7 @@ BrowserWindow::SetResizable(bool flag, BWebView* view)
 void
 BrowserWindow::StatusChanged(const BString& statusText, BWebView* view)
 {
-	if (view != CurrentWebView())
+	if (CurrentWebView() == NULL || view != CurrentWebView())
 		return;
 
 	if (fStatusText)
@@ -1741,7 +1763,7 @@ void
 BrowserWindow::NavigationCapabilitiesChanged(bool canGoBackward,
 	bool canGoForward, bool canStop, BWebView* view)
 {
-	if (view != CurrentWebView())
+	if (CurrentWebView() == NULL || view != CurrentWebView())
 		return;
 
 	fBackButton->SetEnabled(canGoBackward);
@@ -1756,6 +1778,8 @@ BrowserWindow::NavigationCapabilitiesChanged(bool canGoBackward,
 void
 BrowserWindow::UpdateGlobalHistory(const BString& url)
 {
+	if (CurrentWebView() == NULL)
+		return;
 	BrowsingHistory::DefaultInstance()->AddItem(BrowsingHistoryItem(url));
 
 	fURLInputGroup->SetText(CurrentWebView()->MainFrameURL());
@@ -1767,6 +1791,8 @@ BrowserWindow::AuthenticationChallenge(BString message, BString& inOutUser,
 	BString& inOutPassword, bool& inOutRememberCredentials,
 	uint32 failureCount, BWebView* view)
 {
+	if (CurrentWebView() == NULL)
+		return false;
 	CredentialsStorage* persistentStorage
 		= CredentialsStorage::PersistentInstance();
 	CredentialsStorage* sessionStorage
@@ -2047,6 +2073,9 @@ BrowserWindow::_UpdateHistoryMenu()
 void
 BrowserWindow::_UpdateClipboardItems()
 {
+	if (CurrentWebView() == NULL)
+		return;
+
 	BTextView* focusTextView = dynamic_cast<BTextView*>(CurrentFocus());
 	if (focusTextView != NULL) {
 		int32 selectionStart;
