@@ -122,6 +122,7 @@ DownloadWindow::DownloadWindow(BRect frame, bool visible,
 	: BWindow(frame, B_TRANSLATE("Downloads"),
 		B_TITLED_WINDOW_LOOK, B_NORMAL_WINDOW_FEEL,
 		B_AUTO_UPDATE_SIZE_LIMITS | B_ASYNCHRONOUS_CONTROLS | B_NOT_ZOOMABLE),
+	fSaveSettingsRunner(NULL),
 	fMinimizeOnClose(false)
 {
 	SetPulseRate(1000000);
@@ -189,6 +190,7 @@ DownloadWindow::DownloadWindow(BRect frame, bool visible,
 
 DownloadWindow::~DownloadWindow()
 {
+	delete fSaveSettingsRunner;
 	// Only necessary to save the current progress of unfinished downloads:
 	_SaveSettings();
 }
@@ -286,8 +288,7 @@ DownloadWindow::MessageReceived(BMessage* message)
 			_RemoveMissingDownloads();
 			break;
 		case SAVE_SETTINGS:
-			_ValidateButtonStatus();
-			_SaveSettings();
+			_SaveSettingsIfNeeded();
 			break;
 
 		case SETTINGS_VALUE_CHANGED:
@@ -415,6 +416,11 @@ DownloadWindow::_DownloadStarted(BWebDownload* download)
 	SetWorkspaces(B_CURRENT_WORKSPACE);
 	if (IsHidden())
 		Show();
+
+	if (fSaveSettingsRunner == NULL) {
+		fSaveSettingsRunner = new BMessageRunner(BMessenger(this),
+			new BMessage(SAVE_SETTINGS), 5 * 1000000, -1);
+	}
 }
 
 
@@ -442,7 +448,7 @@ DownloadWindow::_DownloadFinished(BWebDownload* download)
 	fRemoveFinishedButton->SetEnabled(finishedCount > 0);
 	fRemoveMissingButton->SetEnabled(missingCount > 0);
 	if (download)
-		_SaveSettings();
+		_SaveSettingsIfNeeded();
 }
 
 
@@ -464,7 +470,7 @@ DownloadWindow::_RemoveFinishedDownloads()
 	}
 	fRemoveFinishedButton->SetEnabled(false);
 	fRemoveMissingButton->SetEnabled(missingCount > 0);
-	_SaveSettings();
+	_SaveSettingsIfNeeded();
 }
 
 
@@ -486,7 +492,7 @@ DownloadWindow::_RemoveMissingDownloads()
 	}
 	fRemoveMissingButton->SetEnabled(false);
 	fRemoveFinishedButton->SetEnabled(finishedCount > 0);
-	_SaveSettings();
+	_SaveSettingsIfNeeded();
 }
 
 
@@ -508,6 +514,18 @@ DownloadWindow::_ValidateButtonStatus()
 	}
 	fRemoveFinishedButton->SetEnabled(finishedCount > 0);
 	fRemoveMissingButton->SetEnabled(missingCount > 0);
+}
+
+
+void
+DownloadWindow::_SaveSettingsIfNeeded()
+{
+	if (!DownloadsInProgress()) {
+		delete fSaveSettingsRunner;
+		fSaveSettingsRunner = NULL;
+	}
+	_ValidateButtonStatus();
+	_SaveSettings();
 }
 
 

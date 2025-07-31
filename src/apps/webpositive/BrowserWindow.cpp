@@ -93,6 +93,7 @@
 #include "WebViewConstants.h"
 #include "WindowIcon.h"
 #include "HistoryMenuHook.cpp"
+#include "SourceWindow.h"
 
 
 #undef B_TRANSLATION_CONTEXT
@@ -2737,80 +2738,26 @@ BrowserWindow::_SmartURLHandler(const BString& url)
 void
 BrowserWindow::_HandlePageSourceResult(const BMessage* message)
 {
-	// TODO: This should be done in an extra thread perhaps. Doing it in
-	// the application thread is not much better, since it actually draws
-	// the pages...
-
-	BPath pathToPageSource;
-
-	BString url;
-	status_t ret = message->FindString("url", &url);
-	if (ret == B_OK && url.FindFirst("file://") == 0) {
-		// Local file
-		url.Remove(0, strlen("file://"));
-		pathToPageSource.SetTo(url.String());
-	} else {
-		// Something else, store it.
-		BString source;
-		ret = message->FindString("source", &source);
-
-		if (ret == B_OK)
-			ret = find_directory(B_SYSTEM_TEMP_DIRECTORY, &pathToPageSource);
-
-		BString mimeType;
-		if (message->FindString("mime type", &mimeType) != B_OK)
-			mimeType = "text/html";
-
-		BString extension = ".html";
-		if (mimeType == "image/svg+xml")
-			extension = ".svg";
-
-		BString tmpFileName("PageSource_");
-		tmpFileName << system_time() << extension;
-		if (ret == B_OK)
-			ret = pathToPageSource.Append(tmpFileName.String());
-
-		BFile pageSourceFile(pathToPageSource.Path(),
-			B_CREATE_FILE | B_ERASE_FILE | B_WRITE_ONLY);
-		if (ret == B_OK)
-			ret = pageSourceFile.InitCheck();
-
-		if (ret == B_OK) {
-			ssize_t written = pageSourceFile.Write(source.String(),
-				source.Length());
-			if (written != source.Length())
-				ret = (status_t)written;
-		}
-
-		if (ret == B_OK) {
-			pageSourceFile.WriteAttrString("BEOS:TYPE", &mimeType);
-				// If it fails we don't care.
-		}
-	}
-
-	entry_ref ref;
-	if (ret == B_OK)
-		ret = get_ref_for_path(pathToPageSource.Path(), &ref);
-
-	if (ret == B_OK) {
-		BMessage refsMessage(B_REFS_RECEIVED);
-		ret = refsMessage.AddRef("refs", &ref);
-		if (ret == B_OK) {
-			ret = be_roster->Launch("text/x-source-code", &refsMessage);
-			if (ret == B_ALREADY_RUNNING)
-				ret = B_OK;
-		}
-	}
+	BString source;
+	status_t ret = message->FindString("source", &source);
 
 	if (ret != B_OK) {
 		char buffer[1024];
-		snprintf(buffer, sizeof(buffer), "Failed to show the "
+		snprintf(buffer, sizeof(buffer), "Failed to get the "
 			"page source: %s\n", strerror(ret));
 		BAlert* alert = new BAlert(B_TRANSLATE("Page source error"), buffer,
 			B_TRANSLATE("OK"));
 		alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
 		alert->Go(NULL);
+		return;
 	}
+
+	BString title(B_TRANSLATE("Page Source"));
+	title << " - " << CurrentWebView()->MainFrameTitle();
+
+	SourceWindow* window = new SourceWindow(Frame().OffsetByCopy(20, 20),
+		title, source);
+	window->Show();
 }
 
 

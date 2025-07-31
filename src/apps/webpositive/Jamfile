@@ -38,6 +38,7 @@ local sources =
 	DownloadWindow.cpp
 	SettingsKeys.cpp
 	SettingsWindow.cpp
+	SourceWindow.cpp
 	URLInputGroup.cpp
 ;
 

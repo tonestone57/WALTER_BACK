@@ -40,10 +40,12 @@ private:
 			void				_RemoveMissingDownloads();
 			void				_ValidateButtonStatus();
 			void				_SaveSettings();
+			void				_SaveSettingsIfNeeded();
 			void				_LoadSettings();
 			bool				_OpenSettingsFile(BFile& file, uint32 mode);
 
 private:
+			BMessageRunner*		fSaveSettingsRunner;
 			BScrollView*		fDownloadsScrollView;
 			BGroupLayout*		fDownloadViewsLayout;
 			BButton*			fRemoveFinishedButton;
