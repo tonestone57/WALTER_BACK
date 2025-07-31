@@ -38,6 +38,7 @@
 #include "FontSelectionView.h"
 #include "SettingsKeys.h"
 #include "WebSettings.h"
+#include "CreateAdvancedPage.cpp"
 
 
 struct Setting {
@@ -52,6 +53,7 @@ struct Setting {
 #define B_TRANSLATION_CONTEXT "Settings Window"
 
 enum {
+	MSG_MAX_CONNECTIONS_CHANGED					= 'mxcc',
 	MSG_APPLY									= 'aply',
 	MSG_CANCEL									= 'cncl',
 	MSG_REVERT									= 'rvrt',
@@ -158,6 +160,7 @@ SettingsWindow::SettingsWindow(BRect frame, SettingsMessage* settings)
 	tabView->AddTab(_CreateGeneralPage(spacing));
 	tabView->AddTab(_CreateFontsPage(spacing));
 	tabView->AddTab(_CreateProxyPage(spacing));
+	tabView->AddTab(_CreateAdvancedPage(spacing));
 
 	_SetupFontSelectionView(fStandardFontView,
 		new BMessage(MSG_STANDARD_FONT_CHANGED));
@@ -314,6 +317,10 @@ SettingsWindow::MessageReceived(BMessage* message)
 			break;
 		case MSG_PROXY_ADDRESS_CHANGED:
 			_ValidateProxyAddress();
+			_ValidateControlsEnabledStatus();
+			break;
+
+		case MSG_MAX_CONNECTIONS_CHANGED:
 			_ValidateControlsEnabledStatus();
 			break;
 
@@ -875,6 +882,9 @@ SettingsWindow::_ApplySettings()
 	// This will find all currently instantiated page settings and apply
 	// the default values, unless the page settings have local overrides.
 	BWebSettings::Default()->Apply();
+
+	BWebSettings::Default()->SetMaximumConnectionsPerHost(
+		fMaxConnectionsSpinner->Value());
 
 	_ValidateControlsEnabledStatus();
 }
