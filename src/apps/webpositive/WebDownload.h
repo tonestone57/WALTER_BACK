@@ -1,7 +1,10 @@
 #ifndef WEB_DOWNLOAD_H
 #define WEB_DOWNLOAD_H
 
+#include <Url.h>
 #include <UrlRequest.h>
+#include <UrlProtocolListener.h>
+#include <UrlContext.h>
 
 class BWebDownload : public BUrlRequest {
 public:

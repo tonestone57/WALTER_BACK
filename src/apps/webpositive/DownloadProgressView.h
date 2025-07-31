@@ -20,6 +20,12 @@ class SmallButton;
 
 
 enum {
+	B_DOWNLOAD_ADDED = 'dadd',
+	B_DOWNLOAD_STARTED = 'dsta',
+	B_DOWNLOAD_PROGRESS = 'dprg'
+};
+
+enum {
 	SAVE_SETTINGS = 'svst',
 	PAUSE_RESUME_DOWNLOAD = 'prdl'
 };
