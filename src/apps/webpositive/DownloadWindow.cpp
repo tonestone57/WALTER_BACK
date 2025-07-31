@@ -20,6 +20,7 @@
 #include <Locale.h>
 #include <MenuBar.h>
 #include <MenuItem.h>
+#include <MessageRunner.h>
 #include <Path.h>
 #include <Roster.h>
 #include <ScrollView.h>
