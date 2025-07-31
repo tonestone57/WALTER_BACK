@@ -6,6 +6,7 @@
 
 #include "DownloadProgressView.h"
 
+#include <WebPage.h>
 #include <private/netservices/UrlProtocolDispatchingListener.h>
 
 #include <Alert.h>

@@ -6,6 +6,7 @@
 
 #include "DownloadWindow.h"
 
+#include <WebPage.h>
 #include <Alert.h>
 #include <Button.h>
 #include <Catalog.h>
