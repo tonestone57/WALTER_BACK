@@ -287,7 +287,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	fIsFullscreen(false),
 	fInterfaceVisible(false),
 	fMenusRunning(false),
-	fPulseRunner(NULL),
+	fPulseRunner(),
 	fVisibleInterfaceElements(interfaceElements),
 	fContext(context),
 	fAppSettings(appSettings),
@@ -296,12 +296,11 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	fAutoHideInterfaceInFullscreenMode(false),
 	fAutoHidePointer(false),
 	fBookmarkBar(NULL),
-	fBookmarkManager(new BookmarkManager()),
-	fDataLoader(NULL)
+	fBookmarkManager(std::make_unique<BookmarkManager>()),
+	fDataLoader(std::make_unique<DataLoader>(BMessenger(this)))
 {
 	// Begin listening to settings changes and read some current values.
 	fAppSettings->AddListener(BMessenger(this));
-	fDataLoader = new DataLoader(BMessenger(this));
 	fDataLoader->Start();
 	fZoomTextOnly = fAppSettings->GetValue("zoom text only", fZoomTextOnly);
 	fShowTabsIfSinglePageOpen = fAppSettings->GetValue(
@@ -324,7 +323,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	newTabMessage->AddString("url", "");
 	newTabMessage->AddPointer("window", this);
 	newTabMessage->AddBool("select", true);
-	fTabManager = new TabManager(BMessenger(this), newTabMessage);
+	fTabManager = std::make_unique<TabManager>(BMessenger(this), newTabMessage);
 
 	// Menu
 #if INTEGRATE_MENU_INTO_TAB_BAR
@@ -568,7 +567,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	else
 		_ShowBookmarkBar(false);
 
-	fSavePanel = new BFilePanel(B_SAVE_PANEL, new BMessenger(this), NULL, 0,
+	fSavePanel = std::make_unique<BFilePanel>(B_SAVE_PANEL, new BMessenger(this), NULL, 0,
 		false);
 
 	// Layout
@@ -648,11 +647,6 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 BrowserWindow::~BrowserWindow()
 {
 	fAppSettings->RemoveListener(BMessenger(this));
-	delete fBookmarkManager;
-	delete fDataLoader;
-	delete fTabManager;
-	delete fPulseRunner;
-	delete fSavePanel;
 }
 
 
@@ -2150,8 +2144,13 @@ BrowserWindow::_SetAutoHideInterfaceInFullscreen(bool doIt)
 			doIt);
 	}
 
-	if (!fAutoHideInterfaceInFullscreenMode)
+	if (fAutoHideInterfaceInFullscreenMode)
+		fPulseRunner = std::make_unique<BMessageRunner>(BMessenger(this),
+			new BMessage(CHECK_AUTO_HIDE_INTERFACE), 100000);
+	else {
+		fPulseRunner.reset();
 		_ShowInterface(true);
+	}
 }
 
 
