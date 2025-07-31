@@ -4,6 +4,7 @@
 #include <WebPage.h>
 #include <UrlProtocolRoster.h>
 #include <private/netservices/UrlContext.h>
+#include <private/netservices/UrlProtocolDispatchingListener.h>
 
 
 BDownload::BDownload(const BUrl& url)
@@ -32,7 +33,7 @@ BDownload::DownloadProgress(BPrivate::Network::BUrlRequest* caller,
 	off_t bytesReceived, off_t bytesTotal)
 {
 	if (fListener.IsValid()) {
-		BMessage progress(B_DOWNLOAD_PROGRESS);
+		BMessage progress(B_URL_PROTOCOL_DOWNLOAD_PROGRESS);
 		progress.AddInt64("current size", bytesReceived);
 		progress.AddInt64("expected size", bytesTotal);
 		fListener.SendMessage(&progress);

@@ -7,6 +7,7 @@
 #include "DownloadProgressView.h"
 
 #include <WebPage.h>
+#include <private/netservices/UrlProtocolDispatchingListener.h>
 #include <cstdio>
 
 #include <Alert.h>
@@ -395,7 +396,7 @@ DownloadProgressView::MessageReceived(BMessage* message)
 				= fEstimatedFinishReferenceTime = system_time();
 			break;
 		}
-		case B_DOWNLOAD_PROGRESS:
+		case B_URL_PROTOCOL_DOWNLOAD_PROGRESS:
 		{
 			int64 currentSize;
 			int64 expectedSize;

@@ -375,7 +375,7 @@ DownloadWindow::_DownloadStarted(BDownload* download)
 			item->View());
 		if (!view)
 			continue;
-		if (BUrl(view->URL().String()) == BUrl(download->Url().UrlString())) {
+		if (view->URL() == download->Url().UrlString()) {
 			index = i;
 			view->RemoveSelf();
 			delete view;
