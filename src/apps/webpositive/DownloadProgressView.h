@@ -14,7 +14,7 @@
 class BEntry;
 class BStatusBar;
 class BStringView;
-class BWebDownload;
+#include "WebDownload.h"
 class IconView;
 class SmallButton;
 

@@ -14,7 +14,7 @@ class BButton;
 class BFile;
 class BGroupLayout;
 class BScrollView;
-class BWebDownload;
+#include "WebDownload.h"
 class SettingsMessage;
 
 

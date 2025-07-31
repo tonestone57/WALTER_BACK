@@ -921,7 +921,7 @@ BrowserWindow::MessageReceived(BMessage* message)
 						message->AddRef("directory", &ref);
 							// Add under the same name that Tracker would use, if
 							// the ref had been added by dragging and dropping to Tracker.
-						fBookmarkManager->CreateBookmark(message);
+						fBookmarkManager->CreateBookmark();
 					}
 				}
 				break;
@@ -1162,7 +1162,7 @@ BrowserWindow::MessageReceived(BMessage* message)
 			if (filetype != NULL && strcmp(filetype, "application/x-vnd.Be-bookmark") == 0) {
 				// Tracker replied after the user dragged and dropped something
 				// that can be bookmarked (e.g. the page icon) to a Tracker window.
-				_CreateBookmark(message);
+				fBookmarkManager->CreateBookmark();
 				break;
 			} else {
 				BWebWindow::MessageReceived(message);
