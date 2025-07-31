@@ -19,6 +19,7 @@ local sources =
 	# support
 	BaseURL.cpp
 	BookmarkBar.cpp
+	BookmarkManager.cpp
 	FontSelectionView.cpp
 
 	# tabview

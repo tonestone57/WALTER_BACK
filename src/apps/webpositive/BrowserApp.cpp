@@ -41,7 +41,7 @@
 #include <UrlContext.h>
 #include <debugger.h>
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "BrowserWindow.h"
 #include "BrowsingHistory.h"

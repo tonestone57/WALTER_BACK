@@ -6,7 +6,7 @@
 
 #include "DownloadProgressView.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 #include <Alert.h>
 #include <Application.h>

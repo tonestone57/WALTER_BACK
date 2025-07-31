@@ -7,7 +7,7 @@
 #include "BrowsingHistory.h"
 
 #include <new>
-#include <stdio.h>
+#include <cstdio>
 
 #include <Autolock.h>
 #include <Entry.h>

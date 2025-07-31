@@ -6,7 +6,7 @@
 
 #include "DownloadWindow.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 #include <Alert.h>
 #include <Button.h>

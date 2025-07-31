@@ -73,12 +73,13 @@
 #include <Url.h>
 
 #include <map>
-#include <stdio.h>
+#include <cstdio>
 
 #include "AuthenticationPanel.h"
 #include "BaseURL.h"
 #include "BitmapButton.h"
 #include "BookmarkBar.h"
+#include "BookmarkManager.h"
 #include "BrowserApp.h"
 #include "BrowsingHistory.h"
 #include "CredentialsStorage.h"
@@ -369,6 +370,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	fAutoHideInterfaceInFullscreenMode(false),
 	fAutoHidePointer(false),
 	fBookmarkBar(NULL),
+	fBookmarkManager(new BookmarkManager()),
 	fDataLoader(NULL)
 {
 	// Begin listening to settings changes and read some current values.
@@ -720,6 +722,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 BrowserWindow::~BrowserWindow()
 {
 	fAppSettings->RemoveListener(BMessenger(this));
+	delete fBookmarkManager;
 	delete fDataLoader;
 	delete fTabManager;
 	delete fPulseRunner;
@@ -917,11 +920,11 @@ BrowserWindow::MessageReceived(BMessage* message)
 		}
 
 		case CREATE_BOOKMARK:
-			_CreateBookmark();
+			fBookmarkManager->CreateBookmark(this);
 			break;
 
 		case SHOW_BOOKMARKS:
-			_ShowBookmarks();
+			fBookmarkManager->ShowBookmarks();
 			break;
 
 		case B_REFS_RECEIVED:
@@ -1947,334 +1950,6 @@ BrowserWindow::_TabChanged(int32 index)
 }
 
 
-status_t
-BrowserWindow::_BookmarkPath(BPath& path) const
-{
-	status_t ret = find_directory(B_USER_SETTINGS_DIRECTORY, &path);
-	if (ret != B_OK)
-		return ret;
-
-	ret = path.Append(kApplicationName);
-	if (ret != B_OK)
-		return ret;
-
-	ret = path.Append("Bookmarks");
-	if (ret != B_OK)
-		return ret;
-
-	return create_directory(path.Path(), 0777);
-}
-
-/*! If fileName is an empty BString, a valid file name will be derived from title.
-	miniIcon and largeIcon may be NULL.
-*/
-void
-BrowserWindow::_CreateBookmark(const BPath& path, BString fileName, const BString& title,
-	const BString& url, BBitmap* miniIcon, BBitmap* largeIcon)
-{
-	// Determine the file name if one was not provided
-	bool presetFileName = true;
-	if (fileName.IsEmpty() == true) {
-		presetFileName = false;
-		fileName = title;
-		if (fileName.Length() == 0) {
-			fileName = url;
-			int32 leafPos = fileName.FindLast('/');
-			if (leafPos >= 0)
-				fileName.Remove(0, leafPos + 1);
-		}
-		fileName.ReplaceAll('/', '-');
-		fileName.Truncate(B_FILE_NAME_LENGTH - 1);
-	}
-
-	BPath entryPath(path);
-	status_t status = entryPath.Append(fileName);
-	BEntry entry;
-	if (status == B_OK)
-		status = entry.SetTo(entryPath.Path(), true);
-
-	// There are several reasons why an entry matching the path argument could already exist.
-	if (status == B_OK && entry.Exists() == true) {
-		off_t size;
-		entry.GetSize(&size);
-		char attrName[B_ATTR_NAME_LENGTH];
-		BNode node(&entry);
-		status_t attrStatus = node.GetNextAttrName(attrName);
-		if (strcmp(attrName, "_trk/pinfo_le") == 0)
-			attrStatus = node.GetNextAttrName(attrName);
-
-		if (presetFileName == true && size == 0 && attrStatus == B_ENTRY_NOT_FOUND) {
-			// Tracker's drag-and-drop routine created an empty entry for us to fill in.
-			// Go ahead and write to the existing entry.
-		} else {
-			BDirectory directory(path.Path());
-			if (_CheckBookmarkExists(directory, fileName, url) == true) {
-				// The existing entry is a bookmark with the same URL.  No further action needed.
-				return;
-			} else {
-				// Find a unique name for the bookmark.
-				int32 tries = 1;
-				while (entry.Exists()) {
-					fileName << " " << tries++;
-					entryPath = path;
-					status = entryPath.Append(fileName);
-					if (status == B_OK)
-						status = entry.SetTo(entryPath.Path(), true);
-					if (status != B_OK)
-						break;
-				}
-			}
-		}
-	}
-
-	BFile bookmarkFile;
-	if (status == B_OK) {
-		status = bookmarkFile.SetTo(&entry,
-			B_CREATE_FILE | B_ERASE_FILE | B_WRITE_ONLY);
-	}
-
-	// Write bookmark meta data
-	if (status == B_OK)
-		status = bookmarkFile.WriteAttrString("META:url", &url);
-	if (status == B_OK) {
-		bookmarkFile.WriteAttrString("META:title", &title);
-	}
-
-	BNodeInfo nodeInfo(&bookmarkFile);
-	if (status == B_OK) {
-		status = nodeInfo.SetType("application/x-vnd.Be-bookmark");
-		// Replace the standard Be-bookmark file icons with the argument icons,
-		// if any were provided.
-		if (status == B_OK) {
-			status_t ret = B_OK;
-			if (miniIcon != NULL) {
-				ret = nodeInfo.SetIcon(miniIcon, B_MINI_ICON);
-				if (ret != B_OK) {
-					BString message(B_TRANSLATE_COMMENT("There was an error "
-						"storing the mini icon for the bookmark.\n\nError: "
-						"%error", "Don't translate variable %error"));
-					message.ReplaceFirst("%error", strerror(ret));
-					BAlert* alert = new BAlert(B_TRANSLATE("Bookmark error"),
-						message.String(), B_TRANSLATE("OK"), NULL, NULL,
-						B_WIDTH_AS_USUAL, B_STOP_ALERT);
-					alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
-					alert->Go();
-				}
-			}
-			if (largeIcon != NULL && ret == B_OK)
-				ret = nodeInfo.SetIcon(largeIcon, B_LARGE_ICON);
-			else if (largeIcon == NULL && miniIcon != NULL && ret == B_OK) {
-				// If largeIcon is not available but miniIcon is, use a magnified miniIcon instead.
-				BBitmap substituteLargeIcon(BRect(0, 0, 31, 31),
-					B_BITMAP_NO_SERVER_LINK, miniIcon->ColorSpace());
-				BView offscreenView(substituteLargeIcon.Bounds(), "offscreen",
-					0, 0);
-				substituteLargeIcon.AddChild(&offscreenView);
-				if (offscreenView.LockLooper()) {
-					offscreenView.DrawBitmap(miniIcon, miniIcon->Bounds(),
-						substituteLargeIcon.Bounds());
-					offscreenView.Sync();
-					offscreenView.UnlockLooper();
-				}
-				substituteLargeIcon.RemoveChild(&offscreenView);
-				ret = nodeInfo.SetIcon(&substituteLargeIcon, B_LARGE_ICON);
-			} else
-				ret = B_OK;
-			if (ret != B_OK) {
-				BString message(B_TRANSLATE_COMMENT("There was an error "
-					"storing the large icon for the bookmark.\n\nError: "
-					"%error", "Don't translate variable %error"));
-				message.ReplaceFirst("%error", strerror(ret));
-				BAlert* alert = new BAlert(B_TRANSLATE("Bookmark error"),
-					message.String(), B_TRANSLATE("OK"), NULL, NULL,
-					B_WIDTH_AS_USUAL, B_STOP_ALERT);
-				alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
-				alert->Go();
-			}
-		}
-	}
-
-	if (status != B_OK) {
-		BString message(B_TRANSLATE_COMMENT("There was an error creating the "
-			"bookmark file.\n\nError: %error", "Don't translate variable "
-			"%error"));
-		message.ReplaceFirst("%error", strerror(status));
-		BAlert* alert = new BAlert(B_TRANSLATE("Bookmark error"),
-			message.String(), B_TRANSLATE("OK"), NULL, NULL,
-			B_WIDTH_AS_USUAL, B_STOP_ALERT);
-		alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
-		alert->Go();
-	}
-	delete miniIcon;
-	delete largeIcon;
-}
-
-
-void
-BrowserWindow::_CreateBookmark(BMessage* message)
-{
-		entry_ref ref;
-		BMessage originatorData;
-		const char* url;
-		const char* title;
-		bool validData = (message->FindRef("directory", &ref) == B_OK
-			&& message->FindMessage("be:originator-data", &originatorData) == B_OK
-			&& originatorData.FindString("url", &url) == B_OK
-			&& originatorData.FindString("title", &title) == B_OK);
-
-		// Optional data
-		const char* fileName;
-		if (message->FindString("name", &fileName) != B_OK) {
-			// This string is only present if the message originated from Tracker (drag and drop).
-			fileName = "";
-		}
-		BBitmap* miniIcon = NULL;
-		BBitmap* largeIcon = NULL;
-		BMessage miniIconArchive;
-		if (originatorData.FindMessage("miniIcon", &miniIconArchive) == B_OK)
-			miniIcon = new(std::nothrow) BBitmap(&miniIconArchive);
-		BMessage largeIconArchive;
-		if (originatorData.FindMessage("largeIcon", &largeIconArchive) == B_OK)
-			largeIcon = new(std::nothrow) BBitmap(&largeIconArchive);
-
-		if (validData == true) {
-			_CreateBookmark(BPath(&ref), BString(fileName), BString(title), BString(url),
-				miniIcon, largeIcon);
-		} else {
-			delete miniIcon;
-			delete largeIcon;
-			BString message(B_TRANSLATE("There was an error setting up "
-				"the bookmark."));
-			BAlert* alert = new BAlert(B_TRANSLATE("Bookmark error"),
-				message.String(), B_TRANSLATE("OK"), NULL, NULL,
-				B_WIDTH_AS_USUAL, B_STOP_ALERT);
-			alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
-			alert->Go();
-		}
-		return;
-}
-
-
-void
-BrowserWindow::_CreateBookmark()
-{
-	BString fileName;
-		// A name will be derived from the title later.
-	BString title(CurrentWebView()->MainFrameTitle());
-	BString url(CurrentWebView()->MainFrameURL());
-	BPath path;
-	status_t status = _BookmarkPath(path);
-
-	BBitmap* miniIcon = NULL;
-	BBitmap* largeIcon = NULL;
-	PageUserData* userData = static_cast<PageUserData*>(CurrentWebView()->GetUserData());
-	if (userData != NULL && userData->PageIcon() != NULL) {
-		miniIcon = new BBitmap(userData->PageIcon());
-		// TODO:  retrieve the large icon too, once PageUserData can provide it.
-	}
-
-	if (status == B_OK)
-		_CreateBookmark(path, fileName, title, url, miniIcon, largeIcon);
-	else {
-		delete miniIcon;
-		delete largeIcon;
-		BString message(B_TRANSLATE_COMMENT("There was an error retrieving "
-			"the bookmark folder.\n\nError: %error", "Don't translate the "
-			"variable %error"));
-		message.ReplaceFirst("%error", strerror(status));
-		BAlert* alert = new BAlert(B_TRANSLATE("Bookmark error"),
-			message.String(), B_TRANSLATE("OK"), NULL, NULL,
-			B_WIDTH_AS_USUAL, B_STOP_ALERT);
-		alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
-		alert->Go();
-	}
-	return;
-}
-
-
-void
-BrowserWindow::_ShowBookmarks()
-{
-	BPath path;
-	entry_ref ref;
-	status_t status = _BookmarkPath(path);
-	if (status == B_OK)
-		status = get_ref_for_path(path.Path(), &ref);
-	if (status == B_OK)
-		status = be_roster->Launch(&ref);
-
-	if (status != B_OK && status != B_ALREADY_RUNNING) {
-		BString message(B_TRANSLATE_COMMENT("There was an error trying to "
-			"show the Bookmarks folder.\n\nError: %error",
-			"Don't translate variable %error"));
-		message.ReplaceFirst("%error", strerror(status));
-		BAlert* alert = new BAlert(B_TRANSLATE("Bookmark error"),
-			message.String(), B_TRANSLATE("OK"), NULL, NULL,
-			B_WIDTH_AS_USUAL, B_STOP_ALERT);
-		alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
-		alert->Go();
-		return;
-	}
-}
-
-
-bool BrowserWindow::_CheckBookmarkExists(BDirectory& directory,
-	const BString& bookmarkName, const BString& url) const
-{
-	BEntry entry;
-	while (directory.GetNextEntry(&entry) == B_OK) {
-		if (entry.IsDirectory()) {
-			BDirectory subDir(&entry);
-			if (_CheckBookmarkExists(subDir, bookmarkName, url))
-				return true;
-		} else {
-			char entryName[B_FILE_NAME_LENGTH];
-			if (entry.GetName(entryName) != B_OK || bookmarkName != entryName)
-				continue;
-			BString storedURL;
-			BFile file(&entry, B_READ_ONLY);
-			if (_ReadURLAttr(file, storedURL)) {
-				// Just bail if the bookmark already exists
-				if (storedURL == url)
-					return true;
-			}
-		}
-	}
-	return false;
-}
-
-
-bool
-BrowserWindow::_ReadURLAttr(BFile& bookmarkFile, BString& url) const
-{
-	return bookmarkFile.InitCheck() == B_OK
-		&& bookmarkFile.ReadAttrString("META:url", &url) == B_OK;
-}
-
-
-void
-BrowserWindow::_AddBookmarkURLsRecursively(BDirectory& directory,
-	BMessage* message, uint32& addedCount) const
-{
-	BEntry entry;
-	while (directory.GetNextEntry(&entry) == B_OK) {
-		if (entry.IsDirectory()) {
-			BDirectory subBirectory(&entry);
-			// At least preserve the entry file handle when recursing into
-			// sub-folders... eventually we will run out, though, with very
-			// deep hierarchy.
-			entry.Unset();
-			_AddBookmarkURLsRecursively(subBirectory, message, addedCount);
-		} else {
-			BString storedURL;
-			BFile file(&entry, B_READ_ONLY);
-			if (_ReadURLAttr(file, storedURL)) {
-				message->AddString("url", storedURL.String());
-				addedCount++;
-			}
-		}
-	}
-}
 
 
 void

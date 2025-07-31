@@ -24,7 +24,7 @@
 #include "BrowserWindow.h"
 #include "NavMenu.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 
 #define B_TRANSLATION_CONTEXT "BookmarkBar"

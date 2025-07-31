@@ -28,9 +28,9 @@
 #include <SettingsMessage.h>
 #include <Variant.h>
 
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cerrno>
+#include <cstdio>
+#include <cstdlib>
 
 #include "BrowserApp.h"
 #include "BrowsingHistory.h"

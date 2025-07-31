@@ -18,7 +18,7 @@
 #include <SpaceLayoutItem.h>
 #include <StringView.h>
 #include <TextControl.h>
-#include <stdio.h>
+#include <cstdio>
 
 static const uint32 kMsgPanelOK = 'pnok';
 static const uint32 kHidePassword = 'hdpw';

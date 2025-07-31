@@ -10,7 +10,7 @@
 
 #include <Looper.h>
 #include <TextControl.h>
-#include <stdio.h>
+#include <cstdio>
 
 #include "AutoCompleterDefaultImpl.h"
 
