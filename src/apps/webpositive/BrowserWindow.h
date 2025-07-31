@@ -52,6 +52,7 @@ class BTextControl;
 class BWebView;
 
 class BookmarkBar;
+class DataLoader;
 class SettingsMessage;
 class TabManager;
 class URLInputGroup;
@@ -224,6 +225,8 @@ private:
 
 			void				_ShowBookmarkBar(bool show);
 
+	static	bool				_HistoryMenuHook(BMenu* menu, void* userData);
+
 private:
 			BMenu*				fHistoryMenu;
 			int32				fHistoryMenuFixedItemCount;
@@ -285,6 +288,7 @@ private:
 			BMenuItem*			fBookmarkBarMenuItem;
 			BookmarkBar*		fBookmarkBar;
 			BFilePanel*			fSavePanel;
+			DataLoader*			fDataLoader;
 };
 
 

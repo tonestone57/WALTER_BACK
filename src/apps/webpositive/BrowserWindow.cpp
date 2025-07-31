@@ -31,6 +31,8 @@
 
 #include "BrowserWindow.h"
 
+#include "DataLoader.h"
+
 #include <Alert.h>
 #include <Application.h>
 #include <Bitmap.h>
@@ -90,6 +92,7 @@
 #include "WebView.h"
 #include "WebViewConstants.h"
 #include "WindowIcon.h"
+#include "HistoryMenuHook.cpp"
 
 
 #undef B_TRANSLATION_CONTEXT
@@ -282,36 +285,13 @@ public:
 	virtual void Draw(BRect updateRect)
 	{
 		BRect frame = Bounds();
-		BRect closeRect(frame.InsetByCopy(4, 4));
 		rgb_color base = ui_color(B_PANEL_BACKGROUND_COLOR);
-		float tint = B_DARKEN_1_TINT;
-
+		uint32 flags = be_control_look->Flags(this);
 		if (fOverCloseRect)
-			tint *= 1.4;
-		else
-			tint *= 1.2;
+			flags |= BControlLook::B_HOVER;
 
-		if (Value() == B_CONTROL_ON && fOverCloseRect) {
-			// Draw the button frame
-			be_control_look->DrawButtonFrame(this, frame, updateRect,
-				base, base, BControlLook::B_ACTIVATED
-					| BControlLook::B_BLEND_FRAME);
-			be_control_look->DrawButtonBackground(this, frame,
-				updateRect, base, BControlLook::B_ACTIVATED);
-			closeRect.OffsetBy(1, 1);
-			tint *= 1.2;
-		} else {
-			SetHighColor(base);
-			FillRect(updateRect);
-		}
-
-		// Draw the ×
-		base = tint_color(base, tint);
-		SetHighColor(base);
-		SetPenSize(2);
-		StrokeLine(closeRect.LeftTop(), closeRect.RightBottom());
-		StrokeLine(closeRect.LeftBottom(), closeRect.RightTop());
-		SetPenSize(1);
+		be_control_look->DrawButton(this, frame, updateRect, base, 0.0, flags,
+			B_CLOSE_BUTTON);
 	}
 
 	virtual void MouseMoved(BPoint where, uint32 transit,
@@ -362,10 +342,13 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	fShowTabsIfSinglePageOpen(true),
 	fAutoHideInterfaceInFullscreenMode(false),
 	fAutoHidePointer(false),
-	fBookmarkBar(NULL)
+	fBookmarkBar(NULL),
+	fDataLoader(NULL)
 {
 	// Begin listening to settings changes and read some current values.
 	fAppSettings->AddListener(BMessenger(this));
+	fDataLoader = new DataLoader(BMessenger(this));
+	fDataLoader->Start();
 	fZoomTextOnly = fAppSettings->GetValue("zoom text only", fZoomTextOnly);
 	fShowTabsIfSinglePageOpen = fAppSettings->GetValue(
 		kSettingsKeyShowTabsIfSinglePageOpen, fShowTabsIfSinglePageOpen);
@@ -711,6 +694,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 BrowserWindow::~BrowserWindow()
 {
 	fAppSettings->RemoveListener(BMessenger(this));
+	delete fDataLoader;
 	delete fTabManager;
 	delete fPulseRunner;
 	delete fSavePanel;
@@ -1231,6 +1215,14 @@ BrowserWindow::MessageReceived(BMessage* message)
 			}
 		}
 
+		case MSG_DATA_LOADED:
+			// TODO: Populate menus
+			break;
+
+		case MSG_POPULATE_HISTORY_MENU:
+			_UpdateHistoryMenu();
+			break;
+
 		default:
 			BWebWindow::MessageReceived(message);
 			break;
@@ -1282,7 +1274,16 @@ BrowserWindow::QuitRequested()
 void
 BrowserWindow::MenusBeginning()
 {
-	_UpdateHistoryMenu();
+	// Don't populate the history menu right away, as it can be slow.
+	// Just add a placeholder and populate it when it's actually opened.
+	for (int32 i = fHistoryMenu->CountItems() - 1; i >= fHistoryMenuFixedItemCount; i--) {
+		BMenuItem* menuItem = fHistoryMenu->RemoveItem(i);
+		delete menuItem;
+	}
+	fHistoryMenu->AddItem(new BMenuItem(B_TRANSLATE("Loading history" B_UTF8_ELLIPSIS), NULL));
+	fHistoryMenu->SetTargetForItems(this);
+	fHistoryMenu->SetTrackingHook(this, _HistoryMenuHook);
+
 	_UpdateClipboardItems();
 	fMenusRunning = true;
 }
