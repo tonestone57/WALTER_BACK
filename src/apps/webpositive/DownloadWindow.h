@@ -14,7 +14,7 @@ class BButton;
 class BFile;
 class BGroupLayout;
 class BScrollView;
-#include "WebDownload.h"
+class BDownload;
 class SettingsMessage;
 
 
@@ -34,8 +34,8 @@ public:
 			void				SetMinimizeOnClose(bool minimize);
 
 private:
-			void				_DownloadStarted(BWebDownload* download);
-			void				_DownloadFinished(BWebDownload* download);
+			void				_DownloadStarted(BDownload* download);
+			void				_DownloadFinished(BDownload* download);
 			void				_RemoveFinishedDownloads();
 			void				_RemoveMissingDownloads();
 			void				_ValidateButtonStatus();

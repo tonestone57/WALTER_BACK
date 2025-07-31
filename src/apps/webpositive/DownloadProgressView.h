@@ -14,16 +14,11 @@
 class BEntry;
 class BStatusBar;
 class BStringView;
-#include "WebDownload.h"
+#include "Download.h"
 class IconView;
 class SmallButton;
 
 
-enum {
-	B_DOWNLOAD_ADDED = 'dadd',
-	B_DOWNLOAD_STARTED = 'dsta',
-	B_DOWNLOAD_PROGRESS = 'dprg'
-};
 
 enum {
 	SAVE_SETTINGS = 'svst',
@@ -33,7 +28,7 @@ enum {
 
 class DownloadProgressView : public BGroupView {
 public:
-								DownloadProgressView(BWebDownload* download);
+								DownloadProgressView(BDownload* download);
 								DownloadProgressView(const BMessage* archive);
 
 			bool				Init(BMessage* archive = NULL);
@@ -49,7 +44,7 @@ public:
 
 			void				ShowContextMenu(BPoint screenWhere);
 
-			BWebDownload*		Download() const;
+			BDownload*			Download() const;
 			const BString&		URL() const;
 			bool				IsMissing() const;
 			bool				IsFinished() const;
@@ -73,7 +68,7 @@ private:
 			SmallButton*		fTopButton;
 			SmallButton*		fPauseButton;
 			SmallButton*		fBottomButton;
-			BWebDownload*		fDownload;
+			BDownload*			fDownload;
 			BString				fURL;
 			BPath				fPath;
 

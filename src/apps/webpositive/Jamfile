@@ -35,7 +35,7 @@ local sources =
 	CookieWindow.cpp
 	CredentialsStorage.cpp
 	DataLoader.cpp
-	WebDownload.cpp
+	Download.cpp
 	DownloadProgressView.cpp
 	DownloadWindow.cpp
 	SettingsKeys.cpp

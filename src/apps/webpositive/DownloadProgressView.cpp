@@ -32,8 +32,6 @@
 #include <StringView.h>
 #include <TimeFormat.h>
 
-#include <Download.h>
-
 #include "BrowserWindow.h"
 #include "WebPage.h"
 #include "StringForSize.h"
@@ -183,7 +181,7 @@ DownloadProgressView::DownloadProgressView(BDownload* download)
 	:
 	BGroupView(B_HORIZONTAL, 8),
 	fDownload(download),
-	fURL(download->Url()),
+	fURL(download->Url().UrlString()),
 	fPath(download->Target())
 {
 }
@@ -514,7 +512,7 @@ DownloadProgressView::MessageReceived(BMessage* message)
 
 					// Inform download of the new path
 					if (fDownload)
-						fDownload->SetTarget(fPath.Path());
+						fDownload->SetTarget(fPath);
 
 					float value = fStatusBar->CurrentValue();
 					fStatusBar->Reset(name);

@@ -33,7 +33,7 @@
 #include "DownloadProgressView.h"
 #include "SettingsKeys.h"
 #include "SettingsMessage.h"
-#include <Download.h>
+#include "Download.h"
 #include "WebPage.h"
 
 
