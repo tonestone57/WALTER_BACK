@@ -19,6 +19,7 @@
 #include <View.h>
 
 #include "BrowserApp.h"
+#include "BrowserWindow.h"
 
 
 #undef B_TRANSLATION_CONTEXT

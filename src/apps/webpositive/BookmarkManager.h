@@ -9,6 +9,8 @@
 #include <Path.h>
 #include <String.h>
 
+#include "PageUserData.h"
+
 class BBitmap;
 class BDirectory;
 class BFile;

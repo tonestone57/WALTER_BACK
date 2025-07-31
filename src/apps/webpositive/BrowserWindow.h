@@ -31,6 +31,8 @@
 
 #include "WebWindow.h"
 
+#include "PageUserData.h"
+
 #include <Messenger.h>
 #include <String.h>
 #include <UrlContext.h>
