@@ -6,6 +6,8 @@
 
 #include "DownloadWindow.h"
 
+#include "DownloadMessages.h"
+
 #include <cstdio>
 
 #include <Alert.h>
@@ -375,7 +377,7 @@ DownloadWindow::_DownloadStarted(BDownload* download)
 			item->View());
 		if (!view)
 			continue;
-		if (BUrl(view->URL()) == download->Url()) {
+		if (BUrl(view->URL().String()) == download->Url()) {
 			index = i;
 			view->RemoveSelf();
 			delete view;

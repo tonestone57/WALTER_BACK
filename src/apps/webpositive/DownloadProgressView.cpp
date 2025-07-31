@@ -6,6 +6,8 @@
 
 #include "DownloadProgressView.h"
 
+#include "DownloadMessages.h"
+
 #include <cstdio>
 
 #include <Alert.h>
@@ -33,7 +35,6 @@
 #include <TimeFormat.h>
 
 #include "BrowserWindow.h"
-#include "WebPage.h"
 #include "StringForSize.h"
 
 
@@ -376,7 +377,7 @@ void
 DownloadProgressView::MessageReceived(BMessage* message)
 {
 	switch (message->what) {
-		case B_DOWNLOAD_STARTED:
+		case B_DOWNLOAD_ADDED:
 		{
 			BString path;
 			if (message->FindString("path", &path) != B_OK)
@@ -511,8 +512,10 @@ DownloadProgressView::MessageReceived(BMessage* message)
 					}
 
 					// Inform download of the new path
-					if (fDownload)
-						fDownload->SetTarget(fPath);
+					// TODO: The BDownload class does not support changing the
+					// target path after the download has started.
+					//if (fDownload)
+					//	fDownload->SetTarget(fPath);
 
 					float value = fStatusBar->CurrentValue();
 					fStatusBar->Reset(name);
@@ -856,4 +859,3 @@ DownloadProgressView::_StopNodeMonitor()
 {
 	stop_watching(this);
 }
-

@@ -7,6 +7,7 @@
 #include <Url.h>
 #include <UrlRequest.h>
 
+class BFile;
 
 class BDownload : public BHandler, public BPrivate::Network::BUrlProtocolListener {
 public:
@@ -38,6 +39,7 @@ public:
 private:
 			BUrl				fUrl;
 			BPath				fTarget;
+			BFile*				fOutputFile;
 			BMessenger			fListener;
 			BPrivate::Network::BUrlRequest*		fRequest;
 			bool				fPaused;

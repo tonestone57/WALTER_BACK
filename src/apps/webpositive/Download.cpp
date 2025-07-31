@@ -1,5 +1,9 @@
 #include "Download.h"
 
+#include "DownloadMessages.h"
+
+#include <File.h>
+#include <UrlProtocolRoster.h>
 #include <private/netservices/UrlContext.h>
 
 
@@ -8,6 +12,7 @@ BDownload::BDownload(const BUrl& url)
 	BHandler(),
 	BPrivate::Network::BUrlProtocolListener(),
 	fUrl(url),
+	fOutputFile(NULL),
 	fRequest(NULL),
 	fPaused(false),
 	fBytesReceived(0)
@@ -19,6 +24,7 @@ BDownload::~BDownload()
 {
 	if (fRequest)
 		fRequest->Stop();
+	delete fOutputFile;
 }
 
 
@@ -46,6 +52,8 @@ BDownload::RequestCompleted(BPrivate::Network::BUrlRequest* caller,
 		fListener.SendMessage(&completed);
 	}
 	fRequest = NULL;
+	delete fOutputFile;
+	fOutputFile = NULL;
 	delete this;
 }
 
@@ -82,10 +90,19 @@ status_t
 BDownload::Start(const BPath& target)
 {
 	fTarget = target;
+	fOutputFile = new BFile(fTarget.Path(), B_CREATE_FILE | B_ERASE_FILE | B_WRITE_ONLY);
+	if (fOutputFile->InitCheck() != B_OK) {
+		delete fOutputFile;
+		fOutputFile = NULL;
+		return B_ERROR;
+	}
+
 	BPrivate::Network::BUrlContext* context = new BPrivate::Network::BUrlContext();
-	fRequest = BPrivate::Network::BUrlRequest::RequestUrl(fUrl, this, context);
+	fRequest = BPrivate::Network::BUrlProtocolRoster::MakeRequest(fUrl, fOutputFile, this, context);
 	if (!fRequest) {
 		delete context;
+		delete fOutputFile;
+		fOutputFile = NULL;
 		return B_ERROR;
 	}
 	return B_OK;
