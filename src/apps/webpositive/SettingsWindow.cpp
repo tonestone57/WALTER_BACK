@@ -1051,7 +1051,7 @@ SettingsWindow::_ValidateControlsEnabledStatus()
 void
 SettingsWindow::_ValidateProxyAddress()
 {
-	BUrl url(fProxyAddressControl->Text());
+	BUrl url(fProxyAddressControl->Text(), true);
 	if (url.Host().Length() == 0) {
 		fProxyAddressControl->TextView()->SetViewColor(255, 200, 200);
 		fProxyAddressValid = false;
@@ -1081,7 +1081,7 @@ SettingsWindow::_ValidateSearchPage()
 void
 SettingsWindow::_ValidateStartPage()
 {
-	BUrl url(fStartPageControl->Text());
+	BUrl url(fStartPageControl->Text(), true);
 	if (!url.IsValid()) {
 		fStartPageControl->TextView()->SetViewColor(255, 200, 200);
 		fStartPageValid = false;
