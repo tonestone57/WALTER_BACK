@@ -21,7 +21,6 @@
 #include <stdio.h>
 
 static const uint32 kMsgPanelOK = 'pnok';
-static const uint32 kMsgJitter = 'jitr';
 static const uint32 kHidePassword = 'hdpw';
 
 
@@ -76,8 +75,10 @@ AuthenticationPanel::MessageReceived(BMessage* message)
 		release_sem(m_exitSemaphore);
 		break;
 	case kHidePassword: {
-		// TODO: Toggling this is broken in BTextView. Workaround is to
-		// set the text and selection again.
+		// TODO: Toggling HideTyping() on a BTextView is broken. It clears
+		// the text and resets the selection. This is a workaround to preserve
+		// the text and selection.
+		// See Haiku bug #...
 		BString text = m_passwordTextControl->Text();
 		int32 selectionStart;
 		int32 selectionEnd;
@@ -88,19 +89,6 @@ AuthenticationPanel::MessageReceived(BMessage* message)
 		m_passwordTextControl->SetText(text.String());
 		m_passwordTextControl->TextView()->Select(selectionStart,
 			selectionEnd);
-		break;
-	}
-	case kMsgJitter: {
-		UpdateIfNeeded();
-		BPoint leftTop = Frame().LeftTop();
-		const float jitterOffsets[] = { -10, 0, 10, 0 };
-		const int32 jitterOffsetCount = sizeof(jitterOffsets) / sizeof(float);
-		for (int32 i = 0; i < 20; i++) {
-			float offset = jitterOffsets[i % jitterOffsetCount];
-			MoveTo(leftTop.x + offset, leftTop.y);
-			snooze(15000);
-		}
-		MoveTo(leftTop);
 		break;
 	}
 	default:
@@ -176,7 +164,7 @@ bool AuthenticationPanel::getAuthentication(const BString& text,
 
 	// Let the window jitter, if the previous password was invalid
 	if (badPassword)
-		PostMessage(kMsgJitter);
+		m_passwordTextControl->TextView()->SetViewColor(255, 200, 200);
 
 	// Block calling thread
 	// Get the originating window, if it exists, to let it redraw itself.

@@ -144,6 +144,7 @@ static const int32 kModifiers = B_SHIFT_KEY | B_COMMAND_KEY
 static const char* kHandledProtocols[] = {
 	"http",
 	"https",
+	"ftp",
 	"file",
 	"about",
 	"data",
@@ -2681,17 +2682,6 @@ BrowserWindow::_VisitSearchEngine(const BString& search)
 }
 
 
-inline bool
-BrowserWindow::_IsValidDomainChar(char ch)
-{
-	// TODO: Currenlty, only a whitespace character breaks a domain name. It
-	// might be a good idea (or a bad one) to make character filtering based on
-	// the IDNA 2008 standard.
-
-	return ch != ' ';
-}
-
-
 /*! \brief "smart" parser for user-entered URLs
 
 	We try to be flexible in what we accept as a valid URL. The protocol may
@@ -2703,8 +2693,8 @@ void
 BrowserWindow::_SmartURLHandler(const BString& url)
 {
 	BUrl urlObject(url.String(), true);
-	if (urlObject.IsValid() && urlObject.Protocol().Length() > 0) {
-		// This is a valid URL with a protocol. Let's see if we can handle it.
+	if (urlObject.Protocol().Length() > 0) {
+		// This is a URL with a protocol. Let's see if we can handle it.
 		bool handled = false;
 		for (unsigned int i = 0; i < sizeof(kHandledProtocols) / sizeof(char*);
 				i++) {
@@ -2732,10 +2722,9 @@ BrowserWindow::_SmartURLHandler(const BString& url)
 		}
 	}
 
-	// If the URL is not valid or has no protocol, try to prepend "http://"
-	BString urlWithHttp = BString("http://").Append(url);
-	BUrl httpUrl(urlWithHttp.String(), true);
-	if (httpUrl.IsValid() && httpUrl.Host().Length() > 0) {
+	// If there is no protocol, check for a dot.
+	if (url.FindFirst('.') >= 0) {
+		BString urlWithHttp = BString("http://").Append(url);
 		_VisitURL(urlWithHttp);
 		return;
 	}
