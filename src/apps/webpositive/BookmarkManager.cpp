@@ -84,15 +84,8 @@ BookmarkManager::CreateBookmark(BrowserWindow* window)
 	else {
 		delete miniIcon;
 		delete largeIcon;
-		BString message(B_TRANSLATE_COMMENT("There was an error retrieving "
-			"the bookmark folder.\n\nError: %error", "Don't translate the "
-			"variable %error"));
-		message.ReplaceFirst("%error", strerror(status));
-		BAlert* alert = new BAlert(B_TRANSLATE("Bookmark error"),
-			message.String(), B_TRANSLATE("OK"), NULL, NULL,
-			B_WIDTH_AS_USUAL, B_STOP_ALERT);
-		alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
-		alert->Go();
+		fprintf(stderr, "BookmarkManager: There was an error retrieving the "
+			"bookmark folder: %s\n", strerror(status));
 	}
 	return;
 }
@@ -183,17 +176,9 @@ BookmarkManager::CreateBookmark(const BPath& path, BString fileName,
 			status_t ret = B_OK;
 			if (miniIcon != NULL) {
 				ret = nodeInfo.SetIcon(miniIcon, B_MINI_ICON);
-				if (ret != B_OK) {
-					BString message(B_TRANSLATE_COMMENT("There was an error "
-						"storing the mini icon for the bookmark.\n\nError: "
-						"%error", "Don't translate variable %error"));
-					message.ReplaceFirst("%error", strerror(ret));
-					BAlert* alert = new BAlert(B_TRANSLATE("Bookmark error"),
-						message.String(), B_TRANSLATE("OK"), NULL, NULL,
-						B_WIDTH_AS_USUAL, B_STOP_ALERT);
-					alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
-					alert->Go();
-				}
+				if (ret != B_OK)
+					fprintf(stderr, "BookmarkManager: There was an error "
+						"storing the mini icon for the bookmark: %s\n", strerror(ret));
 			}
 			if (largeIcon != NULL && ret == B_OK)
 				ret = nodeInfo.SetIcon(largeIcon, B_LARGE_ICON);
@@ -215,29 +200,15 @@ BookmarkManager::CreateBookmark(const BPath& path, BString fileName,
 			} else
 				ret = B_OK;
 			if (ret != B_OK) {
-				BString message(B_TRANSLATE_COMMENT("There was an error "
-					"storing the large icon for the bookmark.\n\nError: "
-					"%error", "Don't translate variable %error"));
-				message.ReplaceFirst("%error", strerror(ret));
-				BAlert* alert = new BAlert(B_TRANSLATE("Bookmark error"),
-					message.String(), B_TRANSLATE("OK"), NULL, NULL,
-					B_WIDTH_AS_USUAL, B_STOP_ALERT);
-				alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
-				alert->Go();
+				fprintf(stderr, "BookmarkManager: There was an error "
+					"storing the large icon for the bookmark: %s\n", strerror(ret));
 			}
 		}
 	}
 
 	if (status != B_OK) {
-		BString message(B_TRANSLATE_COMMENT("There was an error creating the "
-			"bookmark file.\n\nError: %error", "Don't translate variable "
-			"%error"));
-		message.ReplaceFirst("%error", strerror(status));
-		BAlert* alert = new BAlert(B_TRANSLATE("Bookmark error"),
-			message.String(), B_TRANSLATE("OK"), NULL, NULL,
-			B_WIDTH_AS_USUAL, B_STOP_ALERT);
-		alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
-		alert->Go();
+		fprintf(stderr, "BookmarkManager: There was an error creating the "
+			"bookmark file: %s\n", strerror(status));
 	} else
 		fBookmarkURLs.AddItem(new BString(url));
 
@@ -279,13 +250,8 @@ BookmarkManager::CreateBookmark(BMessage* message)
 		} else {
 			delete miniIcon;
 			delete largeIcon;
-			BString message(B_TRANSLATE("There was an error setting up "
-				"the bookmark."));
-			BAlert* alert = new BAlert(B_TRANSLATE("Bookmark error"),
-				message.String(), B_TRANSLATE("OK"), NULL, NULL,
-				B_WIDTH_AS_USUAL, B_STOP_ALERT);
-			alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
-			alert->Go();
+			fprintf(stderr, "BookmarkManager: There was an error setting up "
+				"the bookmark.\n");
 		}
 		return;
 }
@@ -303,15 +269,8 @@ BookmarkManager::ShowBookmarks()
 		status = be_roster->Launch(&ref);
 
 	if (status != B_OK && status != B_ALREADY_RUNNING) {
-		BString message(B_TRANSLATE_COMMENT("There was an error trying to "
-			"show the Bookmarks folder.\n\nError: %error",
-			"Don't translate variable %error"));
-		message.ReplaceFirst("%error", strerror(status));
-		BAlert* alert = new BAlert(B_TRANSLATE("Bookmark error"),
-			message.String(), B_TRANSLATE("OK"), NULL, NULL,
-			B_WIDTH_AS_USUAL, B_STOP_ALERT);
-		alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
-		alert->Go();
+		fprintf(stderr, "BookmarkManager: There was an error trying to "
+			"show the Bookmarks folder: %s\n", strerror(status));
 		return;
 	}
 }
@@ -353,25 +312,27 @@ void
 BookmarkManager::_AddBookmarkURLsRecursively(BDirectory& directory,
 	BMessage* message, uint32& addedCount) const
 {
-	BEntry entry;
-	while (directory.GetNextEntry(&entry) == B_OK) {
-		if (entry.IsDirectory()) {
-			BDirectory subBirectory(&entry);
-			// At least preserve the entry file handle when recursing into
-			// sub-folders... eventually we will run out, though, with very
-			// deep hierarchy.
-			entry.Unset();
-			_AddBookmarkURLsRecursively(subBirectory, message, addedCount);
-		} else {
-			BString storedURL;
-			BFile file(&entry, B_READ_ONLY);
-			if (_ReadURLAttr(file, storedURL)) {
-				if (message != NULL)
-					message->AddString("url", storedURL.String());
-				else
-					const_cast<BookmarkManager*>(this)->fBookmarkURLs.AddItem(new BString(storedURL));
-				addedCount++;
+	BObjectList<BDirectory> directories(10, true);
+	directories.AddItem(new BDirectory(directory));
+
+	while (!directories.IsEmpty()) {
+		BDirectory* currentDir = directories.RemoveItem((int32)0);
+		BEntry entry;
+		while (currentDir->GetNextEntry(&entry) == B_OK) {
+			if (entry.IsDirectory()) {
+				directories.AddItem(new BDirectory(&entry));
+			} else {
+				BString storedURL;
+				BFile file(&entry, B_READ_ONLY);
+				if (_ReadURLAttr(file, storedURL)) {
+					if (message != NULL)
+						message->AddString("url", storedURL.String());
+					else
+						const_cast<BookmarkManager*>(this)->fBookmarkURLs.AddItem(new BString(storedURL));
+					addedCount++;
+				}
 			}
 		}
+		delete currentDir;
 	}
 }
