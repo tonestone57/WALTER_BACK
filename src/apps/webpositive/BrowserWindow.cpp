@@ -790,7 +790,13 @@ BrowserWindow::MessageReceived(BMessage* message)
 		case SAVE_PAGE:
 		{
 			fSavePanel->SetSaveText(CurrentWebView()->MainFrameTitle());
-			fSavePanel->Show();
+			if (fSavePanel->Show() != B_OK) {
+				BAlert* alert = new BAlert(B_TRANSLATE("Save page error"),
+					B_TRANSLATE("The save panel could not be opened."),
+					B_TRANSLATE("OK"));
+				alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
+				alert->Go(NULL);
+			}
 			break;
 		}
 
@@ -878,7 +884,13 @@ BrowserWindow::MessageReceived(BMessage* message)
 					// on to the system to handle. Note that this may result
 					// in us opening other supported files via the application
 					// mechanism.
-					be_roster->Launch(&ref);
+					if (be_roster->Launch(&ref) != B_OK) {
+						BAlert* alert = new BAlert(B_TRANSLATE("Open bookmark error"),
+							B_TRANSLATE("The bookmark could not be opened."),
+							B_TRANSLATE("OK"));
+						alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
+						alert->Go(NULL);
+					}
 				}
 				addedCount += addedSubCount;
 			}
@@ -913,12 +925,18 @@ BrowserWindow::MessageReceived(BMessage* message)
 				BPath path;
 				if (_BookmarkPath(path) == B_OK && path.Append(kBookmarkBarSubdir) == B_OK) {
 					entry_ref ref;
-					if (BEntry(path.Path()).GetRef(&ref) == B_OK) {
-						message->AddRef("directory", &ref);
-							// Add under the same name that Tracker would use, if
-							// the ref had been added by dragging and dropping to Tracker.
-						fBookmarkManager->CreateBookmark(this);
+					if (BEntry(path.Path()).GetRef(&ref) != B_OK) {
+						BAlert* alert = new BAlert(B_TRANSLATE("Bookmark error"),
+							B_TRANSLATE("The bookmark could not be created."),
+							B_TRANSLATE("OK"));
+						alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
+						alert->Go(NULL);
+						break;
 					}
+					message->AddRef("directory", &ref);
+						// Add under the same name that Tracker would use, if
+						// the ref had been added by dragging and dropping to Tracker.
+					fBookmarkManager->CreateBookmark(this);
 				}
 				break;
 			}
@@ -943,8 +961,16 @@ BrowserWindow::MessageReceived(BMessage* message)
 				break;
 			BEntry entry(&ref, true);
 			BPath path;
-			if (!entry.Exists() || entry.GetPath(&path) != B_OK)
+			if (!entry.Exists())
 				break;
+			if (entry.GetPath(&path) != B_OK) {
+				BAlert* alert = new BAlert(B_TRANSLATE("Open file error"),
+					B_TRANSLATE("The file could not be opened."),
+					B_TRANSLATE("OK"));
+				alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
+				alert->Go(NULL);
+				break;
+			}
 
 			BUrl url(path);
 			CurrentWebView()->LoadURL(url);
@@ -2414,8 +2440,16 @@ BrowserWindow::_ShowBookmarkBar(bool show)
 		BPath path;
 		entry_ref ref;
 		if (_BookmarkPath(path) == B_OK
-			&& path.Append(kBookmarkBarSubdir) == B_OK
-			&& get_ref_for_path(path.Path(), &ref) == B_OK) {
+			&& path.Append(kBookmarkBarSubdir) == B_OK) {
+			if (get_ref_for_path(path.Path(), &ref) != B_OK) {
+				BAlert* alert = new BAlert(B_TRANSLATE("Bookmark bar error"),
+					B_TRANSLATE("The bookmark bar folder could not be found."),
+					B_TRANSLATE("OK"));
+				alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
+				alert->Go(NULL);
+				fBookmarkBarMenuItem->SetMarked(false);
+				return;
+			}
 			BDirectory dir(&ref);
 			if (dir.CountEntries() == 0) {
 				fBookmarkBarMenuItem->SetMarked(false);
