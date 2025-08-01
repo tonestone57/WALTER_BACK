@@ -7,7 +7,7 @@
 #define BROWSING_HISTORY_H
 
 #include "DateTime.h"
-#include <List.h>
+#include <ObjectList.h>
 #include <Locker.h>
 
 class BFile;
