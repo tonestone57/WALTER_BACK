@@ -253,8 +253,7 @@ BrowsingHistory::_AddItem(const BrowsingHistoryItem& item, bool internal)
 	int32 insertionIndex = count;
 	for (int32 i = 0; i < count; i++) {
 		BrowsingHistoryItem* existingItem
-			= reinterpret_cast<BrowsingHistoryItem*>(
-			fHistoryItems.ItemAtFast(i));
+			= fHistoryItems.ItemAt(i);
 		if (item.URL() == existingItem->URL()) {
 			if (!internal)
 				existingItem->Invoked();
