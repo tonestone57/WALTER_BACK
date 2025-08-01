@@ -1993,7 +1993,7 @@ BrowserWindow::_UpdateHistoryMenu()
 	}
 	fHistoryMenu->AddSeparatorItem();
 
-	std::map<BDate, BObjectList<BMenuItem>*, std::greater<BDate>> itemsByDate;
+	std::map<BDate, BObjectList<BMenuItem, true>*, std::greater<BDate>> itemsByDate;
 
 	int32 maxCount = min_c(count, 20);
 	for (int32 i = 0; i < maxCount; i++) {
@@ -2020,16 +2020,17 @@ BrowserWindow::_UpdateHistoryMenu()
 	BDate yesterday = today;
 	yesterday.AddDays(-1);
 
-	for (auto const& [date, items] : itemsByDate) {
+	for (auto const& entry : itemsByDate) {
 		BString label;
-		if (date == today)
+		if (entry.first == today)
 			label = B_TRANSLATE("Today");
-		else if (date == yesterday)
+		else if (entry.first == yesterday)
 			label = B_TRANSLATE("Yesterday");
 		else
-			label = date.ToString();
+			label = entry.first.ToString();
 
 		BMenu* menu = new BMenu(label);
+		BObjectList<BMenuItem, true>* items = entry.second;
 		for (int32 i = 0; i < items->CountItems(); i++)
 			menu->AddItem(items->ItemAt(i));
 		fHistoryMenu->AddItem(menu);
