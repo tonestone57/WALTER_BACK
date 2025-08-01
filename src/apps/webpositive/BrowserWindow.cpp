@@ -228,11 +228,10 @@ public:
 		if (Value() == B_CONTROL_ON && fOverCloseRect)
 			flags = BControlLook::B_ACTIVATED;
 
-		if (be_control_look->DrawButtonFrame(this, frame, updateRect,
-				base, base, tint, flags) != B_OK) {
-			be_control_look->DrawButtonBackground(this, frame, updateRect,
+		be_control_look->DrawButtonFrame(this, frame, updateRect,
+				base, base, tint, flags);
+		be_control_look->DrawButtonBackground(this, frame, updateRect,
 				base, flags);
-		}
 
 		if (Value() == B_CONTROL_ON && fOverCloseRect) {
 			closeRect.OffsetBy(1, 1);
@@ -1970,43 +1969,6 @@ BrowserWindow::_SetPageIcon(BWebView* view, const BBitmap* icon)
 }
 
 
-static void
-addItemToMenuOrSubmenu(BMenu* menu, BMenuItem* newItem)
-{
-	BString baseURLLabel = baseURL(BString(newItem->Label()));
-	for (int32 i = menu->CountItems() - 1; i >= 0; i--) {
-		BMenuItem* item = menu->ItemAt(i);
-		BString label = item->Label();
-		if (label.FindFirst(baseURLLabel) >= 0) {
-			if (item->Submenu()) {
-				// Submenu was already added in previous iteration.
-				item->Submenu()->AddItem(newItem);
-				return;
-			} else {
-				menu->RemoveItem(item);
-				BMenu* subMenu = new BMenu(baseURLLabel.String());
-				subMenu->AddItem(item);
-				subMenu->AddItem(newItem);
-				// Add common submenu for this base URL, clickable.
-				BMessage* message = new BMessage(GOTO_URL);
-				message->AddString("url", baseURLLabel.String());
-				menu->AddItem(new BMenuItem(subMenu, message), i);
-				return;
-			}
-		}
-	}
-	menu->AddItem(newItem);
-}
-
-
-static void
-addOrDeleteMenu(BMenu* menu, BMenu* toMenu)
-{
-	if (menu->CountItems() > 0)
-		toMenu->AddItem(menu);
-	else
-		delete menu;
-}
 
 
 void
@@ -2031,56 +1993,47 @@ BrowserWindow::_UpdateHistoryMenu()
 	}
 	fHistoryMenu->AddSeparatorItem();
 
-	BObjectList<BMenuItem> items(20, true);
+	std::map<BDate, BObjectList<BMenuItem>*, std::greater<BDate>> itemsByDate;
+
 	int32 maxCount = min_c(count, 20);
 	for (int32 i = 0; i < maxCount; i++) {
-		BrowsingHistoryItem* historyItem = new BrowsingHistoryItem(
-			history->HistoryItemAt(i));
+		BrowsingHistoryItem historyItem = history->HistoryItemAt(i);
 		BMessage* message = new BMessage(GOTO_URL);
-		message->AddString("url", historyItem->URL());
+		message->AddString("url", historyItem.URL());
 
-		BString truncatedUrl(historyItem->URL());
+		BString truncatedUrl(historyItem.URL());
 		be_plain_font->TruncateString(&truncatedUrl, B_TRUNCATE_END, 480);
 		BMenuItem* menuItem = new BMenuItem(truncatedUrl, message);
 		menuItem->SetTarget(this);
-		items.AddItem(menuItem, historyItem);
+
+		BDate date = historyItem.DateTime().Date();
+		if (itemsByDate.find(date) == itemsByDate.end())
+			itemsByDate[date] = new BObjectList<BMenuItem>(5, true);
+		itemsByDate[date]->AddItem(menuItem);
 	}
 	history->Unlock();
 
-	if (items.IsEmpty())
+	if (itemsByDate.empty())
 		return;
 
-	// In this second part, we sort the items by date and group them in
-	// submenus.
-	BDateTime today = BDate::CurrentDate(B_LOCAL_TIME);
+	BDate today = BDate::CurrentDate(B_LOCAL_TIME);
+	BDate yesterday = today;
+	yesterday.AddDays(-1);
 
-	BMenu* currentMenu = NULL;
-	BString currentLabel;
-
-	for (int32 i = 0; i < items.CountItems(); i++) {
-		BMenuItem* menuItem = items.ItemAt(i);
-		BrowsingHistoryItem* historyItem
-			= (BrowsingHistoryItem*)items.LastItem();
-		items.RemoveItem(items.CountItems() - 1);
-			// The list now owns one less item.
-
+	for (auto const& [date, items] : itemsByDate) {
 		BString label;
-		BDate date = historyItem->DateTime().Date();
 		if (date == today)
 			label = B_TRANSLATE("Today");
-		else if (date == today.AddDays(-1))
+		else if (date == yesterday)
 			label = B_TRANSLATE("Yesterday");
 		else
-			label = date.ToLongString();
+			label = date.LongString();
 
-		if (label != currentLabel) {
-			currentLabel = label;
-			currentMenu = new BMenu(label);
-			fHistoryMenu->AddItem(currentMenu);
-		}
-
-		currentMenu->AddItem(menuItem);
-		delete historyItem;
+		BMenu* menu = new BMenu(label);
+		for (int32 i = 0; i < items->CountItems(); i++)
+			menu->AddItem(items->ItemAt(i));
+		fHistoryMenu->AddItem(menu);
+		delete items;
 	}
 
 	fHistoryMenu->AddSeparatorItem();

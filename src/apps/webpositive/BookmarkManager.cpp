@@ -31,7 +31,7 @@
 
 BookmarkManager::BookmarkManager()
 	:
-	fBookmarkURLs(20, true)
+	fBookmarkURLs(20)
 {
 	_LoadBookmarkURLs();
 }

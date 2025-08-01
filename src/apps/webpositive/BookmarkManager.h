@@ -33,15 +33,16 @@ public:
 			void				CreateBookmark(BMessage* message);
 			void				ShowBookmarks();
 
-private:
-			void				_LoadBookmarkURLs();
-			bool				_CheckBookmarkExists(const BString& url) const;
 			bool				_ReadURLAttr(BFile& bookmarkFile,
 									BString& url) const;
 			void				_AddBookmarkURLsRecursively(
 									BDirectory& directory,
 									BMessage* message,
 									uint32& addedCount) const;
+
+private:
+			void				_LoadBookmarkURLs();
+			bool				_CheckBookmarkExists(const BString& url) const;
 
 private:
 			BObjectList<BString>	fBookmarkURLs;
