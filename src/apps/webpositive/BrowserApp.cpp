@@ -478,6 +478,8 @@ BrowserApp::QuitRequested()
 	if (cookieJar.Archive(&cookieArchive) == B_OK)
 		fCookies->SetValue("cookies", cookieArchive);
 
+	BrowsingHistory::DefaultInstance()->Save();
+
 	return true;
 }
 

@@ -7,6 +7,7 @@
 
 
 #include <Path.h>
+#include <ObjectList.h>
 #include <String.h>
 
 #include "PageUserData.h"
@@ -32,16 +33,18 @@ public:
 			void				CreateBookmark(BMessage* message);
 			void				ShowBookmarks();
 
-public:
-			bool				_CheckBookmarkExists(BDirectory& directory,
-									const BString& fileName,
-									const BString& url) const;
+private:
+			void				_LoadBookmarkURLs();
+			bool				_CheckBookmarkExists(const BString& url) const;
 			bool				_ReadURLAttr(BFile& bookmarkFile,
 									BString& url) const;
 			void				_AddBookmarkURLsRecursively(
 									BDirectory& directory,
 									BMessage* message,
 									uint32& addedCount) const;
+
+private:
+			BObjectList<BString>	fBookmarkURLs;
 };
 
 

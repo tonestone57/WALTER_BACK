@@ -106,7 +106,10 @@ BrowsingHistoryItem::operator<(const BrowsingHistoryItem& other) const
 	if (this == &other)
 		return false;
 
-	return fDateTime < other.fDateTime || fURL < other.fURL;
+	if (fDateTime != other.fDateTime)
+		return fDateTime < other.fDateTime;
+
+	return fURL < other.fURL;
 }
 
 
@@ -123,7 +126,10 @@ BrowsingHistoryItem::operator>(const BrowsingHistoryItem& other) const
 	if (this == &other)
 		return false;
 
-	return fDateTime > other.fDateTime || fURL > other.fURL;
+	if (fDateTime != other.fDateTime)
+		return fDateTime > other.fDateTime;
+
+	return fURL > other.fURL;
 }
 
 
@@ -265,10 +271,8 @@ BrowsingHistory::_AddItem(const BrowsingHistoryItem& item, bool internal)
 			= reinterpret_cast<BrowsingHistoryItem*>(
 			fHistoryItems.ItemAtFast(i));
 		if (item.URL() == existingItem->URL()) {
-			if (!internal) {
+			if (!internal)
 				existingItem->Invoked();
-				_SaveSettings();
-			}
 			return true;
 		}
 		if (item < *existingItem)
@@ -280,12 +284,18 @@ BrowsingHistory::_AddItem(const BrowsingHistoryItem& item, bool internal)
 		return false;
 	}
 
-	if (!internal) {
+	if (!internal)
 		newItem->Invoked();
-		_SaveSettings();
-	}
 
 	return true;
+}
+
+
+void
+BrowsingHistory::Save()
+{
+	BAutolock _(this);
+	_SaveSettings();
 }
 
 

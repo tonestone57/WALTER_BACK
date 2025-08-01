@@ -22,12 +22,18 @@
 #include "BrowserWindow.h"
 
 
+#include <ObjectList.h>
+
+
 #undef B_TRANSLATION_CONTEXT
 #define B_TRANSLATION_CONTEXT "BookmarkManager"
 
 
 BookmarkManager::BookmarkManager()
+	:
+	fBookmarkURLs(20, true)
 {
+	_LoadBookmarkURLs();
 }
 
 
@@ -132,11 +138,11 @@ BookmarkManager::CreateBookmark(const BPath& path, BString fileName,
 			// Tracker's drag-and-drop routine created an empty entry for us to fill in.
 			// Go ahead and write to the existing entry.
 		} else {
-			BDirectory directory(path.Path());
-			if (_CheckBookmarkExists(directory, fileName, url) == true) {
-				// The existing entry is a bookmark with the same URL.  No further action needed.
+			if (_CheckBookmarkExists(url))
 				return;
-			} else {
+
+			BEntry entry(entryPath.Path(), true);
+			if (entry.Exists()) {
 				// Find a unique name for the bookmark.
 				int32 tries = 1;
 				while (entry.Exists()) {
@@ -229,7 +235,9 @@ BookmarkManager::CreateBookmark(const BPath& path, BString fileName,
 			B_WIDTH_AS_USUAL, B_STOP_ALERT);
 		alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
 		alert->Go();
-	}
+	} else
+		fBookmarkURLs.AddItem(new BString(url));
+
 	delete miniIcon;
 	delete largeIcon;
 }
@@ -306,28 +314,25 @@ BookmarkManager::ShowBookmarks()
 }
 
 
-bool
-BookmarkManager::_CheckBookmarkExists(BDirectory& directory,
-	const BString& bookmarkName, const BString& url) const
+void
+BookmarkManager::_LoadBookmarkURLs()
 {
-	BEntry entry;
-	while (directory.GetNextEntry(&entry) == B_OK) {
-		if (entry.IsDirectory()) {
-			BDirectory subDir(&entry);
-			if (_CheckBookmarkExists(subDir, bookmarkName, url))
-				return true;
-		} else {
-			char entryName[B_FILE_NAME_LENGTH];
-			if (entry.GetName(entryName) != B_OK || bookmarkName != entryName)
-				continue;
-			BString storedURL;
-			BFile file(&entry, B_READ_ONLY);
-			if (_ReadURLAttr(file, storedURL)) {
-				// Just bail if the bookmark already exists
-				if (storedURL == url)
-					return true;
-			}
-		}
+	BPath path;
+	if (GetBookmarkPath(path) != B_OK)
+		return;
+
+	BDirectory directory(path.Path());
+	uint32 count = 0;
+	_AddBookmarkURLsRecursively(directory, NULL, count);
+}
+
+
+bool
+BookmarkManager::_CheckBookmarkExists(const BString& url) const
+{
+	for (int32 i = 0; i < fBookmarkURLs.CountItems(); i++) {
+		if (*fBookmarkURLs.ItemAt(i) == url)
+			return true;
 	}
 	return false;
 }
@@ -358,7 +363,10 @@ BookmarkManager::_AddBookmarkURLsRecursively(BDirectory& directory,
 			BString storedURL;
 			BFile file(&entry, B_READ_ONLY);
 			if (_ReadURLAttr(file, storedURL)) {
-				message->AddString("url", storedURL.String());
+				if (message != NULL)
+					message->AddString("url", storedURL.String());
+				else
+					const_cast<BookmarkManager*>(this)->fBookmarkURLs.AddItem(new BString(storedURL));
 				addedCount++;
 			}
 		}

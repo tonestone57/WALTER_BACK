@@ -63,6 +63,8 @@ public:
 			BrowsingHistoryItem	HistoryItemAt(int32 index);
 			void				Clear();
 
+			void				Save();
+
 			void				SetMaxHistoryItemAge(int32 days);
 			int32				MaxHistoryItemAge() const;
 
