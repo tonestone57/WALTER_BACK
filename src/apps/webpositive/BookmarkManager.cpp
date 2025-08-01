@@ -9,6 +9,7 @@
 #include <Alert.h>
 #include <Application.h>
 #include <Bitmap.h>
+#include <memory>
 #include <Directory.h>
 #include <Entry.h>
 #include <File.h>
@@ -71,19 +72,17 @@ BookmarkManager::CreateBookmark(BrowserWindow* window)
 	BPath path;
 	status_t status = GetBookmarkPath(path);
 
-	BBitmap* miniIcon = NULL;
-	BBitmap* largeIcon = NULL;
+	std::unique_ptr<BBitmap> miniIcon;
+	std::unique_ptr<BBitmap> largeIcon;
 	PageUserData* userData = static_cast<PageUserData*>(window->CurrentWebView()->GetUserData());
 	if (userData != NULL && userData->PageIcon() != NULL) {
-		miniIcon = new BBitmap(userData->PageIcon());
+		miniIcon = std::make_unique<BBitmap>(userData->PageIcon());
 		// TODO:  retrieve the large icon too, once PageUserData can provide it.
 	}
 
 	if (status == B_OK)
-		CreateBookmark(path, fileName, title, url, miniIcon, largeIcon);
+		CreateBookmark(path, fileName, title, url, miniIcon.get(), largeIcon.get());
 	else {
-		delete miniIcon;
-		delete largeIcon;
 		fprintf(stderr, "BookmarkManager: There was an error retrieving the "
 			"bookmark folder: %s\n", strerror(status));
 	}
@@ -211,9 +210,6 @@ BookmarkManager::CreateBookmark(const BPath& path, BString fileName,
 			"bookmark file: %s\n", strerror(status));
 	} else
 		fBookmarkURLs.AddItem(new BString(url));
-
-	delete miniIcon;
-	delete largeIcon;
 }
 
 
@@ -235,21 +231,19 @@ BookmarkManager::CreateBookmark(BMessage* message)
 			// This string is only present if the message originated from Tracker (drag and drop).
 			fileName = "";
 		}
-		BBitmap* miniIcon = NULL;
-		BBitmap* largeIcon = NULL;
+		std::unique_ptr<BBitmap> miniIcon;
+		std::unique_ptr<BBitmap> largeIcon;
 		BMessage miniIconArchive;
 		if (originatorData.FindMessage("miniIcon", &miniIconArchive) == B_OK)
-			miniIcon = new(std::nothrow) BBitmap(&miniIconArchive);
+			miniIcon = std::make_unique<BBitmap>(&miniIconArchive);
 		BMessage largeIconArchive;
 		if (originatorData.FindMessage("largeIcon", &largeIconArchive) == B_OK)
-			largeIcon = new(std::nothrow) BBitmap(&largeIconArchive);
+			largeIcon = std::make_unique<BBitmap>(&largeIconArchive);
 
 		if (validData == true) {
 			CreateBookmark(BPath(&ref), BString(fileName), BString(title), BString(url),
-				miniIcon, largeIcon);
+				miniIcon.get(), largeIcon.get());
 		} else {
-			delete miniIcon;
-			delete largeIcon;
 			fprintf(stderr, "BookmarkManager: There was an error setting up "
 				"the bookmark.\n");
 		}

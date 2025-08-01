@@ -81,7 +81,7 @@ private:
 			bool				_OpenSettingsFile(BFile& file, uint32 mode);
 
 private:
-			BList				fHistoryItems;
+			BObjectList<BrowsingHistoryItem, true>	fHistoryItems;
 			int32				fMaxHistoryItemAge;
 
 	static	BrowsingHistory		sDefaultInstance;

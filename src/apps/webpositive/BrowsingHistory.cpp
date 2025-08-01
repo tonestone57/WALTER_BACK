@@ -12,6 +12,7 @@
 #include <Autolock.h>
 #include <Entry.h>
 #include <File.h>
+#include <ObjectList.h>
 #include <FindDirectory.h>
 #include <Message.h>
 #include <Path.h>
@@ -171,17 +172,14 @@ BrowsingHistory::BrowsingHistory()
 BrowsingHistory::~BrowsingHistory()
 {
 	_SaveSettings();
-	_Clear();
 }
 
 
 /*static*/ BrowsingHistory*
 BrowsingHistory::DefaultInstance()
 {
-	if (sDefaultInstance.Lock()) {
-		sDefaultInstance._LoadSettings();
-		sDefaultInstance.Unlock();
-	}
+	BAutolock lock(sDefaultInstance);
+	sDefaultInstance._LoadSettings();
 	return &sDefaultInstance;
 }
 
@@ -222,7 +220,7 @@ void
 BrowsingHistory::Clear()
 {
 	BAutolock _(this);
-	_Clear();
+	fHistoryItems.MakeEmpty();
 	_SaveSettings();
 }	
 
@@ -246,19 +244,6 @@ BrowsingHistory::MaxHistoryItemAge() const
 
 
 // #pragma mark - private
-
-
-void
-BrowsingHistory::_Clear()
-{
-	int32 count = CountItems();
-	for (int32 i = 0; i < count; i++) {
-		BrowsingHistoryItem* item = reinterpret_cast<BrowsingHistoryItem*>(
-			fHistoryItems.ItemAtFast(i));
-		delete item;
-	}
-	fHistoryItems.MakeEmpty();
-}
 
 
 bool
