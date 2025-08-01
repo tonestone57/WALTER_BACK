@@ -790,13 +790,7 @@ BrowserWindow::MessageReceived(BMessage* message)
 		case SAVE_PAGE:
 		{
 			fSavePanel->SetSaveText(CurrentWebView()->MainFrameTitle());
-			if (fSavePanel->Show() != B_OK) {
-				BAlert* alert = new BAlert(B_TRANSLATE("Save page error"),
-					B_TRANSLATE("The save panel could not be opened."),
-					B_TRANSLATE("OK"));
-				alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
-				alert->Go(NULL);
-			}
+			fSavePanel->Show();
 			break;
 		}
 
