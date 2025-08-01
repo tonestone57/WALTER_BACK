@@ -2011,18 +2011,15 @@ addOrDeleteMenu(BMenu* menu, BMenu* toMenu)
 void
 BrowserWindow::_UpdateHistoryMenu()
 {
-	for (int32 i = fHistoryMenu->CountItems() - 1; i >= fHistoryMenuFixedItemCount; i--) {
-		BMenuItem* menuItem = fHistoryMenu->RemoveItem(i);
-		delete menuItem;
-	}
+	BMenuItem* item;
+	while ((item = fHistoryMenu->RemoveItem(fHistoryMenuFixedItemCount)) != NULL)
+		delete item;
 
 	BrowsingHistory* history = BrowsingHistory::DefaultInstance();
 	if (!history->Lock())
 		return;
 
 	int32 count = history->CountItems();
-	if (count > 20)
-		count = 20;
 	BMenuItem* clearHistoryItem = new BMenuItem(B_TRANSLATE("Clear history"),
 		new BMessage(CLEAR_HISTORY));
 	clearHistoryItem->SetEnabled(count > 0);
@@ -2033,69 +2030,57 @@ BrowserWindow::_UpdateHistoryMenu()
 	}
 	fHistoryMenu->AddSeparatorItem();
 
-	BDateTime todayStart = BDateTime::CurrentDateTime(B_LOCAL_TIME);
-	todayStart.SetTime(BTime(0, 0, 0));
-
-	BDateTime oneDayAgoStart = todayStart;
-	oneDayAgoStart.Date().AddDays(-1);
-
-	BDateTime twoDaysAgoStart = oneDayAgoStart;
-	twoDaysAgoStart.Date().AddDays(-1);
-
-	BDateTime threeDaysAgoStart = twoDaysAgoStart;
-	threeDaysAgoStart.Date().AddDays(-1);
-
-	BDateTime fourDaysAgoStart = threeDaysAgoStart;
-	fourDaysAgoStart.Date().AddDays(-1);
-
-	BDateTime fiveDaysAgoStart = fourDaysAgoStart;
-	fiveDaysAgoStart.Date().AddDays(-1);
-
-	BMenu* todayMenu = new BMenu(B_TRANSLATE("Today"));
-	BMenu* yesterdayMenu = new BMenu(B_TRANSLATE("Yesterday"));
-	BMenu* twoDaysAgoMenu = new BMenu(
-		twoDaysAgoStart.Date().LongDayName().String());
-	BMenu* threeDaysAgoMenu = new BMenu(
-		threeDaysAgoStart.Date().LongDayName().String());
-	BMenu* fourDaysAgoMenu = new BMenu(
-		fourDaysAgoStart.Date().LongDayName().String());
-	BMenu* fiveDaysAgoMenu = new BMenu(
-		fiveDaysAgoStart.Date().LongDayName().String());
-	BMenu* earlierMenu = new BMenu(B_TRANSLATE("Earlier"));
-
-	for (int32 i = 0; i < count; i++) {
-		BrowsingHistoryItem historyItem = history->HistoryItemAt(i);
+	BObjectList<BMenuItem> items(20, true);
+	int32 maxCount = min_c(count, 20);
+	for (int32 i = 0; i < maxCount; i++) {
+		BrowsingHistoryItem* historyItem = new BrowsingHistoryItem(
+			history->HistoryItemAt(i));
 		BMessage* message = new BMessage(GOTO_URL);
-		message->AddString("url", historyItem.URL().String());
+		message->AddString("url", historyItem->URL());
 
-		BString truncatedUrl(historyItem.URL());
+		BString truncatedUrl(historyItem->URL());
 		be_plain_font->TruncateString(&truncatedUrl, B_TRUNCATE_END, 480);
 		BMenuItem* menuItem = new BMenuItem(truncatedUrl, message);
-
-		if (historyItem.DateTime() < fiveDaysAgoStart)
-			addItemToMenuOrSubmenu(earlierMenu, menuItem);
-		else if (historyItem.DateTime() < fourDaysAgoStart)
-			addItemToMenuOrSubmenu(fiveDaysAgoMenu, menuItem);
-		else if (historyItem.DateTime() < threeDaysAgoStart)
-			addItemToMenuOrSubmenu(fourDaysAgoMenu, menuItem);
-		else if (historyItem.DateTime() < twoDaysAgoStart)
-			addItemToMenuOrSubmenu(threeDaysAgoMenu, menuItem);
-		else if (historyItem.DateTime() < oneDayAgoStart)
-			addItemToMenuOrSubmenu(twoDaysAgoMenu, menuItem);
-		else if (historyItem.DateTime() < todayStart)
-			addItemToMenuOrSubmenu(yesterdayMenu, menuItem);
-		else
-			addItemToMenuOrSubmenu(todayMenu, menuItem);
+		menuItem->SetTarget(this);
+		items.AddItem(menuItem, historyItem);
 	}
 	history->Unlock();
 
-	addOrDeleteMenu(todayMenu, fHistoryMenu);
-	addOrDeleteMenu(yesterdayMenu, fHistoryMenu);
-	addOrDeleteMenu(twoDaysAgoMenu, fHistoryMenu);
-	addOrDeleteMenu(threeDaysAgoMenu, fHistoryMenu);
-	addOrDeleteMenu(fourDaysAgoMenu, fHistoryMenu);
-	addOrDeleteMenu(fiveDaysAgoMenu, fHistoryMenu);
-	addOrDeleteMenu(earlierMenu, fHistoryMenu);
+	if (items.IsEmpty())
+		return;
+
+	// In this second part, we sort the items by date and group them in
+	// submenus.
+	BDateTime today = BDate::CurrentDate(B_LOCAL_TIME);
+
+	BMenu* currentMenu = NULL;
+	BString currentLabel;
+
+	for (int32 i = 0; i < items.CountItems(); i++) {
+		BMenuItem* menuItem = items.ItemAt(i);
+		BrowsingHistoryItem* historyItem
+			= (BrowsingHistoryItem*)items.LastItem();
+		items.RemoveItem(items.CountItems() - 1);
+			// The list now owns one less item.
+
+		BString label;
+		BDate date = historyItem->DateTime().Date();
+		if (date == today)
+			label = B_TRANSLATE("Today");
+		else if (date == today.AddDays(-1))
+			label = B_TRANSLATE("Yesterday");
+		else
+			label = date.ToLongString();
+
+		if (label != currentLabel) {
+			currentLabel = label;
+			currentMenu = new BMenu(label);
+			fHistoryMenu->AddItem(currentMenu);
+		}
+
+		currentMenu->AddItem(menuItem);
+		delete historyItem;
+	}
 
 	fHistoryMenu->AddSeparatorItem();
 	fHistoryMenu->AddItem(new BMenuItem(B_TRANSLATE("Show all history"),
