@@ -145,12 +145,15 @@ BookmarkManager::CreateBookmark(const BPath& path, BString fileName,
 			if (entry.Exists()) {
 				// Find a unique name for the bookmark.
 				int32 tries = 1;
+				BString originalFileName = fileName;
 				while (entry.Exists()) {
+					fileName = originalFileName;
 					fileName << " " << tries++;
 					entryPath = path;
 					status = entryPath.Append(fileName);
-					if (status == B_OK)
-						status = entry.SetTo(entryPath.Path(), true);
+					if (status != B_OK)
+						break;
+					status = entry.SetTo(entryPath.Path(), true);
 					if (status != B_OK)
 						break;
 				}
