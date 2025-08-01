@@ -274,23 +274,22 @@ DownloadProgressView::Init(BMessage* archive)
 	BGroupLayout* layout = GroupLayout();
 	layout->SetInsets(8, 5, 5, 6);
 	layout->AddView(fIconView);
-	BView* verticalGroup = BGroupLayoutBuilder(B_VERTICAL, 3)
+	BView* statusGroup = BGroupLayoutBuilder(B_VERTICAL, 3)
 		.Add(fStatusBar)
 		.Add(fInfoView)
-		.TopView()
-	;
-	verticalGroup->SetViewColor(ViewColor());
-	layout->AddView(verticalGroup);
+		.TopView();
+	statusGroup->SetViewColor(ViewColor());
 
-	BGroupLayoutBuilder builder(B_VERTICAL, 3);
-	builder.Add(fTopButton);
-	if (fPauseButton)
-		builder.Add(fPauseButton);
-	builder.Add(fBottomButton);
+	BGroupLayoutBuilder buttonGroupBuilder(B_VERTICAL, 3);
+	buttonGroupBuilder.Add(fTopButton);
+	if (fPauseButton != NULL)
+		buttonGroupBuilder.Add(fPauseButton);
+	buttonGroupBuilder.Add(fBottomButton);
+	BView* buttonGroup = buttonGroupBuilder.TopView();
+	buttonGroup->SetViewColor(ViewColor());
 
-	verticalGroup = builder.TopView();
-	verticalGroup->SetViewColor(ViewColor());
-	layout->AddView(verticalGroup);
+	layout->AddView(statusGroup);
+	layout->AddView(buttonGroup);
 
 	BFont font;
 	fInfoView->GetFont(&font);
