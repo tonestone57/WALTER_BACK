@@ -1993,8 +1993,6 @@ BrowserWindow::_UpdateHistoryMenu()
 	}
 	fHistoryMenu->AddSeparatorItem();
 
-	std::map<BDate, BObjectList<BMenuItem, true>*, std::greater<BDate>> itemsByDate;
-
 	int32 maxCount = min_c(count, 20);
 	for (int32 i = 0; i < maxCount; i++) {
 		BrowsingHistoryItem historyItem = history->HistoryItemAt(i);
@@ -2005,37 +2003,9 @@ BrowserWindow::_UpdateHistoryMenu()
 		be_plain_font->TruncateString(&truncatedUrl, B_TRUNCATE_END, 480);
 		BMenuItem* menuItem = new BMenuItem(truncatedUrl, message);
 		menuItem->SetTarget(this);
-
-		BDate date = historyItem.DateTime().Date();
-		if (itemsByDate.find(date) == itemsByDate.end())
-			itemsByDate[date] = new BObjectList<BMenuItem, true>(5);
-		itemsByDate[date]->AddItem(menuItem);
+		fHistoryMenu->AddItem(menuItem);
 	}
 	history->Unlock();
-
-	if (itemsByDate.empty())
-		return;
-
-	BDate today = BDate::CurrentDate(B_LOCAL_TIME);
-	BDate yesterday = today;
-	yesterday.AddDays(-1);
-
-	for (auto const& entry : itemsByDate) {
-		BString label;
-		if (entry.first == today)
-			label = B_TRANSLATE("Today");
-		else if (entry.first == yesterday)
-			label = B_TRANSLATE("Yesterday");
-		else
-			label = entry.first.ToString();
-
-		BMenu* menu = new BMenu(label);
-		BObjectList<BMenuItem, true>* items = entry.second;
-		for (int32 i = 0; i < items->CountItems(); i++)
-			menu->AddItem(items->ItemAt(i));
-		fHistoryMenu->AddItem(menu);
-		delete items;
-	}
 
 	fHistoryMenu->AddSeparatorItem();
 	fHistoryMenu->AddItem(new BMenuItem(B_TRANSLATE("Show all history"),
