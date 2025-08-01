@@ -192,8 +192,7 @@ DownloadProgressView::DownloadProgressView(const BMessage* archive)
 	BGroupView(B_HORIZONTAL, 8),
 	fDownload(NULL),
 	fURL(),
-	fPath(),
-	fPauseButton(NULL)
+	fPath()
 {
 	const char* string;
 	if (archive->FindString("path", &string) == B_OK)
@@ -275,22 +274,22 @@ DownloadProgressView::Init(BMessage* archive)
 	BGroupLayout* layout = GroupLayout();
 	layout->SetInsets(8, 5, 5, 6);
 	layout->AddView(fIconView);
-	BView* statusGroup = BGroupLayoutBuilder(B_VERTICAL, 3)
+	BView* verticalGroup = BGroupLayoutBuilder(B_VERTICAL, 3)
 		.Add(fStatusBar)
 		.Add(fInfoView)
-		.TopView();
-	statusGroup->SetViewColor(ViewColor());
+		.TopView()
+	;
+	verticalGroup->SetViewColor(ViewColor());
+	layout->AddView(verticalGroup);
 
-	BGroupLayoutBuilder buttonGroupBuilder(B_VERTICAL, 3);
-	buttonGroupBuilder.Add(fTopButton);
-	if (fPauseButton != NULL)
-		buttonGroupBuilder.Add(fPauseButton);
-	buttonGroupBuilder.Add(fBottomButton);
-	BView* buttonGroup = buttonGroupBuilder.TopView();
-	buttonGroup->SetViewColor(ViewColor());
-
-	layout->AddView(statusGroup);
-	layout->AddView(buttonGroup);
+	verticalGroup = BGroupLayoutBuilder(B_VERTICAL, 3)
+		.Add(fTopButton)
+		.Add(fPauseButton)
+		.Add(fBottomButton)
+		.TopView()
+	;
+	verticalGroup->SetViewColor(ViewColor());
+	layout->AddView(verticalGroup);
 
 	BFont font;
 	fInfoView->GetFont(&font);

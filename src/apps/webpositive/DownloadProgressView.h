@@ -66,11 +66,11 @@ private:
 			BStatusBar*			fStatusBar;
 			BStringView*		fInfoView;
 			SmallButton*		fTopButton;
+			SmallButton*		fPauseButton;
 			SmallButton*		fBottomButton;
 			BDownload*			fDownload;
 			BString				fURL;
 			BPath				fPath;
-			SmallButton*		fPauseButton;
 
 			off_t				fCurrentSize;
 			off_t				fExpectedSize;
