@@ -2008,7 +2008,7 @@ BrowserWindow::_UpdateHistoryMenu()
 
 		BDate date = historyItem.DateTime().Date();
 		if (itemsByDate.find(date) == itemsByDate.end())
-			itemsByDate[date] = new BObjectList<BMenuItem>(5, true);
+			itemsByDate[date] = new BObjectList<BMenuItem, true>(5);
 		itemsByDate[date]->AddItem(menuItem);
 	}
 	history->Unlock();
@@ -2027,7 +2027,7 @@ BrowserWindow::_UpdateHistoryMenu()
 		else if (date == yesterday)
 			label = B_TRANSLATE("Yesterday");
 		else
-			label = date.LongString();
+			label = date.ToString();
 
 		BMenu* menu = new BMenu(label);
 		for (int32 i = 0; i < items->CountItems(); i++)
