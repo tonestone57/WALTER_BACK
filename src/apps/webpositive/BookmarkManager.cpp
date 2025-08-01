@@ -306,11 +306,11 @@ void
 BookmarkManager::_AddBookmarkURLsRecursively(BDirectory& directory,
 	BMessage* message, uint32& addedCount) const
 {
-	BObjectList<BDirectory> directories(10, true);
+	BObjectList<BDirectory, true> directories(10);
 	directories.AddItem(new BDirectory(directory));
 
 	while (!directories.IsEmpty()) {
-		BDirectory* currentDir = directories.RemoveItem((int32)0);
+		BDirectory* currentDir = directories.RemoveItemAt(0);
 		BEntry entry;
 		while (currentDir->GetNextEntry(&entry) == B_OK) {
 			if (entry.IsDirectory()) {
