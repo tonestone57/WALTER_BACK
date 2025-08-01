@@ -2027,7 +2027,7 @@ BrowserWindow::_UpdateHistoryMenu()
 		else if (entry.first == yesterday)
 			label = B_TRANSLATE("Yesterday");
 		else
-			label = entry.first.ToString();
+			label = entry.first.LongString();
 
 		BMenu* menu = new BMenu(label);
 		BObjectList<BMenuItem, true>* items = entry.second;
