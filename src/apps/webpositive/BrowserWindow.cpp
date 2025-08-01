@@ -2026,8 +2026,13 @@ BrowserWindow::_UpdateHistoryMenu()
 			label = B_TRANSLATE("Today");
 		else if (entry.first == yesterday)
 			label = B_TRANSLATE("Yesterday");
-		else
-			label = entry.first.LongString();
+		else {
+			char buffer[256];
+			time_t date_t = entry.first.Time_t();
+			struct tm* date_tm = localtime(&date_t);
+			strftime(buffer, sizeof(buffer), "%x", date_tm);
+			label = buffer;
+		}
 
 		BMenu* menu = new BMenu(label);
 		BObjectList<BMenuItem, true>* items = entry.second;
