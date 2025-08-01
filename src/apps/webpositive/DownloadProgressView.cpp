@@ -192,7 +192,8 @@ DownloadProgressView::DownloadProgressView(const BMessage* archive)
 	BGroupView(B_HORIZONTAL, 8),
 	fDownload(NULL),
 	fURL(),
-	fPath()
+	fPath(),
+	fPauseButton(NULL)
 {
 	const char* string;
 	if (archive->FindString("path", &string) == B_OK)
