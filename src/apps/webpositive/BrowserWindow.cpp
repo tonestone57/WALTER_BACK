@@ -224,18 +224,19 @@ public:
 		else
 			tint *= 1.2;
 
+		uint32 flags = 0;
+		if (Value() == B_CONTROL_ON && fOverCloseRect)
+			flags = BControlLook::B_ACTIVATED;
+
+		if (be_control_look->DrawButtonFrame(this, frame, updateRect,
+				base, base, tint, flags) != B_OK) {
+			be_control_look->DrawButtonBackground(this, frame, updateRect,
+				base, flags);
+		}
+
 		if (Value() == B_CONTROL_ON && fOverCloseRect) {
-			// Draw the button frame
-			be_control_look->DrawButtonFrame(this, frame, updateRect,
-				base, base, BControlLook::B_ACTIVATED
-					| BControlLook::B_BLEND_FRAME);
-			be_control_look->DrawButtonBackground(this, frame,
-				updateRect, base, BControlLook::B_ACTIVATED);
 			closeRect.OffsetBy(1, 1);
 			tint *= 1.2;
-		} else {
-			SetHighColor(base);
-			FillRect(updateRect);
 		}
 
 		// Draw the ×
