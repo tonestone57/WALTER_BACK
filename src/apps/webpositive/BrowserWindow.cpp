@@ -1187,8 +1187,19 @@ BrowserWindow::MessageReceived(BMessage* message)
 		}
 
 		case MSG_DATA_LOADED:
-			// TODO: Populate menus
+		{
+			BObjectList<BrowsingHistoryItem>* historyItems = NULL;
+			if (message->FindPointer("history", (void**)&historyItems) == B_OK) {
+				for (int32 i = 0; i < historyItems->CountItems(); i++) {
+					BrowsingHistoryItem* item = historyItems->ItemAt(i);
+					BMessage* historyMessage = new BMessage(GOTO_URL);
+					historyMessage->AddString("url", item->URL());
+					fHistoryMenu->AddItem(new BMenuItem(item->URL(), historyMessage));
+				}
+				delete historyItems;
+			}
 			break;
+		}
 
 		case MSG_POPULATE_HISTORY_MENU:
 			_UpdateHistoryMenu();
