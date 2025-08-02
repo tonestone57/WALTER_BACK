@@ -829,8 +829,8 @@ BrowserWindow::MessageReceived(BMessage* message)
 		case MSG_FIND_TEXT_CHANGED:
 		{
 			bool findTextAvailable = strlen(fFindView->Text()) > 0;
-	fMenuManager->FindPreviousMenuItem()->SetEnabled(false);
-	fMenuManager->FindNextMenuItem()->SetEnabled(false);
+			fMenuManager->FindPreviousMenuItem()->SetEnabled(findTextAvailable);
+			fMenuManager->FindNextMenuItem()->SetEnabled(findTextAvailable);
 			break;
 		}
 		case EDIT_FIND_PREVIOUS:
@@ -1630,36 +1630,47 @@ BrowserWindow::AuthenticationChallenge(BString message, BString& inOutUser,
 	// TODO: Using the message as key here is not so smart.
 	HashString key(message);
 
-	if (failureCount == 0) {
-		if (persistentStorage->Contains(key)) {
-			Credentials credentials = persistentStorage->GetCredentials(key);
-			inOutUser = credentials.Username();
-			inOutPassword = credentials.Password();
-			return true;
-		} else if (sessionStorage->Contains(key)) {
-			Credentials credentials = sessionStorage->GetCredentials(key);
-			inOutUser = credentials.Username();
-			inOutPassword = credentials.Password();
-			return true;
-		}
+	Credentials credentials;
+	bool storedCredentials = false;
+	if (persistentStorage->Contains(key)) {
+		credentials = persistentStorage->GetCredentials(key);
+		storedCredentials = true;
+	} else if (sessionStorage->Contains(key)) {
+		credentials = sessionStorage->GetCredentials(key);
+		storedCredentials = true;
 	}
+
+	if (storedCredentials)
+		inOutUser = credentials.Username();
+
 	// Switch to the page for which this authentication is required.
 	if (!_ShowPage(view))
 		return false;
 
-	AuthenticationPanel* panel = new AuthenticationPanel(Frame());
-		// Panel auto-destructs.
-	bool success = panel->getAuthentication(message, inOutUser, inOutPassword,
-		inOutRememberCredentials, failureCount > 0, inOutUser, inOutPassword,
-		&inOutRememberCredentials);
-	if (success) {
-		Credentials credentials(inOutUser, inOutPassword);
-		if (inOutRememberCredentials)
-			persistentStorage->PutCredentials(key, credentials);
-		else
-			sessionStorage->PutCredentials(key, credentials);
+	while (true) {
+		AuthenticationPanel* panel = new AuthenticationPanel(Frame());
+			// Panel auto-destructs.
+		bool success = panel->getAuthentication(message, inOutUser,
+			BString(), inOutRememberCredentials, failureCount > 0,
+			inOutUser, inOutPassword, &inOutRememberCredentials);
+
+		if (!success)
+			return false;
+
+		if (storedCredentials) {
+			if (credentials.CheckPassword(inOutPassword))
+				return true;
+		} else {
+			credentials = Credentials(inOutUser, inOutPassword);
+			if (inOutRememberCredentials)
+				persistentStorage->PutCredentials(key, credentials);
+			else
+				sessionStorage->PutCredentials(key, credentials);
+			return true;
+		}
+
+		failureCount++;
 	}
-	return success;
 }
 
 

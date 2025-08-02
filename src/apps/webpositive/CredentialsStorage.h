@@ -37,12 +37,11 @@ public:
 			bool				operator!=(const Credentials& other) const;
 
 			const BString&		Username() const;
-			const BString&		Password() const;
+			bool				CheckPassword(const BString& password) const;
 
 private:
 			BString				fUsername;
-			BString				fPassword;
-			BString				fSalt;
+			BString				fPasswordHash;
 };
 
 
