@@ -205,14 +205,6 @@ BrowserApp::ReadyToRun()
 		mainSettingsPath.String()));
 
 	fLastWindowFrame = fSettings->GetValue("window frame", fLastWindowFrame);
-	BRect consoleWindowFrame = fSettings->GetValue("console window frame",
-		BRect(50, 50, 400, 300));
-	BRect cookieWindowFrame = fSettings->GetValue("cookie window frame",
-		BRect(50, 50, 400, 300));
-
-	fConsoleWindow = new ConsoleWindow(consoleWindowFrame);
-	fCookieWindow = new CookieWindow(cookieWindowFrame, fContext->GetCookieJar());
-
 	fInitialized = true;
 
 	int32 pagesCreated = 0;
@@ -374,9 +366,20 @@ BrowserApp::MessageReceived(BMessage* message)
 		_ShowWindow(message, fSettingsWindow);
 		break;
 	case SHOW_CONSOLE_WINDOW:
+		if (fConsoleWindow == NULL) {
+			BRect consoleWindowFrame = fSettings->GetValue("console window frame",
+				BRect(50, 50, 400, 300));
+			fConsoleWindow = new ConsoleWindow(consoleWindowFrame);
+		}
 		_ShowWindow(message, fConsoleWindow);
 		break;
 	case SHOW_COOKIE_WINDOW:
+		if (fCookieWindow == NULL) {
+			BRect cookieWindowFrame = fSettings->GetValue("cookie window frame",
+				BRect(50, 50, 400, 300));
+			fCookieWindow = new CookieWindow(cookieWindowFrame,
+				fContext->GetCookieJar());
+		}
 		_ShowWindow(message, fCookieWindow);
 		break;
 	case ADD_CONSOLE_MESSAGE:
