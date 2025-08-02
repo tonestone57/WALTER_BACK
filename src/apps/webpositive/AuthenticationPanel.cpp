@@ -194,11 +194,14 @@ bool AuthenticationPanel::getAuthentication(const BString& text,
 	// AuthenticationPanel wants to quit.
 	Lock();
 
-	user = m_usernameTextControl->Text();
-	pass = m_passwordTextControl->Text();
-	if (rememberCredentials)
-		*rememberCredentials = m_rememberCredentialsCheckBox->Value()
-			== B_CONTROL_ON;
+	if (!m_cancelled) {
+		user = m_usernameTextControl->Text();
+		pass = m_passwordTextControl->Text();
+		if (rememberCredentials)
+			*rememberCredentials = m_rememberCredentialsCheckBox->Value()
+				== B_CONTROL_ON;
+	}
+	m_passwordTextControl->SetText("");
 
 	bool canceled = m_cancelled;
 	Quit();

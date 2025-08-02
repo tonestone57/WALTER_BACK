@@ -190,7 +190,8 @@ DownloadWindow::~DownloadWindow()
 {
 	delete fSaveSettingsRunner;
 	// Only necessary to save the current progress of unfinished downloads:
-	_SaveSettings();
+	if (fSaveSettingsRunner)
+		_SaveSettings();
 }
 
 
@@ -363,34 +364,15 @@ DownloadWindow::_DownloadStarted(BDownload* download)
 {
 	download->Start(BPath(fDownloadPath.String()));
 
-	int32 finishedCount = 0;
-	int32 missingCount = 0;
-	int32 index = 0;
-	for (int32 i = fDownloadViewsLayout->CountItems() - 1;
-			BLayoutItem* item = fDownloadViewsLayout->ItemAt(i); i--) {
-		DownloadProgressView* view = dynamic_cast<DownloadProgressView*>(
-			item->View());
-		if (!view)
-			continue;
-		if (view->URL() == download->Url().UrlString()) {
-			index = i;
-			view->RemoveSelf();
-			delete view;
-			continue;
-		}
-		if (view->IsFinished())
-			finishedCount++;
-		if (view->IsMissing())
-			missingCount++;
-	}
-	fRemoveFinishedButton->SetEnabled(finishedCount > 0);
-	fRemoveMissingButton->SetEnabled(missingCount > 0);
+	if (fDownloadViews.find(download->Url().UrlString()) != fDownloadViews.end())
+		return;
 	DownloadProgressView* view = new DownloadProgressView(download);
 	if (!view->Init()) {
 		delete view;
 		return;
 	}
-	fDownloadViewsLayout->AddView(index, view);
+	fDownloadViews[download->Url().UrlString()] = view;
+	fDownloadViewsLayout->AddView(view);
 
 	// Scroll new download into view
 	if (BScrollBar* scrollBar = fDownloadsScrollView->ScrollBar(B_VERTICAL)) {
@@ -425,26 +407,12 @@ DownloadWindow::_DownloadStarted(BDownload* download)
 void
 DownloadWindow::_DownloadFinished(BDownload* download)
 {
-	int32 finishedCount = 0;
-	int32 missingCount = 0;
-	for (int32 i = 0;
-			BLayoutItem* item = fDownloadViewsLayout->ItemAt(i); i++) {
-		DownloadProgressView* view = dynamic_cast<DownloadProgressView*>(
-			item->View());
-		if (!view)
-			continue;
-		if (download && view->Download() == download) {
+	if (download) {
+		DownloadProgressView* view = fDownloadViews[download->Url().UrlString()];
+		if (view)
 			view->DownloadFinished();
-			finishedCount++;
-			continue;
-		}
-		if (view->IsFinished())
-			finishedCount++;
-		if (view->IsMissing())
-			missingCount++;
 	}
-	fRemoveFinishedButton->SetEnabled(finishedCount > 0);
-	fRemoveMissingButton->SetEnabled(missingCount > 0);
+	_ValidateButtonStatus();
 	if (download)
 		_SaveSettingsIfNeeded();
 }
@@ -453,21 +421,17 @@ DownloadWindow::_DownloadFinished(BDownload* download)
 void
 DownloadWindow::_RemoveFinishedDownloads()
 {
-	int32 missingCount = 0;
-	for (int32 i = fDownloadViewsLayout->CountItems() - 1;
-			BLayoutItem* item = fDownloadViewsLayout->ItemAt(i); i--) {
-		DownloadProgressView* view = dynamic_cast<DownloadProgressView*>(
-			item->View());
-		if (!view)
-			continue;
-		if (view->IsFinished()) {
-			view->RemoveSelf();
-			delete view;
-		} else if (view->IsMissing())
-			missingCount++;
+	BAutolock _(this);
+	for (auto it = fDownloadViews.begin(); it != fDownloadViews.end();) {
+		if (it->second->IsFinished()) {
+			it->second->RemoveSelf();
+			delete it->second;
+			it = fDownloadViews.erase(it);
+		} else {
+			++it;
+		}
 	}
-	fRemoveFinishedButton->SetEnabled(false);
-	fRemoveMissingButton->SetEnabled(missingCount > 0);
+	_ValidateButtonStatus();
 	_SaveSettingsIfNeeded();
 }
 
@@ -475,21 +439,17 @@ DownloadWindow::_RemoveFinishedDownloads()
 void
 DownloadWindow::_RemoveMissingDownloads()
 {
-	int32 finishedCount = 0;
-	for (int32 i = fDownloadViewsLayout->CountItems() - 1;
-			BLayoutItem* item = fDownloadViewsLayout->ItemAt(i); i--) {
-		DownloadProgressView* view = dynamic_cast<DownloadProgressView*>(
-			item->View());
-		if (!view)
-			continue;
-		if (view->IsMissing()) {
-			view->RemoveSelf();
-			delete view;
-		} else if (view->IsFinished())
-			finishedCount++;
+	BAutolock _(this);
+	for (auto it = fDownloadViews.begin(); it != fDownloadViews.end();) {
+		if (it->second->IsMissing()) {
+			it->second->RemoveSelf();
+			delete it->second;
+			it = fDownloadViews.erase(it);
+		} else {
+			++it;
+		}
 	}
-	fRemoveMissingButton->SetEnabled(false);
-	fRemoveFinishedButton->SetEnabled(finishedCount > 0);
+	_ValidateButtonStatus();
 	_SaveSettingsIfNeeded();
 }
 
@@ -531,8 +491,10 @@ void
 DownloadWindow::_SaveSettings()
 {
 	BFile file;
-	if (!_OpenSettingsFile(file, B_ERASE_FILE | B_CREATE_FILE | B_WRITE_ONLY))
+	if (!_OpenSettingsFile(file, B_ERASE_FILE | B_CREATE_FILE | B_WRITE_ONLY)) {
+		fprintf(stderr, "Failed to open download settings file for writing.\\n");
 		return;
+	}
 	BMessage message;
 	for (int32 i = fDownloadViewsLayout->CountItems() - 1;
 			BLayoutItem* item = fDownloadViewsLayout->ItemAt(i); i--) {
@@ -545,7 +507,8 @@ DownloadWindow::_SaveSettings()
 		if (view->SaveSettings(&downloadArchive) == B_OK)
 			message.AddMessage("download", &downloadArchive);
 	}
-	message.Flatten(&file);
+	if (message.Flatten(&file) != B_OK)
+		fprintf(stderr, "Failed to save download settings.\\n");
 }
 
 
@@ -556,16 +519,22 @@ DownloadWindow::_LoadSettings()
 	if (!_OpenSettingsFile(file, B_READ_ONLY))
 		return;
 	BMessage message;
-	if (message.Unflatten(&file) != B_OK)
+	if (message.Unflatten(&file) != B_OK) {
+		fprintf(stderr, "Failed to load download settings.\\n");
 		return;
+	}
 	BMessage downloadArchive;
 	for (int32 i = 0;
 			message.FindMessage("download", i, &downloadArchive) == B_OK;
 			i++) {
-		DownloadProgressView* view = new DownloadProgressView(
+		DownloadProgressView* view = new(std::nothrow) DownloadProgressView(
 			&downloadArchive);
-		if (!view->Init(&downloadArchive))
+		if (view == NULL)
 			continue;
+		if (!view->Init(&downloadArchive)) {
+			delete view;
+			continue;
+		}
 		fDownloadViewsLayout->AddView(0, view);
 	}
 }

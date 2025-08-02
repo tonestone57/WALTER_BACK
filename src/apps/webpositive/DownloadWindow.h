@@ -10,6 +10,8 @@
 #include <String.h>
 #include <Window.h>
 
+#include <map>
+
 class BButton;
 class BFile;
 class BGroupLayout;
@@ -48,6 +50,7 @@ private:
 			BMessageRunner*		fSaveSettingsRunner;
 			BScrollView*		fDownloadsScrollView;
 			BGroupLayout*		fDownloadViewsLayout;
+			std::map<BString, DownloadProgressView*> fDownloadViews;
 			BButton*			fRemoveFinishedButton;
 			BButton*			fRemoveMissingButton;
 			BString				fDownloadPath;
