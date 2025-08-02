@@ -27,6 +27,7 @@ enum {
 	COOKIE_IMPORT = 'cimp',
 	COOKIE_EXPORT = 'cexp',
 	COOKIE_DELETE = 'cdel',
+	COOKIE_EDIT = 'cedt',
 	COOKIE_REFRESH = 'rfsh',
 
 	DOMAIN_SELECTED = 'dmsl',
@@ -46,7 +47,7 @@ public:
 	void DrawField(BField* field, BRect rect, BView* parent) {
 		BDateField* dateField = (BDateField*)field;
 		if (dateField->UnixTime() == -1) {
-			DrawString(B_TRANSLATE("Session cookie"), parent, rect);
+		DrawString(B_TRANSLATE("Session"), parent, rect);
 		} else {
 			BDateColumn::DrawField(field, rect, parent);
 		}
@@ -67,6 +68,8 @@ public:
 		SetField(new BStringField(cookie.Name().String()), 0);
 		SetField(new BStringField(cookie.Path().String()), 1);
 		time_t expiration = cookie.ExpirationDate();
+		if (cookie.IsSession())
+			expiration = -1;
 		SetField(new BDateField(&expiration), 2);
 		SetField(new BStringField(cookie.Value().String()), 3);
 
@@ -158,6 +161,8 @@ CookieWindow::CookieWindow(BRect frame,
 				NULL))
 #endif
 			.AddGlue()
+			.Add(new BButton("edit", B_TRANSLATE("Edit"),
+				new BMessage(COOKIE_EDIT)))
 			.Add(fDeleteButton), 3);
 
 	fDomains->SetSelectionMessage(new BMessage(DOMAIN_SELECTED));
@@ -194,6 +199,18 @@ CookieWindow::MessageReceived(BMessage* message)
 		case COOKIE_DELETE:
 			_DeleteCookies();
 			return;
+
+		case COOKIE_EDIT:
+		{
+			BRow* row = fCookies->CurrentSelection(NULL);
+			if (row == NULL)
+				return;
+			CookieRow* cookieRow = static_cast<CookieRow*>(row);
+			CookieEditor* editor = new CookieEditor(Frame().OffsetByCopy(20, 20),
+				cookieRow->Cookie(), this);
+			editor->Show();
+			return;
+		}
 	}
 	BWindow::MessageReceived(message);
 }
@@ -390,6 +407,12 @@ CookieWindow::_ShowCookiesForDomain(BString domain)
 void
 CookieWindow::_DeleteCookies()
 {
+	BAlert* alert = new BAlert(B_TRANSLATE("Delete cookies"),
+		B_TRANSLATE("Are you sure you want to delete the selected cookies?"),
+		B_TRANSLATE("Delete"), B_TRANSLATE("Cancel"));
+	if (alert->Go() == 1)
+		return;
+
 	BRow* row;
 	while ((row = fCookies->CurrentSelection(NULL)) != NULL) {
 		CookieRow* cookieRow = static_cast<CookieRow*>(row);

@@ -13,6 +13,8 @@
 
 #include <NetworkCookieJar.h>
 
+#include "CookieEditor.h"
+
 
 class BColumnListView;
 class BOutlineListView;

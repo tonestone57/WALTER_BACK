@@ -42,17 +42,6 @@ Credentials::Credentials(const Credentials& other)
 }
 
 
-static void
-_convertToB64(char* salt, int size)
-{
-	const char* b64chars =
-		"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-	for (int i = 0; i < size; i++)
-		salt[i] = b64chars[salt[i] % 64];
-	salt[size - 1] = 0;
-}
-
-
 Credentials::Credentials(const BMessage* archive)
 {
 	if (archive == NULL)

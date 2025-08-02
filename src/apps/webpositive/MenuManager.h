@@ -25,7 +25,7 @@ public:
 			BMenuItem*			ForwardMenuItem() const { return fForwardMenuItem; }
 			BMenuItem*			BookmarkBarMenuItem() const { return fBookmarkBarMenuItem; }
 
-			BMenu*				HistoryMenu() const { return fHistoryMenu; }
+			BMenu*				HistoryMenu();
 			int32				HistoryMenuFixedItemCount() const { return fHistoryMenuFixedItemCount; }
 
 private:

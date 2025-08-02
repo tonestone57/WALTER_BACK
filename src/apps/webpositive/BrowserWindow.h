@@ -249,6 +249,7 @@ private:
 			uint32				fVisibleInterfaceElements;
 			bigtime_t			fLastMouseMovedTime;
 			BPoint				fLastMousePos;
+			bigtime_t			fLastClipboardCheckTime;
 
 			BReference<BPrivate::Network::BUrlContext>	fContext;
 

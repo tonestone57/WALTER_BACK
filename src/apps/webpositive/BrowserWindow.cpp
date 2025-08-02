@@ -257,6 +257,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	fVisibleInterfaceElements(interfaceElements),
 	fHistoryItems(NULL),
 	fMenuManager(std::make_unique<MenuManager>(this)),
+	fLastClipboardCheckTime(0),
 	fContext(context),
 	fAppSettings(appSettings),
 	fZoomTextOnly(false),
@@ -512,7 +513,6 @@ BrowserWindow::DispatchMessage(BMessage* message, BHandler* target)
 			if (bytes[0] == B_RETURN) {
 				// Do it in such a way that the user sees the Go-button go down.
 				_InvokeButtonVisibly(fURLInputGroup->GoButton());
-				return;
 			} else if (bytes[0] == B_ESCAPE) {
 				// Replace edited text with the current URL.
 				fURLInputGroup->LockURLInput(false);
@@ -935,7 +935,10 @@ BrowserWindow::MessageReceived(BMessage* message)
 			int32 index;
 			if (message->FindInt32("tab index", &index) != B_OK)
 				index = -1;
-			_TabChanged(index);
+			if (index == -1 && fTabManager->CountTabs() == 0)
+				PostMessage(B_QUIT_REQUESTED);
+			else
+				_TabChanged(index);
 			break;
 		}
 
@@ -1136,7 +1139,9 @@ BrowserWindow::SetCurrentWebView(BWebView* webView)
 		PageUserData* userData = static_cast<PageUserData*>(
 			CurrentWebView()->GetUserData());
 		if (userData == NULL) {
-			userData = new PageUserData(CurrentFocus());
+			userData = new(std::nothrow) PageUserData(CurrentFocus());
+			if (userData == NULL)
+				return;
 			CurrentWebView()->SetUserData(userData);
 		}
 		userData->SetFocusedView(CurrentFocus());
@@ -1849,9 +1854,13 @@ BrowserWindow::_UpdateClipboardItems()
 		bool canPaste = false;
 		// A BTextView has the focus.
 		if (be_clipboard->Lock()) {
-			BMessage* data = be_clipboard->Data();
-			if (data != NULL)
-				canPaste = data->HasData("text/plain", B_MIME_TYPE);
+			bigtime_t lastModified = be_clipboard->LocalCount();
+			if (lastModified > fLastClipboardCheckTime) {
+				fLastClipboardCheckTime = lastModified;
+				BMessage* data = be_clipboard->Data();
+				if (data != NULL)
+					canPaste = data->HasData("text/plain", B_MIME_TYPE);
+			}
 			be_clipboard->Unlock();
 		}
 		fMenuManager->CutMenuItem()->SetEnabled(hasSelection);
@@ -1884,6 +1893,8 @@ BrowserWindow::_ShowPage(BWebView* view)
 			// Page seems to be gone already?
 			return false;
 		}
+		if (fTabManager->SelectedTabIndex() == tabIndex)
+			return true;
 		fTabManager->SelectTab(tabIndex);
 		_TabChanged(tabIndex);
 		UpdateIfNeeded();
@@ -1896,8 +1907,12 @@ void
 BrowserWindow::_ResizeToScreen()
 {
 	BScreen screen(this);
-	MoveTo(0, 0);
-	ResizeTo(screen.Frame().Width(), screen.Frame().Height());
+	BRect decoratorFrame = DecoratorFrame();
+	BRect frame = Frame();
+	MoveTo(screen.Frame().left - (decoratorFrame.left - frame.left),
+		screen.Frame().top - (decoratorFrame.top - frame.top));
+	ResizeTo(screen.Frame().Width() - (decoratorFrame.Width() - frame.Width()),
+		screen.Frame().Height() - (decoratorFrame.Height() - frame.Height()));
 }
 
 
@@ -2038,22 +2053,18 @@ BrowserWindow::_NewTabURL(bool isNewWindow) const
 BString
 BrowserWindow::_EncodeURIComponent(const BString& search)
 {
-	// We have to take care of some of the escaping before we hand over the
-	// search string to WebKit, if we want queries like "4+3" to not be
-	// searched as "4 3".
-	const BString escCharList = " $&`:<>[]{}\"+#%@/;=?\\^|~\',";
-	BString result = search;
-	char hexcode[4];
-
-	for (int32 i = 0; i < result.Length(); i++) {
-		if (escCharList.FindFirst(result[i]) != B_ERROR) {
-			sprintf(hexcode, "%02X", (unsigned int)result[i]);
-			result.SetByteAt(i, '%');
-			result.Insert(hexcode, i + 1);
-			i += 2;
+	static const char* hex = "0123456789ABCDEF";
+	BString result;
+	for (int32 i = 0; i < search.Length(); i++) {
+		char c = search[i];
+		if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~')
+			result += c;
+		else {
+			result += '%';
+			result += hex[c >> 4];
+			result += hex[c & 0xf];
 		}
 	}
-
 	return result;
 }
 
