@@ -74,7 +74,11 @@ CookieEditor::MessageReceived(BMessage* message)
 		{
 			fCookie.SetName(fName->Text());
 			fCookie.SetValue(fValue->Text());
-			// TODO: parse expiration date
+			struct tm time;
+			if (strptime(fExpiration->Text(), "%s", &time) != NULL)
+				fCookie.SetExpirationDate(mktime(&time));
+			else
+				fCookie.SetExpirationDate(0);
 			PostMessage(B_QUIT_REQUESTED);
 			break;
 		}

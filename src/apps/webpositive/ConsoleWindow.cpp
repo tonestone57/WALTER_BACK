@@ -104,6 +104,7 @@ ConsoleWindow::MessageReceived(BMessage* message)
 				fRepeatCounter = 0;
 			}
 			fMessagesListView->AddItem(new BStringItem(finalText.String()));
+			fMessagesListView->ScrollToSelection();
 			break;
 		}
 		case CLEAR_CONSOLE_MESSAGES:
