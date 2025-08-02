@@ -289,6 +289,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	fMenusRunning(false),
 	fPulseRunner(),
 	fVisibleInterfaceElements(interfaceElements),
+	fHistoryItems(NULL),
 	fContext(context),
 	fAppSettings(appSettings),
 	fZoomTextOnly(false),
@@ -622,6 +623,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 BrowserWindow::~BrowserWindow()
 {
 	fAppSettings->RemoveListener(BMessenger(this));
+	delete fHistoryItems;
 }
 
 
@@ -1154,19 +1156,14 @@ BrowserWindow::MessageReceived(BMessage* message)
 		{
 			BObjectList<BrowsingHistoryItem>* historyItems = NULL;
 			if (message->FindPointer("history", (void**)&historyItems) == B_OK) {
-				for (int32 i = 0; i < historyItems->CountItems(); i++) {
-					BrowsingHistoryItem* item = historyItems->ItemAt(i);
-					BMessage* historyMessage = new BMessage(GOTO_URL);
-					historyMessage->AddString("url", item->URL());
-					fHistoryMenu->AddItem(new BMenuItem(item->URL(), historyMessage));
-				}
-				delete historyItems;
+				delete fHistoryItems;
+				fHistoryItems = historyItems;
 			}
 			break;
 		}
 
 		case MSG_POPULATE_HISTORY_MENU:
-			_UpdateHistoryMenu();
+			_PopulateHistoryMenu();
 			break;
 
 		default:
@@ -1838,7 +1835,7 @@ bool
 BrowserWindow::_HistoryMenuHook(BMenu* menu, void* userData)
 {
 	BrowserWindow* window = static_cast<BrowserWindow*>(userData);
-	window->PostMessage(MSG_POPULATE_HISTORY_MENU);
+	window->_PopulateHistoryMenu();
 	// Remove the hook so it doesn't get called again.
 	menu->SetTrackingHook(NULL, NULL);
 	return false;
@@ -1947,40 +1944,37 @@ BrowserWindow::_SetPageIcon(BWebView* view, const BBitmap* icon)
 
 
 void
-BrowserWindow::_UpdateHistoryMenu()
+BrowserWindow::_PopulateHistoryMenu()
 {
 	BMenuItem* item;
 	while ((item = fHistoryMenu->RemoveItem(fHistoryMenuFixedItemCount)) != NULL)
 		delete item;
 
-	BrowsingHistory* history = BrowsingHistory::DefaultInstance();
-	if (!history->Lock())
+	if (!fHistoryItems)
 		return;
 
-	int32 count = history->CountItems();
+	int32 count = fHistoryItems->CountItems();
 	BMenuItem* clearHistoryItem = new BMenuItem(B_TRANSLATE("Clear history"),
 		new BMessage(CLEAR_HISTORY));
 	clearHistoryItem->SetEnabled(count > 0);
 	fHistoryMenu->AddItem(clearHistoryItem);
-	if (count == 0) {
-		history->Unlock();
+	if (count == 0)
 		return;
-	}
+
 	fHistoryMenu->AddSeparatorItem();
 
 	int32 maxCount = min_c(count, 20);
 	for (int32 i = 0; i < maxCount; i++) {
-		BrowsingHistoryItem historyItem = history->HistoryItemAt(i);
+		BrowsingHistoryItem* historyItem = fHistoryItems->ItemAt(i);
 		BMessage* message = new BMessage(GOTO_URL);
-		message->AddString("url", historyItem.URL());
+		message->AddString("url", historyItem->URL());
 
-		BString truncatedUrl(historyItem.URL());
+		BString truncatedUrl(historyItem->URL());
 		be_plain_font->TruncateString(&truncatedUrl, B_TRUNCATE_END, 480);
 		BMenuItem* menuItem = new BMenuItem(truncatedUrl, message);
 		menuItem->SetTarget(this);
 		fHistoryMenu->AddItem(menuItem);
 	}
-	history->Unlock();
 
 	fHistoryMenu->AddSeparatorItem();
 	fHistoryMenu->AddItem(new BMenuItem(B_TRANSLATE("Show all history"),

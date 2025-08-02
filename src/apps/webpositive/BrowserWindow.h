@@ -54,6 +54,7 @@ class BStringView;
 class BWebView;
 
 class BookmarkBar;
+class BrowsingHistoryItem;
 class BookmarkManager;
 class DataLoader;
 class FindView;
@@ -187,7 +188,7 @@ private:
 			void				_SetPageIcon(BWebView* view,
 									const BBitmap* icon);
 
-			void				_UpdateHistoryMenu();
+			void				_PopulateHistoryMenu();
 			void				_UpdateClipboardItems();
 
 			bool				_ShowPage(BWebView* view);
@@ -218,6 +219,7 @@ private:
 	static	bool				_HistoryMenuHook(BMenu* menu, void* userData);
 
 			BMenu*				fHistoryMenu;
+			BObjectList<BrowsingHistoryItem>* fHistoryItems;
 			int32				fHistoryMenuFixedItemCount;
 
 			BMenuItem*			fCutMenuItem;
