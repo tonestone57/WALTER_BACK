@@ -1,5 +1,7 @@
 SubDir HAIKU_TOP src kits package ;
 
+UseHeadersIn $(HAIKU_TOP) src kits shared ;
+
 AddResources libpackage.so : libpackage.rdef ;
 
 UsePrivateHeaders
