@@ -85,6 +85,7 @@
 #include "CredentialsStorage.h"
 #include "FindView.h"
 #include "IconButton.h"
+#include "MenuManager.h"
 #include "NavMenu.h"
 #include "SettingsKeys.h"
 #include "SettingsMessage.h"
@@ -163,41 +164,6 @@ layoutItemFor(BView* view)
 	int32 index = layout->IndexOfView(view);
 	return layout->ItemAt(index);
 }
-
-
-class BookmarkMenu : public BNavMenu {
-public:
-	BookmarkMenu(const char* title, BHandler* target, const entry_ref* navDir)
-		:
-		BNavMenu(title, B_REFS_RECEIVED, target)
-	{
-		// Add these items here already, so the shortcuts work even when
-		// the menu has never been opened yet.
-		_AddStaticItems();
-
-		SetNavDir(navDir);
-	}
-
-	virtual void AttachedToWindow()
-	{
-		RemoveItems(0, CountItems(), true);
-		ForceRebuild();
-		BNavMenu::AttachedToWindow();
-		if (CountItems() > 0)
-			AddItem(new BSeparatorItem(), 0);
-		_AddStaticItems();
-		DoLayout();
-	}
-
-private:
-	void _AddStaticItems()
-	{
-		AddItem(new BMenuItem(B_TRANSLATE("Manage bookmarks"),
-			new BMessage(SHOW_BOOKMARKS), 'M'), 0);
-		AddItem(new BMenuItem(B_TRANSLATE("Bookmark this page"),
-			new BMessage(CREATE_BOOKMARK), 'B'), 0);
-	}
-};
 
 
 class CloseButton : public BButton {
@@ -290,6 +256,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	fPulseRunner(),
 	fVisibleInterfaceElements(interfaceElements),
 	fHistoryItems(NULL),
+	fMenuManager(std::make_unique<MenuManager>(this)),
 	fContext(context),
 	fAppSettings(appSettings),
 	fZoomTextOnly(false),
@@ -326,130 +293,6 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	newTabMessage->AddBool("select", true);
 	fTabManager = std::make_unique<TabManager>(BMessenger(this), newTabMessage);
 
-	// Menu
-#if INTEGRATE_MENU_INTO_TAB_BAR
-	BMenu* mainMenu = new BMenu("≡");
-#else
-	BMenu* mainMenu = new BMenuBar("Main menu");
-#endif
-	BMenu* menu = new BMenu(B_TRANSLATE("Window"));
-	BMessage* newWindowMessage = new BMessage(NEW_WINDOW);
-	newWindowMessage->AddString("url", "");
-	BMenuItem* newItem = new BMenuItem(B_TRANSLATE("New window"),
-		newWindowMessage, 'N');
-	menu->AddItem(newItem);
-	newItem->SetTarget(be_app);
-	newItem = new BMenuItem(B_TRANSLATE("New tab"),
-		new BMessage(*newTabMessage), 'T');
-	menu->AddItem(newItem);
-	newItem->SetTarget(be_app);
-	menu->AddItem(new BMenuItem(B_TRANSLATE("Open location"),
-		new BMessage(OPEN_LOCATION), 'L'));
-	menu->AddSeparatorItem();
-	menu->AddItem(new BMenuItem(B_TRANSLATE("Close window"),
-		new BMessage(B_QUIT_REQUESTED), 'W', B_SHIFT_KEY));
-	menu->AddItem(new BMenuItem(B_TRANSLATE("Close tab"),
-		new BMessage(CLOSE_TAB), 'W'));
-	menu->AddItem(new BMenuItem(B_TRANSLATE("Save page as" B_UTF8_ELLIPSIS),
-		new BMessage(SAVE_PAGE), 'S'));
-	menu->AddSeparatorItem();
-	menu->AddItem(new BMenuItem(B_TRANSLATE("Downloads"),
-		new BMessage(SHOW_DOWNLOAD_WINDOW), 'D'));
-	menu->AddItem(new BMenuItem(B_TRANSLATE("Settings"),
-		new BMessage(SHOW_SETTINGS_WINDOW), ','));
-	menu->AddItem(new BMenuItem(B_TRANSLATE("Cookie manager"),
-		new BMessage(SHOW_COOKIE_WINDOW)));
-	menu->AddItem(new BMenuItem(B_TRANSLATE("Script console"),
-		new BMessage(SHOW_CONSOLE_WINDOW)));
-	BMenuItem* aboutItem = new BMenuItem(B_TRANSLATE("About"),
-		new BMessage(B_ABOUT_REQUESTED));
-	menu->AddItem(aboutItem);
-	aboutItem->SetTarget(be_app);
-	menu->AddSeparatorItem();
-	BMenuItem* quitItem = new BMenuItem(B_TRANSLATE("Quit"),
-		new BMessage(B_QUIT_REQUESTED), 'Q');
-	menu->AddItem(quitItem);
-	quitItem->SetTarget(be_app);
-	mainMenu->AddItem(menu);
-
-	menu = new BMenu(B_TRANSLATE("Edit"));
-	menu->AddItem(fCutMenuItem = new BMenuItem(B_TRANSLATE("Cut"),
-		new BMessage(B_CUT), 'X'));
-	menu->AddItem(fCopyMenuItem = new BMenuItem(B_TRANSLATE("Copy"),
-		new BMessage(B_COPY), 'C'));
-	menu->AddItem(fPasteMenuItem = new BMenuItem(B_TRANSLATE("Paste"),
-		new BMessage(B_PASTE), 'V'));
-	menu->AddSeparatorItem();
-	menu->AddItem(new BMenuItem(B_TRANSLATE("Find"),
-		new BMessage(EDIT_SHOW_FIND_GROUP), 'F'));
-	menu->AddItem(fFindPreviousMenuItem
-		= new BMenuItem(B_TRANSLATE("Find previous"),
-		new BMessage(EDIT_FIND_PREVIOUS), 'G', B_SHIFT_KEY));
-	menu->AddItem(fFindNextMenuItem = new BMenuItem(B_TRANSLATE("Find next"),
-		new BMessage(EDIT_FIND_NEXT), 'G'));
-	mainMenu->AddItem(menu);
-	fFindPreviousMenuItem->SetEnabled(false);
-	fFindNextMenuItem->SetEnabled(false);
-
-	menu = new BMenu(B_TRANSLATE("View"));
-	menu->AddItem(new BMenuItem(B_TRANSLATE("Reload"), new BMessage(RELOAD),
-		'R'));
-	// the label will be replaced with the appropriate text later on
-	fBookmarkBarMenuItem = new BMenuItem(B_TRANSLATE("Show bookmark bar"),
-		new BMessage(SHOW_HIDE_BOOKMARK_BAR));
-	menu->AddItem(fBookmarkBarMenuItem);
-	menu->AddSeparatorItem();
-	menu->AddItem(new BMenuItem(B_TRANSLATE("Increase size"),
-		new BMessage(ZOOM_FACTOR_INCREASE), '+'));
-	menu->AddItem(new BMenuItem(B_TRANSLATE("Decrease size"),
-		new BMessage(ZOOM_FACTOR_DECREASE), '-'));
-	menu->AddItem(new BMenuItem(B_TRANSLATE("Reset size"),
-		new BMessage(ZOOM_FACTOR_RESET), '0'));
-	fZoomTextOnlyMenuItem = new BMenuItem(B_TRANSLATE("Zoom text only"),
-		new BMessage(ZOOM_TEXT_ONLY));
-	fZoomTextOnlyMenuItem->SetMarked(fZoomTextOnly);
-	menu->AddItem(fZoomTextOnlyMenuItem);
-
-	menu->AddSeparatorItem();
-	fFullscreenItem = new BMenuItem(B_TRANSLATE("Full screen"),
-		new BMessage(TOGGLE_FULLSCREEN), B_RETURN);
-	menu->AddItem(fFullscreenItem);
-	menu->AddItem(new BMenuItem(B_TRANSLATE("Page source"),
-		new BMessage(SHOW_PAGE_SOURCE), 'U'));
-	mainMenu->AddItem(menu);
-
-	fHistoryMenu = new BMenu(B_TRANSLATE("History"));
-	fHistoryMenu->AddItem(fBackMenuItem = new BMenuItem(B_TRANSLATE("Back"),
-		new BMessage(GO_BACK), B_LEFT_ARROW));
-	fHistoryMenu->AddItem(fForwardMenuItem
-		= new BMenuItem(B_TRANSLATE("Forward"), new BMessage(GO_FORWARD),
-		B_RIGHT_ARROW));
-	fHistoryMenu->AddSeparatorItem();
-	fHistoryMenuFixedItemCount = fHistoryMenu->CountItems();
-	mainMenu->AddItem(fHistoryMenu);
-
-	BPath bookmarkPath;
-	entry_ref bookmarkRef;
-	if (_BookmarkPath(bookmarkPath) == B_OK
-		&& get_ref_for_path(bookmarkPath.Path(), &bookmarkRef) == B_OK) {
-		BMenu* bookmarkMenu
-			= new BookmarkMenu(B_TRANSLATE("Bookmarks"), this, &bookmarkRef);
-		mainMenu->AddItem(bookmarkMenu);
-
-		BDirectory barDir(&bookmarkRef);
-		BEntry bookmarkBar(&barDir, kBookmarkBarSubdir);
-		entry_ref bookmarkBarRef;
-		if (bookmarkBar.Exists() && bookmarkBar.GetRef(&bookmarkBarRef) == B_OK) {
-			BDirectory dir(&bookmarkBarRef);
-			if (dir.CountEntries() > 0) {
-				fBookmarkBar = new BookmarkBar("Bookmarks", this, &bookmarkBarRef);
-				fBookmarkBarMenuItem->SetEnabled(true);
-			} else
-				fBookmarkBarMenuItem->SetEnabled(false);
-		} else
-			fBookmarkBarMenuItem->SetEnabled(false);
-	} else
-		fBookmarkBarMenuItem->SetEnabled(false);
 
 	// Back, Forward, Stop & Home buttons
 	fBackButton = new BIconButton("Back", NULL, new BMessage(GO_BACK));
@@ -526,16 +369,9 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 		new BMessage(TOGGLE_FULLSCREEN));
 	toggleFullscreenButton->SetBackgroundMode(BBitmapButton::MENUBAR_BACKGROUND);
 
-#if !INTEGRATE_MENU_INTO_TAB_BAR
-	BMenu* mainMenuItem = mainMenu;
 	fMenuGroup = (new BGroupView(B_HORIZONTAL, 0))->GroupLayout();
-#else
-	BMenu* mainMenuItem = new BMenuBar("Main menu");
-	mainMenuItem->AddItem(mainMenu);
-	fMenuGroup = fTabManager->MenuContainerLayout();
-#endif
 	BLayoutBuilder::Group<>(fMenuGroup)
-		.Add(mainMenuItem)
+		.Add(fMenuManager->MenuBar())
 		.Add(toggleFullscreenButton, 0.0f)
 	;
 
@@ -543,6 +379,21 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 		_ShowBookmarkBar(true);
 	else
 		_ShowBookmarkBar(false);
+
+	BPath bookmarkPath;
+	entry_ref bookmarkRef;
+	if (_BookmarkPath(bookmarkPath) == B_OK
+		&& get_ref_for_path(bookmarkPath.Path(), &bookmarkRef) == B_OK) {
+		BDirectory barDir(&bookmarkRef);
+		BEntry bookmarkBar(&barDir, kBookmarkBarSubdir);
+		entry_ref bookmarkBarRef;
+		if (bookmarkBar.Exists() && bookmarkBar.GetRef(&bookmarkBarRef) == B_OK) {
+			BDirectory dir(&bookmarkBarRef);
+			if (dir.CountEntries() > 0) {
+				fBookmarkBar = new BookmarkBar("Bookmarks", this, &bookmarkBarRef);
+			}
+		}
+	}
 
 	fSavePanel = std::make_unique<BFilePanel>(B_SAVE_PANEL, new BMessenger(this), nullptr, 0,
 		false);
@@ -945,7 +796,7 @@ BrowserWindow::MessageReceived(BMessage* message)
 			break;
 		case ZOOM_TEXT_ONLY:
 			fZoomTextOnly = !fZoomTextOnly;
-			fZoomTextOnlyMenuItem->SetMarked(fZoomTextOnly);
+			fMenuManager->ZoomTextOnlyMenuItem()->SetMarked(fZoomTextOnly);
 			if (CurrentWebView())
 				CurrentWebView()->Reload();
 			break;
@@ -978,8 +829,8 @@ BrowserWindow::MessageReceived(BMessage* message)
 		case MSG_FIND_TEXT_CHANGED:
 		{
 			bool findTextAvailable = strlen(fFindView->Text()) > 0;
-			fFindPreviousMenuItem->SetEnabled(findTextAvailable);
-			fFindNextMenuItem->SetEnabled(findTextAvailable);
+	fMenuManager->FindPreviousMenuItem()->SetEnabled(false);
+	fMenuManager->FindNextMenuItem()->SetEnabled(false);
 			break;
 		}
 		case EDIT_FIND_PREVIOUS:
@@ -1030,9 +881,9 @@ BrowserWindow::MessageReceived(BMessage* message)
 				canCopy = false;
 			if (message->FindBool("can paste", &canPaste) != B_OK)
 				canPaste = false;
-			fCutMenuItem->SetEnabled(canCut);
-			fCopyMenuItem->SetEnabled(canCopy);
-			fPasteMenuItem->SetEnabled(canPaste);
+			fMenuManager->CutMenuItem()->SetEnabled(canCut);
+			fMenuManager->CopyMenuItem()->SetEnabled(canCopy);
+			fMenuManager->PasteMenuItem()->SetEnabled(canPaste);
 			break;
 		}
 
@@ -1219,13 +1070,13 @@ BrowserWindow::MenusBeginning()
 {
 	// Don't populate the history menu right away, as it can be slow.
 	// Just add a placeholder and populate it when it's actually opened.
-	for (int32 i = fHistoryMenu->CountItems() - 1; i >= fHistoryMenuFixedItemCount; i--) {
-		BMenuItem* menuItem = fHistoryMenu->RemoveItem(i);
+	for (int32 i = fMenuManager->HistoryMenu()->CountItems() - 1; i >= fMenuManager->HistoryMenuFixedItemCount(); i--) {
+		BMenuItem* menuItem = fMenuManager->HistoryMenu()->RemoveItem(i);
 		delete menuItem;
 	}
-	fHistoryMenu->AddItem(new BMenuItem(B_TRANSLATE("Loading history" B_UTF8_ELLIPSIS), NULL));
-	fHistoryMenu->SetTargetForItems(this);
-	fHistoryMenu->SetTrackingHook(_HistoryMenuHook, this);
+	fMenuManager->HistoryMenu()->AddItem(new BMenuItem(B_TRANSLATE("Loading history" B_UTF8_ELLIPSIS), NULL));
+	fMenuManager->HistoryMenu()->SetTargetForItems(this);
+	fMenuManager->HistoryMenu()->SetTrackingHook(_HistoryMenuHook, this);
 
 	_UpdateClipboardItems();
 	fMenusRunning = true;
@@ -1422,7 +1273,7 @@ BrowserWindow::ToggleFullscreen()
 		SetLook(B_TITLED_WINDOW_LOOK);
 	}
 	fIsFullscreen = !fIsFullscreen;
-	fFullscreenItem->SetMarked(fIsFullscreen);
+	fMenuManager->FullscreenItem()->SetMarked(fIsFullscreen);
 	fToggleFullscreenButton->SetVisible(fIsFullscreen);
 }
 
@@ -1764,8 +1615,8 @@ BrowserWindow::NavigationCapabilitiesChanged(bool canGoBackward,
 	fForwardButton->SetEnabled(canGoForward);
 	fStopButton->SetEnabled(canStop);
 
-	fBackMenuItem->SetEnabled(canGoBackward);
-	fForwardMenuItem->SetEnabled(canGoForward);
+	fMenuManager->BackMenuItem()->SetEnabled(canGoBackward);
+	fMenuManager->ForwardMenuItem()->SetEnabled(canGoForward);
 }
 
 
@@ -1947,7 +1798,7 @@ void
 BrowserWindow::_PopulateHistoryMenu()
 {
 	BMenuItem* item;
-	while ((item = fHistoryMenu->RemoveItem(fHistoryMenuFixedItemCount)) != NULL)
+	while ((item = fMenuManager->HistoryMenu()->RemoveItem(fMenuManager->HistoryMenuFixedItemCount())) != NULL)
 		delete item;
 
 	if (!fHistoryItems)
@@ -1957,11 +1808,11 @@ BrowserWindow::_PopulateHistoryMenu()
 	BMenuItem* clearHistoryItem = new BMenuItem(B_TRANSLATE("Clear history"),
 		new BMessage(CLEAR_HISTORY));
 	clearHistoryItem->SetEnabled(count > 0);
-	fHistoryMenu->AddItem(clearHistoryItem);
+	fMenuManager->HistoryMenu()->AddItem(clearHistoryItem);
 	if (count == 0)
 		return;
 
-	fHistoryMenu->AddSeparatorItem();
+	fMenuManager->HistoryMenu()->AddSeparatorItem();
 
 	int32 maxCount = min_c(count, 20);
 	for (int32 i = 0; i < maxCount; i++) {
@@ -1973,11 +1824,11 @@ BrowserWindow::_PopulateHistoryMenu()
 		be_plain_font->TruncateString(&truncatedUrl, B_TRUNCATE_END, 480);
 		BMenuItem* menuItem = new BMenuItem(truncatedUrl, message);
 		menuItem->SetTarget(this);
-		fHistoryMenu->AddItem(menuItem);
+		fMenuManager->HistoryMenu()->AddItem(menuItem);
 	}
 
-	fHistoryMenu->AddSeparatorItem();
-	fHistoryMenu->AddItem(new BMenuItem(B_TRANSLATE("Show all history"),
+	fMenuManager->HistoryMenu()->AddSeparatorItem();
+	fMenuManager->HistoryMenu()->AddItem(new BMenuItem(B_TRANSLATE("Show all history"),
 		new BMessage(SHOW_HISTORY_WINDOW)));
 }
 
@@ -2002,9 +1853,9 @@ BrowserWindow::_UpdateClipboardItems()
 				canPaste = data->HasData("text/plain", B_MIME_TYPE);
 			be_clipboard->Unlock();
 		}
-		fCutMenuItem->SetEnabled(hasSelection);
-		fCopyMenuItem->SetEnabled(hasSelection);
-		fPasteMenuItem->SetEnabled(canPaste);
+		fMenuManager->CutMenuItem()->SetEnabled(hasSelection);
+		fMenuManager->CopyMenuItem()->SetEnabled(hasSelection);
+		fMenuManager->PasteMenuItem()->SetEnabled(canPaste);
 	} else if (CurrentWebView() != NULL) {
 		// Trigger update of the clipboard items, even if the
 		// BWebView doesn't have focus, we'll dispatch these message
@@ -2014,9 +1865,9 @@ BrowserWindow::_UpdateClipboardItems()
 		// standard shortcut handling is always wrapped inside MenusBeginning()
 		// and MenusEnded(), and since we update items asynchronously, we need
 		// to have them enabled to begin with.
-		fCutMenuItem->SetEnabled(true);
-		fCopyMenuItem->SetEnabled(true);
-		fPasteMenuItem->SetEnabled(true);
+		fMenuManager->CutMenuItem()->SetEnabled(true);
+		fMenuManager->CopyMenuItem()->SetEnabled(true);
+		fMenuManager->PasteMenuItem()->SetEnabled(true);
 
 		CurrentWebView()->WebPage()->SendEditingCapabilities();
 	}
@@ -2331,18 +2182,18 @@ BrowserWindow::_ShowBookmarkBar(bool show)
 					B_TRANSLATE("OK"));
 				alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
 				alert->Go(NULL);
-				fBookmarkBarMenuItem->SetMarked(false);
+				fMenuManager->BookmarkBarMenuItem()->SetMarked(false);
 				return;
 			}
 			BDirectory dir(&ref);
 			if (dir.CountEntries() == 0) {
-				fBookmarkBarMenuItem->SetMarked(false);
+				fMenuManager->BookmarkBarMenuItem()->SetMarked(false);
 				return;
 			}
 		}
 	}
 
-	fBookmarkBarMenuItem->SetMarked(show);
+	fMenuManager->BookmarkBarMenuItem()->SetMarked(show);
 
 	if (fBookmarkBar == NULL || fBookmarkBar->IsHidden() != show)
 		return;

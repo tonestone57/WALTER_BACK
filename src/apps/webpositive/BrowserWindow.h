@@ -58,6 +58,7 @@ class BrowsingHistoryItem;
 class BookmarkManager;
 class DataLoader;
 class FindView;
+class MenuManager;
 class SettingsMessage;
 class TabManager;
 class URLInputGroup;
@@ -135,6 +136,8 @@ public:
 			BRect				WindowFrame() const;
 
 			void				ToggleFullscreen();
+
+			status_t			_BookmarkPath(BPath& path) const;
 
 private:
 	// WebPage notification API implementations
@@ -218,19 +221,7 @@ private:
 private:
 	static	bool				_HistoryMenuHook(BMenu* menu, void* userData);
 
-			BMenu*				fHistoryMenu;
 			BObjectList<BrowsingHistoryItem>* fHistoryItems;
-			int32				fHistoryMenuFixedItemCount;
-
-			BMenuItem*			fCutMenuItem;
-			BMenuItem*			fCopyMenuItem;
-			BMenuItem*			fPasteMenuItem;
-			BMenuItem*			fFindPreviousMenuItem;
-			BMenuItem*			fFindNextMenuItem;
-			BMenuItem*			fZoomTextOnlyMenuItem;
-			BMenuItem*			fFullscreenItem;
-			BMenuItem*			fBackMenuItem;
-			BMenuItem*			fForwardMenuItem;
 
 			BIconButton*		fBackButton;
 			BIconButton*		fForwardButton;
@@ -247,6 +238,7 @@ private:
 			BLayoutItem*		fToggleFullscreenButton;
 
 			FindView*			fFindView;
+			std::unique_ptr<MenuManager>		fMenuManager;
 			std::unique_ptr<TabManager>			fTabManager;
 
 			bool				fIsFullscreen;
@@ -271,7 +263,6 @@ private:
 			BString				fStartPageURL;
 			BString				fSearchPageURL;
 
-			BMenuItem*			fBookmarkBarMenuItem;
 			BookmarkBar*		fBookmarkBar;
 			std::unique_ptr<BFilePanel>			fSavePanel;
 			std::unique_ptr<BookmarkManager>	fBookmarkManager;
