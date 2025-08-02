@@ -925,8 +925,8 @@ BrowserWindow::MessageReceived(BMessage* message)
 			if (index >= fTabManager->CountTabs())
 				index = 0;
 			fTabManager->SelectTab(index);
-			break;
 		}
+		break;
 
 		case TAB_CHANGED:
 		{
@@ -939,8 +939,8 @@ BrowserWindow::MessageReceived(BMessage* message)
 				PostMessage(B_QUIT_REQUESTED);
 			else
 				_TabChanged(index);
-			break;
 		}
+		break;
 
 		case SETTINGS_VALUE_CHANGED:
 		{
@@ -986,12 +986,8 @@ BrowserWindow::MessageReceived(BMessage* message)
 				&& message->FindBool("value", &flag) == B_OK) {
 				_ShowBookmarkBar(flag);
 			}
-			break;
 		}
-		case ADD_CONSOLE_MESSAGE:
-			be_app->PostMessage(message);
-			BWebWindow::MessageReceived(message);
-			break;
+		break;
 
 		case B_COPY_TARGET:
 		{
@@ -1001,26 +997,9 @@ BrowserWindow::MessageReceived(BMessage* message)
 				// that can be bookmarked (e.g. the page icon) to a Tracker window.
 				fBookmarkManager->CreateBookmark(this);
 				break;
-			} else {
-				BWebWindow::MessageReceived(message);
-				break;
 			}
 		}
-
-		case MSG_DATA_LOADED:
-		{
-			BObjectList<BrowsingHistoryItem>* historyItems = NULL;
-			if (message->FindPointer("history", (void**)&historyItems) == B_OK) {
-				delete fHistoryItems;
-				fHistoryItems = historyItems;
-			}
-			break;
-		}
-
-		case MSG_POPULATE_HISTORY_MENU:
-			_PopulateHistoryMenu();
-			break;
-
+		// fall through
 		default:
 			BWebWindow::MessageReceived(message);
 			break;

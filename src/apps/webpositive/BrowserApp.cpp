@@ -667,8 +667,16 @@ main(int, char**)
 		new BrowserApp();
 		be_app->Run();
 		delete be_app;
+	} catch (const std::exception& e) {
+		BString message("An unexpected error occurred:\n");
+		message << e.what();
+		BAlert* alert = new BAlert("Error", message.String(), "OK");
+		alert->Go();
+		return 1;
 	} catch (...) {
-		debugger("Exception caught.");
+		BAlert* alert = new BAlert("Error", "An unexpected error occurred.", "OK");
+		alert->Go();
+		return 1;
 	}
 
 	return 0;
