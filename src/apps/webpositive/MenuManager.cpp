@@ -84,6 +84,8 @@ MenuManager::MenuManager(BHandler* target)
 		new BMessage(B_QUIT_REQUESTED), 'W', B_SHIFT_KEY));
 	menu->AddItem(new BMenuItem(B_TRANSLATE("Close tab"),
 		new BMessage(CLOSE_TAB), 'W'));
+	menu->AddItem(new BMenuItem(B_TRANSLATE("Undo close tab"),
+		new BMessage(MSG_UNDO_CLOSE_TAB), 'T', B_SHIFT_KEY));
 	menu->AddItem(new BMenuItem(B_TRANSLATE("Save page as" B_UTF8_ELLIPSIS),
 		new BMessage(SAVE_PAGE), 'S'));
 	menu->AddSeparatorItem();

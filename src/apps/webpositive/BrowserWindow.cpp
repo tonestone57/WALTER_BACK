@@ -957,6 +957,14 @@ BrowserWindow::MessageReceived(BMessage* message)
 		}
 		break;
 
+		case MSG_UNDO_CLOSE_TAB:
+		{
+			BWebView* view = static_cast<BrowserApp*>(be_app)->GetTabCache()->Get();
+			if (view)
+				CreateNewTab(view->MainFrameURL(), true, view);
+			break;
+		}
+
 		case TAB_CHANGED:
 		{
 			// This message may be received also when the last tab closed,
@@ -1774,9 +1782,10 @@ BrowserWindow::_ShutdownTab(int32 index)
 	BWebView* webView = dynamic_cast<BWebView*>(view);
 	if (webView == CurrentWebView())
 		SetCurrentWebView(NULL);
-	if (webView != NULL)
+	if (webView != NULL) {
+		static_cast<BrowserApp*>(be_app)->GetTabCache()->Add(webView);
 		webView->Shutdown();
-	else
+	} else
 		delete view;
 }
 

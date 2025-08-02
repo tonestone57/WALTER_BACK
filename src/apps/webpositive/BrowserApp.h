@@ -41,6 +41,7 @@ class CookieWindow;
 class DownloadWindow;
 class BrowserWindow;
 class SessionManager;
+class TabCache;
 class SettingsMessage;
 class SettingsWindow;
 
@@ -57,6 +58,7 @@ public:
 	virtual	void				ReadyToRun();
 	virtual	bool				QuitRequested();
 
+			TabCache*			GetTabCache() { return fTabCache; };
 private:
 			/*! @param[in,out] _pagesCreated if set, the pointed integer will be incremented by
 			 *                               the number of created pages.
@@ -90,6 +92,7 @@ private:
 			SettingsWindow*		fSettingsWindow;
 			ConsoleWindow*		fConsoleWindow;
 			CookieWindow*		fCookieWindow;
+			TabCache*			fTabCache;
 };
 
 

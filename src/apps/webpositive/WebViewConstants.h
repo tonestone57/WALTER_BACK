@@ -21,6 +21,9 @@ enum {
 
 	// DataLoader -> BrowserWindow
 	MSG_HISTORY_LOADED						= 'hsls',
+
+	// BrowserWindow -> BrowserWindow
+	MSG_UNDO_CLOSE_TAB						= 'uctb',
 };
 
 #endif // WEBVIEW_CONSTANTS_H

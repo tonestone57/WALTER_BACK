@@ -51,6 +51,7 @@
 #include "ConsoleWindow.h"
 #include "CookieWindow.h"
 #include "SessionManager.h"
+#include "TabCache.h"
 #include <NetworkCookieJar.h>
 #include "WebKitInfo.h"
 #include "WebPage.h"
@@ -80,8 +81,10 @@ BrowserApp::BrowserApp()
 	fDownloadWindow(NULL),
 	fSettingsWindow(NULL),
 	fConsoleWindow(NULL),
-	fCookieWindow(NULL)
+	fCookieWindow(NULL),
+	fTabCache(NULL)
 {
+	fTabCache = new TabCache(10);
 #ifdef __i386__
 	// First let's check SSE2 is available
 	cpuid_info info;
@@ -123,6 +126,7 @@ BrowserApp::BrowserApp()
 
 BrowserApp::~BrowserApp()
 {
+	delete fTabCache;
 }
 
 
