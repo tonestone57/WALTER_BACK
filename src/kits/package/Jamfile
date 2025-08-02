@@ -64,6 +64,7 @@ HPKG_SOURCES =
 local architectureObject ;
 for architectureObject in [ MultiArchSubDirSetup ] {
 	on $(architectureObject) {
+		SEARCH_SOURCE += [ FDirName $(HAIKU_TOP) src kits shared ] ;
 		SEARCH_SOURCE += [ FDirName $(HAIKU_TOP) src kits package hpkg ] ;
 		SEARCH_SOURCE += [ FDirName $(HAIKU_TOP) src kits package hpkg v1 ] ;
 		SEARCH_SOURCE += [ FDirName $(HAIKU_TOP) src kits package manager ] ;
@@ -128,7 +129,6 @@ for architectureObject in [ MultiArchSubDirSetup ] {
 			shared
 			bnetapi
 			be localestub
-			shared
 			[ MultiArchDefaultGristFiles libnetservices.a ]
 			[ TargetLibstdc++ ]
 			$(TARGET_NETWORK_LIBS)
