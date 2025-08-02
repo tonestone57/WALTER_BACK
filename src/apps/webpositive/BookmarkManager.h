@@ -46,6 +46,7 @@ private:
 
 private:
 			BObjectList<BString>	fBookmarkURLs;
+			bool				fBookmarksLoaded;
 };
 
 

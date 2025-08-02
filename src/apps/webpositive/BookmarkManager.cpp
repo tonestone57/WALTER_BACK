@@ -32,9 +32,9 @@
 
 BookmarkManager::BookmarkManager()
 	:
-	fBookmarkURLs(20)
+	fBookmarkURLs(20),
+	fBookmarksLoaded(false)
 {
-	_LoadBookmarkURLs();
 }
 
 
@@ -284,8 +284,13 @@ BookmarkManager::_LoadBookmarkURLs()
 
 
 bool
-BookmarkManager::_CheckBookmarkExists(const BString& url) const
+BookmarkManager::_CheckBookmarkExists(const BString& url)
 {
+	if (!fBookmarksLoaded) {
+		_LoadBookmarkURLs();
+		fBookmarksLoaded = true;
+	}
+
 	for (int32 i = 0; i < fBookmarkURLs.CountItems(); i++) {
 		if (*fBookmarkURLs.ItemAt(i) == url)
 			return true;

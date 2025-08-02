@@ -178,8 +178,6 @@ BrowsingHistory::~BrowsingHistory()
 /*static*/ BrowsingHistory*
 BrowsingHistory::DefaultInstance()
 {
-	BAutolock lock(sDefaultInstance);
-	sDefaultInstance._LoadSettings();
 	return &sDefaultInstance;
 }
 
@@ -197,7 +195,7 @@ int32
 BrowsingHistory::BrowsingHistory::CountItems()
 {
 	BAutolock _(this);
-
+	_LoadSettings();
 	return fHistoryItems.CountItems();
 }
 
@@ -206,7 +204,7 @@ BrowsingHistoryItem
 BrowsingHistory::HistoryItemAt(int32 index)
 {
 	BAutolock _(this);
-
+	_LoadSettings();
 	BrowsingHistoryItem* existingItem = static_cast<BrowsingHistoryItem*>(
 		fHistoryItems.ItemAt(index));
 	if (!existingItem)
