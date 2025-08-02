@@ -2103,8 +2103,6 @@ BrowserWindow::_SmartURLHandler(const BString& url)
 		}
 
 		if (handled) {
-			if (static_cast<BrowserApp*>(be_app)->GetBlocklistManager()->IsBlocked(urlObject))
-				return;
 			_VisitURL(url);
 			return;
 		} else {

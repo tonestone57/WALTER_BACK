@@ -7,8 +7,24 @@
 
 #include <SupportDefs.h>
 
+#include "blake3.h"
 
-uint32 string_hash(const char* _string);
+
+static inline uint32
+string_hash(const char *_string)
+{
+	const uint8* string = (const uint8*)_string;
+	if (string == NULL)
+		return 0;
+
+	uint8_t output[BLAKE3_OUT_LEN];
+	blake3_hasher hasher;
+	blake3_hasher_init(&hasher);
+	blake3_hasher_update(&hasher, string, strlen((const char*)string));
+	blake3_hasher_finalize(&hasher, output, BLAKE3_OUT_LEN);
+
+	return *(uint32*)output;
+}
 
 
 namespace BPrivate {

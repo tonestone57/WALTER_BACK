@@ -36,7 +36,6 @@
 
 #include <memory>
 
-class BlocklistManager;
 class ConsoleWindow;
 class CookieWindow;
 class DownloadWindow;
@@ -58,7 +57,6 @@ public:
 	virtual	void				ReadyToRun();
 	virtual	bool				QuitRequested();
 
-			BlocklistManager*	GetBlocklistManager() { return fBlocklistManager; };
 private:
 			/*! @param[in,out] _pagesCreated if set, the pointed integer will be incremented by
 			 *                               the number of created pages.
@@ -92,7 +90,6 @@ private:
 			SettingsWindow*		fSettingsWindow;
 			ConsoleWindow*		fConsoleWindow;
 			CookieWindow*		fCookieWindow;
-			BlocklistManager*	fBlocklistManager;
 };
 
 

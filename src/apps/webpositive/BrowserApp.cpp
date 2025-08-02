@@ -51,7 +51,6 @@
 #include "ConsoleWindow.h"
 #include "CookieWindow.h"
 #include "SessionManager.h"
-#include "support/BlocklistManager.h"
 #include <NetworkCookieJar.h>
 #include "WebKitInfo.h"
 #include "WebPage.h"
@@ -81,10 +80,8 @@ BrowserApp::BrowserApp()
 	fDownloadWindow(NULL),
 	fSettingsWindow(NULL),
 	fConsoleWindow(NULL),
-	fCookieWindow(NULL),
-	fBlocklistManager(NULL)
+	fCookieWindow(NULL)
 {
-	fBlocklistManager = new BlocklistManager();
 #ifdef __i386__
 	// First let's check SSE2 is available
 	cpuid_info info;
@@ -126,7 +123,6 @@ BrowserApp::BrowserApp()
 
 BrowserApp::~BrowserApp()
 {
-	delete fBlocklistManager;
 }
 
 
@@ -483,24 +479,18 @@ BrowserApp::QuitRequested()
 		fSettings->SetValue("show downloads", !fDownloadWindow->IsHidden());
 		fDownloadWindow->Unlock();
 	}
-	if (fSettingsWindow && fSettingsWindow->Lock()) {
+	if (fSettingsWindow->Lock()) {
 		fSettings->SetValue("settings window frame", fSettingsWindow->Frame());
 		fSettingsWindow->Unlock();
 	}
-	if (fConsoleWindow && fConsoleWindow->Lock()) {
+	if (fConsoleWindow->Lock()) {
 		fSettings->SetValue("console window frame", fConsoleWindow->Frame());
 		fConsoleWindow->Unlock();
 	}
-	if (fCookieWindow && fCookieWindow->Lock()) {
+	if (fCookieWindow->Lock()) {
 		fSettings->SetValue("cookie window frame", fCookieWindow->Frame());
 		fCookieWindow->Unlock();
 	}
-
-	// The application is quitting, so we can safely delete the windows, they
-	// will not be used anymore.
-	delete fSettingsWindow;
-	delete fConsoleWindow;
-	delete fCookieWindow;
 
 	BrowsingHistory::DefaultInstance()->Save();
 

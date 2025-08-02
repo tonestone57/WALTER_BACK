@@ -19,6 +19,6 @@ Application package :
 	PackageWriterListener.cpp
 	PackageWritingUtils.cpp
 	:
-	package be bnetapi shared
+	package be bnetapi
 	[ TargetLibsupc++ ]
 ;
