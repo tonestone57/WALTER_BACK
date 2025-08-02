@@ -73,9 +73,9 @@ BrowserApp::BrowserApp()
 	fLastWindowFrame(50, 50, 950, 750),
 	fLaunchRefsMessage(0),
 	fInitialized(false),
-	fSettings(NULL),
-	fCookies(NULL),
-	fSession(NULL),
+	fSettings(),
+	fCookies(),
+	fSession(),
 	fContext(NULL),
 	fDownloadWindow(NULL),
 	fSettingsWindow(NULL),
@@ -99,8 +99,8 @@ BrowserApp::BrowserApp()
 
 	BString cookieStorePath = kApplicationName;
 	cookieStorePath << "/Cookies";
-	fCookies = new SettingsMessage(B_USER_SETTINGS_DIRECTORY,
-		cookieStorePath.String());
+	fCookies.reset(new SettingsMessage(B_USER_SETTINGS_DIRECTORY,
+		cookieStorePath.String()));
 	fContext = new BPrivate::Network::BUrlContext();
 	if (fCookies->InitCheck() == B_OK) {
 		BMessage cookieArchive = fCookies->GetValue("cookies", cookieArchive);
@@ -118,17 +118,14 @@ BrowserApp::BrowserApp()
 
 	BString sessionStorePath = kApplicationName;
 	sessionStorePath << "/Session";
-	fSession = new SettingsMessage(B_USER_SETTINGS_DIRECTORY,
-		sessionStorePath.String());
+	fSession.reset(new SettingsMessage(B_USER_SETTINGS_DIRECTORY,
+		sessionStorePath.String()));
 }
 
 
 BrowserApp::~BrowserApp()
 {
 	delete fLaunchRefsMessage;
-	delete fSettings;
-	delete fCookies;
-	delete fSession;
 }
 
 
@@ -207,8 +204,8 @@ BrowserApp::ReadyToRun()
 
 	BString mainSettingsPath(kApplicationName);
 	mainSettingsPath << "/Application";
-	fSettings = new SettingsMessage(B_USER_SETTINGS_DIRECTORY,
-		mainSettingsPath.String());
+	fSettings.reset(new SettingsMessage(B_USER_SETTINGS_DIRECTORY,
+		mainSettingsPath.String()));
 
 	fLastWindowFrame = fSettings->GetValue("window frame", fLastWindowFrame);
 	BRect defaultDownloadWindowFrame(-10, -10, 365, 265);

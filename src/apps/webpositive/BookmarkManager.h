@@ -38,7 +38,7 @@ public:
 			void				_AddBookmarkURLsRecursively(
 									BDirectory& directory,
 									BMessage* message,
-									uint32& addedCount) const;
+									uint32& addedCount);
 
 private:
 			void				_LoadBookmarkURLs();

@@ -207,7 +207,7 @@ BrowsingHistory::HistoryItemAt(int32 index)
 {
 	BAutolock _(this);
 
-	BrowsingHistoryItem* existingItem = reinterpret_cast<BrowsingHistoryItem*>(
+	BrowsingHistoryItem* existingItem = static_cast<BrowsingHistoryItem*>(
 		fHistoryItems.ItemAt(index));
 	if (!existingItem)
 		return BrowsingHistoryItem(BString());

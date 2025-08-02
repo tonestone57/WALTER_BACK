@@ -304,7 +304,7 @@ BookmarkManager::_ReadURLAttr(BFile& bookmarkFile, BString& url) const
 
 void
 BookmarkManager::_AddBookmarkURLsRecursively(BDirectory& directory,
-	BMessage* message, uint32& addedCount) const
+	BMessage* message, uint32& addedCount)
 {
 	BObjectList<BDirectory, true> directories(10);
 	directories.AddItem(new BDirectory(directory));
@@ -322,7 +322,7 @@ BookmarkManager::_AddBookmarkURLsRecursively(BDirectory& directory,
 					if (message != NULL)
 						message->AddString("url", storedURL.String());
 					else
-						const_cast<BookmarkManager*>(this)->fBookmarkURLs.AddItem(new BString(storedURL));
+						fBookmarkURLs.AddItem(new BString(storedURL));
 					addedCount++;
 				}
 			}

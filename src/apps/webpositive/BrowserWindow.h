@@ -40,7 +40,6 @@
 #include <memory>
 
 class BButton;
-class BCheckBox;
 class BDirectory;
 class BFile;
 class BFilePanel;
@@ -52,12 +51,12 @@ class BMessageRunner;
 class BPath;
 class BStatusBar;
 class BStringView;
-class BTextControl;
 class BWebView;
 
 class BookmarkBar;
 class BookmarkManager;
 class DataLoader;
+class FindView;
 class SettingsMessage;
 class TabManager;
 class URLInputGroup;
@@ -214,9 +213,10 @@ private:
 
 			void				_ShowBookmarkBar(bool show);
 
-	static	bool				_HistoryMenuHook(BMenu* menu, void* userData);
 
 private:
+	static	bool				_HistoryMenuHook(BMenu* menu, void* userData);
+
 			BMenu*				fHistoryMenu;
 			int32				fHistoryMenuFixedItemCount;
 
@@ -241,15 +241,10 @@ private:
 			BGroupLayout*		fMenuGroup;
 			BLayoutItem*		fTabGroup;
 			BLayoutItem*		fNavigationGroup;
-			BLayoutItem*		fFindGroup;
 			BLayoutItem*		fStatusGroup;
 			BLayoutItem*		fToggleFullscreenButton;
 
-			BTextControl*		fFindTextControl;
-			BButton*			fFindPreviousButton;
-			BButton*			fFindNextButton;
-			BButton*			fFindCloseButton;
-			BCheckBox*			fFindCaseSensitiveCheckBox;
+			FindView*			fFindView;
 			std::unique_ptr<TabManager>			fTabManager;
 
 			bool				fIsFullscreen;

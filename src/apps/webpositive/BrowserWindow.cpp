@@ -83,6 +83,7 @@
 #include "BrowserApp.h"
 #include "BrowsingHistory.h"
 #include "CredentialsStorage.h"
+#include "FindView.h"
 #include "IconButton.h"
 #include "NavMenu.h"
 #include "SettingsKeys.h"
@@ -93,7 +94,6 @@
 #include "WebView.h"
 #include "WebViewConstants.h"
 #include "WindowIcon.h"
-#include "HistoryMenuHook.cpp"
 #include "SourceWindow.h"
 
 
@@ -102,6 +102,7 @@
 
 
 enum {
+	MSG_POPULATE_HISTORY_MENU					= 'phmn',
 	MSG_DATA_LOADED								= 'dtld',
 	OPEN_LOCATION								= 'open',
 	SAVE_PAGE									= 'save',
@@ -133,7 +134,6 @@ enum {
 	EDIT_HIDE_FIND_GROUP						= 'hfnd',
 	EDIT_FIND_NEXT								= 'fndn',
 	EDIT_FIND_PREVIOUS							= 'fndp',
-	FIND_TEXT_CHANGED							= 'ftxt',
 
 	SELECT_TAB									= 'sltb',
 	CYCLE_TABS									= 'ctab',
@@ -493,33 +493,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	const float kInsetSpacing = 3;
 	const float kElementSpacing = 5;
 
-	// Find group
-	fFindCloseButton = new CloseButton(new BMessage(EDIT_HIDE_FIND_GROUP));
-	fFindTextControl = new BTextControl("find", B_TRANSLATE("Find:"), "", NULL);
-	fFindTextControl->SetModificationMessage(new BMessage(FIND_TEXT_CHANGED));
-	fFindPreviousButton = new BButton(B_TRANSLATE("Previous"),
-		new BMessage(EDIT_FIND_PREVIOUS));
-	fFindPreviousButton->SetToolTip(
-		B_TRANSLATE_COMMENT("Find previous occurrence of search terms",
-			"find bar previous button tooltip"));
-	fFindNextButton = new BButton(B_TRANSLATE("Next"),
-		new BMessage(EDIT_FIND_NEXT));
-	fFindNextButton->SetToolTip(
-		B_TRANSLATE_COMMENT("Find next occurrence of search terms",
-			"find bar next button tooltip"));
-	fFindCaseSensitiveCheckBox = new BCheckBox(B_TRANSLATE("Match case"));
-	BGroupLayout* findGroup = BLayoutBuilder::Group<>(B_VERTICAL, 0.0)
-		.Add(new BSeparatorView(B_HORIZONTAL, B_PLAIN_BORDER))
-		.Add(BGroupLayoutBuilder(B_HORIZONTAL, B_USE_SMALL_SPACING)
-			.Add(fFindCloseButton)
-			.Add(fFindTextControl)
-			.Add(fFindPreviousButton)
-			.Add(fFindNextButton)
-			.Add(fFindCaseSensitiveCheckBox)
-			.SetInsets(kInsetSpacing, kInsetSpacing,
-				kInsetSpacing, kInsetSpacing)
-		)
-	;
+	fFindView = new FindView(this);
 
 	// Navigation group
 	BGroupLayout* navigationGroup = BLayoutBuilder::Group<>(B_VERTICAL, 0.0)
@@ -588,18 +562,17 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	if (fBookmarkBar != NULL)
 		container->AddChild(fBookmarkBar);
 	topView->AddChild(fTabManager->ContainerView());
-	container->AddChild(findGroup);
+	container->AddChild(fFindView);
 	container->AddChild(statusGroup);
 
 	fURLInputGroup->MakeFocus(true);
 
-	fTabGroup = fTabManager->TabGroup()->GetLayout();
+	fTabGroup = fTabManager->TabG-roup()->GetLayout();
 	fNavigationGroup = navigationGroup;
-	fFindGroup = findGroup;
 	fStatusGroup = statusGroup;
 	fToggleFullscreenButton = layoutItemFor(toggleFullscreenButton);
 
-	fFindGroup->SetVisible(false);
+	fFindView->SetVisible(false);
 	fToggleFullscreenButton->SetVisible(false);
 
 	CreateNewTab(url, true, webView);
@@ -690,18 +663,6 @@ BrowserWindow::DispatchMessage(BMessage* message, BHandler* target)
 				// Replace edited text with the current URL.
 				fURLInputGroup->LockURLInput(false);
 				fURLInputGroup->SetText(BString(CurrentWebView()->MainFrameURL()));
-			}
-		} else if (target == fFindTextControl->TextView()) {
-			// Handle B_RETURN when the find text control has focus.
-			if (bytes[0] == B_RETURN) {
-				if ((modifierKeys & B_SHIFT_KEY) != 0)
-					_InvokeButtonVisibly(fFindPreviousButton);
-				else
-					_InvokeButtonVisibly(fFindNextButton);
-				return;
-			} else if (bytes[0] == B_ESCAPE) {
-				_InvokeButtonVisibly(fFindCloseButton);
-				return;
 			}
 		} else if (bytes[0] == B_ESCAPE && !fMenusRunning) {
 			if (modifierKeys == B_COMMAND_KEY)
@@ -1008,28 +969,31 @@ BrowserWindow::MessageReceived(BMessage* message)
 			break;
 
 		case EDIT_FIND_NEXT:
-			CurrentWebView()->FindString(fFindTextControl->Text(), true,
-				fFindCaseSensitiveCheckBox->Value());
+		case MSG_FIND_NEXT:
+			CurrentWebView()->FindString(fFindView->Text(), true,
+				fFindView->IsCaseSensitive());
 			break;
-		case FIND_TEXT_CHANGED:
+		case MSG_FIND_TEXT_CHANGED:
 		{
-			bool findTextAvailable = strlen(fFindTextControl->Text()) > 0;
+			bool findTextAvailable = strlen(fFindView->Text()) > 0;
 			fFindPreviousMenuItem->SetEnabled(findTextAvailable);
 			fFindNextMenuItem->SetEnabled(findTextAvailable);
 			break;
 		}
 		case EDIT_FIND_PREVIOUS:
-			CurrentWebView()->FindString(fFindTextControl->Text(), false,
-				fFindCaseSensitiveCheckBox->Value());
+		case MSG_FIND_PREVIOUS:
+			CurrentWebView()->FindString(fFindView->Text(), false,
+				fFindView->IsCaseSensitive());
 			break;
 		case EDIT_SHOW_FIND_GROUP:
-			if (!fFindGroup->IsVisible())
-				fFindGroup->SetVisible(true);
-			fFindTextControl->MakeFocus(true);
+			if (fFindView->IsHidden())
+				fFindView->Show();
+			fFindView->MakeFocus(true);
 			break;
 		case EDIT_HIDE_FIND_GROUP:
-			if (fFindGroup->IsVisible()) {
-				fFindGroup->SetVisible(false);
+		case MSG_FIND_CLOSED:
+			if (!fFindView->IsHidden()) {
+				fFindView->Hide();
 				if (CurrentWebView() != NULL)
 					CurrentWebView()->MakeFocus(true);
 			}
@@ -1868,6 +1832,17 @@ BrowserWindow::AuthenticationChallenge(BString message, BString& inOutUser,
 
 
 // #pragma mark - private
+
+
+bool
+BrowserWindow::_HistoryMenuHook(BMenu* menu, void* userData)
+{
+	BrowserWindow* window = static_cast<BrowserWindow*>(userData);
+	window->PostMessage(MSG_POPULATE_HISTORY_MENU);
+	// Remove the hook so it doesn't get called again.
+	menu->SetTrackingHook(NULL, NULL);
+	return false;
+}
 
 
 void
