@@ -17,7 +17,6 @@ class BDirectory;
 class BFile;
 class BMessage;
 class BrowserWindow;
-class DataLoader;
 
 
 class BookmarkManager {
@@ -41,18 +40,13 @@ public:
 									BMessage* message,
 									uint32& addedCount);
 
-public:
-			void				SetDataLoader(DataLoader* loader);
-
 private:
-	friend class DataLoader;
 			void				_LoadBookmarkURLs();
-			bool				_CheckBookmarkExists(const BString& url);
+			bool				_CheckBookmarkExists(const BString& url) const;
 
 private:
 			std::set<BString>	fBookmarkURLs;
 			bool				fBookmarksLoaded;
-			DataLoader*			fDataLoader;
 };
 
 

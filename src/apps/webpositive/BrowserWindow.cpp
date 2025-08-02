@@ -96,17 +96,15 @@
 #include "WebViewConstants.h"
 #include "WindowIcon.h"
 #include "SourceWindow.h"
-#include "support/IconLoader.h"
 
 
 #undef B_TRANSLATION_CONTEXT
 #define B_TRANSLATION_CONTEXT "WebPositive Window"
 
 
-#include "WebViewConstants.h"
-
 enum {
 	MSG_POPULATE_HISTORY_MENU					= 'phmn',
+	MSG_DATA_LOADED								= 'dtld',
 	OPEN_LOCATION								= 'open',
 	SAVE_PAGE									= 'save',
 	GO_BACK										= 'goba',
@@ -268,13 +266,11 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	fAutoHidePointer(false),
 	fBookmarkBar(),
 	fBookmarkManager(std::make_unique<BookmarkManager>()),
-	fDataLoader(std::make_unique<DataLoader>(this)),
-	fIconLoader(std::make_unique<IconLoader>(this))
+	fDataLoader(std::make_unique<DataLoader>(BMessenger(this)))
 {
-	fBookmarkManager->SetDataLoader(fDataLoader.get());
 	// Begin listening to settings changes and read some current values.
 	fAppSettings->AddListener(BMessenger(this));
-	fDataLoader->PostMessage(MSG_LOAD_HISTORY);
+	fDataLoader->Start();
 	fZoomTextOnly = fAppSettings->GetValue("zoom text only", fZoomTextOnly);
 	fShowTabsIfSinglePageOpen = fAppSettings->GetValue(
 		kSettingsKeyShowTabsIfSinglePageOpen, fShowTabsIfSinglePageOpen);
@@ -825,32 +821,6 @@ BrowserWindow::MessageReceived(BMessage* message)
 			_HandlePageSourceResult(message);
 			break;
 
-		case B_ICON_RESULT:
-		{
-			BBitmap* icon;
-			if (message->FindPointer("icon", (void**)&icon) != B_OK)
-				break;
-			BMessage originalRequest;
-			if (message->FindMessage("original", &originalRequest) != B_OK)
-				break;
-			BWebView* webView;
-			if (originalRequest.FindPointer("view", (void**)&webView) != B_OK)
-				break;
-			_SetPageIcon(webView, icon);
-			delete icon;
-			break;
-		}
-
-		case MSG_HISTORY_LOADED:
-		{
-			BObjectList<BrowsingHistoryItem, true>* historyItems;
-			if (message->FindPointer("history",
-					(void**)&historyItems) != B_OK)
-				break;
-			fHistoryItems = historyItems;
-			break;
-		}
-
 		case EDIT_FIND_NEXT:
 		case MSG_FIND_NEXT:
 			CurrentWebView()->FindString(fFindView->Text(), true,
@@ -859,8 +829,8 @@ BrowserWindow::MessageReceived(BMessage* message)
 		case MSG_FIND_TEXT_CHANGED:
 		{
 			bool findTextAvailable = strlen(fFindView->Text()) > 0;
-			fMenuManager->FindPreviousMenuItem()->SetEnabled(findTextAvailable);
-			fMenuManager->FindNextMenuItem()->SetEnabled(findTextAvailable);
+	fMenuManager->FindPreviousMenuItem()->SetEnabled(false);
+	fMenuManager->FindNextMenuItem()->SetEnabled(false);
 			break;
 		}
 		case EDIT_FIND_PREVIOUS:
@@ -956,14 +926,6 @@ BrowserWindow::MessageReceived(BMessage* message)
 			fTabManager->SelectTab(index);
 		}
 		break;
-
-		case MSG_UNDO_CLOSE_TAB:
-		{
-			BWebView* view = static_cast<BrowserApp*>(be_app)->GetTabCache()->Get();
-			if (view)
-				CreateNewTab(view->MainFrameURL(), true, view);
-			break;
-		}
 
 		case TAB_CHANGED:
 		{
@@ -1529,12 +1491,7 @@ BrowserWindow::IconReceived(const BBitmap* icon, BWebView* view)
 	if (!fTabManager->HasView(view))
 		return;
 
-	BMessage message(B_ICON_REQUEST);
-	message.AddPointer("view", view);
-	BMessage iconArchive;
-	if (icon->Archive(&iconArchive, true) == B_OK)
-		message.AddMessage("icon", &iconArchive);
-	fIconLoader->PostMessage(&message);
+	_SetPageIcon(view, icon);
 }
 
 
@@ -1673,47 +1630,36 @@ BrowserWindow::AuthenticationChallenge(BString message, BString& inOutUser,
 	// TODO: Using the message as key here is not so smart.
 	HashString key(message);
 
-	Credentials credentials;
-	bool storedCredentials = false;
-	if (persistentStorage->Contains(key)) {
-		credentials = persistentStorage->GetCredentials(key);
-		storedCredentials = true;
-	} else if (sessionStorage->Contains(key)) {
-		credentials = sessionStorage->GetCredentials(key);
-		storedCredentials = true;
+	if (failureCount == 0) {
+		if (persistentStorage->Contains(key)) {
+			Credentials credentials = persistentStorage->GetCredentials(key);
+			inOutUser = credentials.Username();
+			inOutPassword = credentials.Password();
+			return true;
+		} else if (sessionStorage->Contains(key)) {
+			Credentials credentials = sessionStorage->GetCredentials(key);
+			inOutUser = credentials.Username();
+			inOutPassword = credentials.Password();
+			return true;
+		}
 	}
-
-	if (storedCredentials)
-		inOutUser = credentials.Username();
-
 	// Switch to the page for which this authentication is required.
 	if (!_ShowPage(view))
 		return false;
 
-	while (true) {
-		AuthenticationPanel* panel = new AuthenticationPanel(Frame());
-			// Panel auto-destructs.
-		bool success = panel->getAuthentication(message, inOutUser,
-			BString(), inOutRememberCredentials, failureCount > 0,
-			inOutUser, inOutPassword, &inOutRememberCredentials);
-
-		if (!success)
-			return false;
-
-		if (storedCredentials) {
-			if (credentials.CheckPassword(inOutPassword))
-				return true;
-		} else {
-			credentials = Credentials(inOutUser, inOutPassword);
-			if (inOutRememberCredentials)
-				persistentStorage->PutCredentials(key, credentials);
-			else
-				sessionStorage->PutCredentials(key, credentials);
-			return true;
-		}
-
-		failureCount++;
+	AuthenticationPanel* panel = new AuthenticationPanel(Frame());
+		// Panel auto-destructs.
+	bool success = panel->getAuthentication(message, inOutUser, inOutPassword,
+		inOutRememberCredentials, failureCount > 0, inOutUser, inOutPassword,
+		&inOutRememberCredentials);
+	if (success) {
+		Credentials credentials(inOutUser, inOutPassword);
+		if (inOutRememberCredentials)
+			persistentStorage->PutCredentials(key, credentials);
+		else
+			sessionStorage->PutCredentials(key, credentials);
 	}
+	return success;
 }
 
 
@@ -1782,10 +1728,9 @@ BrowserWindow::_ShutdownTab(int32 index)
 	BWebView* webView = dynamic_cast<BWebView*>(view);
 	if (webView == CurrentWebView())
 		SetCurrentWebView(NULL);
-	if (webView != NULL) {
-		static_cast<BrowserApp*>(be_app)->GetTabCache()->Add(webView);
+	if (webView != NULL)
 		webView->Shutdown();
-	} else
+	else
 		delete view;
 }
 
@@ -2158,6 +2103,8 @@ BrowserWindow::_SmartURLHandler(const BString& url)
 		}
 
 		if (handled) {
+			if (static_cast<BrowserApp*>(be_app)->GetBlocklistManager()->IsBlocked(urlObject))
+				return;
 			_VisitURL(url);
 			return;
 		} else {

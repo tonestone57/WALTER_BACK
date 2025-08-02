@@ -18,12 +18,10 @@ local sources =
 
 	# support
 	BaseURL.cpp
+	BlocklistManager.cpp
 	BookmarkBar.cpp
 	BookmarkManager.cpp
 	FontSelectionView.cpp
-	IconLoader.cpp
-	TabCache.cpp
-	URLUtils.cpp
 
 	# tabview
 	TabContainerView.cpp

@@ -37,7 +37,6 @@
 #include "BrowserWindow.h"
 #include "FontSelectionView.h"
 #include "SettingsKeys.h"
-#include "support/URLUtils.h"
 #include "WebSettings.h"
 
 
@@ -976,7 +975,8 @@ SettingsWindow::_ValidateControlsEnabledStatus()
 void
 SettingsWindow::_ValidateProxyAddress()
 {
-	if (!URLUtils::IsProxyAddress(fProxyAddressControl->Text())) {
+	BUrl url(fProxyAddressControl->Text(), true);
+	if (url.Host().Length() == 0) {
 		fProxyAddressControl->TextView()->SetViewColor(255, 200, 200);
 		fProxyAddressValid = false;
 	} else {
@@ -990,7 +990,8 @@ SettingsWindow::_ValidateProxyAddress()
 void
 SettingsWindow::_ValidateSearchPage()
 {
-	if (!URLUtils::IsSearchURL(fSearchPageControl->Text())) {
+	BString url(fSearchPageControl->Text());
+	if (url.FindFirst("%s") < 0) {
 		fSearchPageControl->TextView()->SetViewColor(255, 200, 200);
 		fSearchPageValid = false;
 	} else {
@@ -1004,7 +1005,8 @@ SettingsWindow::_ValidateSearchPage()
 void
 SettingsWindow::_ValidateStartPage()
 {
-	if (!URLUtils::IsValid(fStartPageControl->Text())) {
+	BUrl url(fStartPageControl->Text(), true);
+	if (!url.IsValid()) {
 		fStartPageControl->TextView()->SetViewColor(255, 200, 200);
 		fStartPageValid = false;
 	} else {

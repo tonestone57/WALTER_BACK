@@ -8,7 +8,7 @@
 
 #include <new>
 #include <stdio.h>
-#include <bcrypt.h>
+#include <Bcrypt.h>
 
 #include <Autolock.h>
 #include <Entry.h>
@@ -23,19 +23,21 @@
 Credentials::Credentials()
 	:
 	fUsername(),
-	fPasswordHash()
+	fPassword(),
+	fSalt()
 {
 }
 
 
 Credentials::Credentials(const BString& username, const BString& password)
 	:
-	fUsername(username)
+	fUsername(username),
+	fPassword(password)
 {
-	char salt[BCRYPT_SALT_LEN];
-	bcrypt_gensalt(12, salt);
-	bcrypt_hashpw(password, salt, fPasswordHash.LockBuffer(BCRYPT_HASH_LEN));
-	fPasswordHash.UnlockBuffer();
+	char salt[21];
+	arc4random_buf(salt, sizeof(salt));
+	_convertToB64(salt, sizeof(salt));
+	fSalt = salt;
 }
 
 
@@ -45,12 +47,26 @@ Credentials::Credentials(const Credentials& other)
 }
 
 
+static void
+_convertToB64(char* salt, int size)
+{
+	const char* b64chars =
+		"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+	for (int i = 0; i < size; i++)
+		salt[i] = b64chars[salt[i] % 64];
+	salt[size - 1] = 0;
+}
+
+
 Credentials::Credentials(const BMessage* archive)
 {
 	if (archive == NULL)
 		return;
 	archive->FindString("username", &fUsername);
-	archive->FindString("password_hash", &fPasswordHash);
+	archive->FindString("salt", &fSalt);
+	BString encryptedPassword;
+	if (archive->FindString("password", &encryptedPassword) == B_OK)
+		Bcrypt::Decrypt(encryptedPassword, fSalt, fPassword);
 }
 
 
@@ -66,7 +82,14 @@ Credentials::Archive(BMessage* archive) const
 		return B_BAD_VALUE;
 	status_t status = archive->AddString("username", fUsername);
 	if (status == B_OK)
-		status = archive->AddString("password_hash", fPasswordHash);
+		status = archive->AddString("salt", fSalt);
+	if (status == B_OK) {
+		BString encryptedPassword;
+		if (Bcrypt::Encrypt(fPassword, fSalt, encryptedPassword) == B_OK)
+			status = archive->AddString("password", encryptedPassword);
+		else
+			status = B_ERROR;
+	}
 	return status;
 }
 
@@ -78,7 +101,8 @@ Credentials::operator=(const Credentials& other)
 		return *this;
 
 	fUsername = other.fUsername;
-	fPasswordHash = other.fPasswordHash;
+	fPassword = other.fPassword;
+	fSalt = other.fSalt;
 
 	return *this;
 }
@@ -90,7 +114,7 @@ Credentials::operator==(const Credentials& other) const
 	if (this == &other)
 		return true;
 
-	return fUsername == other.fUsername && fPasswordHash == other.fPasswordHash;
+	return fUsername == other.fUsername && fPassword == other.fPassword;
 }
 
 
@@ -108,11 +132,10 @@ Credentials::Username() const
 }
 
 
-bool
-Credentials::CheckPassword(const BString& password) const
+const BString&
+Credentials::Password() const
 {
-	return fPasswordHash == NULL
-		|| bcrypt_checkpw(password, fPasswordHash) == 0;
+	return fPassword;
 }
 
 
