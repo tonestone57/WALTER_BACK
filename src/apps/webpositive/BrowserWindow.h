@@ -58,6 +58,7 @@ class BrowsingHistoryItem;
 class BookmarkManager;
 class DataLoader;
 class FindView;
+class IconLoader;
 class MenuManager;
 class SettingsMessage;
 class TabManager;
@@ -268,6 +269,7 @@ private:
 			std::unique_ptr<BFilePanel>			fSavePanel;
 			std::unique_ptr<BookmarkManager>	fBookmarkManager;
 			std::unique_ptr<DataLoader>			fDataLoader;
+			std::unique_ptr<IconLoader>			fIconLoader;
 };
 
 

@@ -96,15 +96,17 @@
 #include "WebViewConstants.h"
 #include "WindowIcon.h"
 #include "SourceWindow.h"
+#include "support/IconLoader.h"
 
 
 #undef B_TRANSLATION_CONTEXT
 #define B_TRANSLATION_CONTEXT "WebPositive Window"
 
 
+#include "WebViewConstants.h"
+
 enum {
 	MSG_POPULATE_HISTORY_MENU					= 'phmn',
-	MSG_DATA_LOADED								= 'dtld',
 	OPEN_LOCATION								= 'open',
 	SAVE_PAGE									= 'save',
 	GO_BACK										= 'goba',
@@ -266,11 +268,13 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	fAutoHidePointer(false),
 	fBookmarkBar(),
 	fBookmarkManager(std::make_unique<BookmarkManager>()),
-	fDataLoader(std::make_unique<DataLoader>(BMessenger(this)))
+	fDataLoader(std::make_unique<DataLoader>(this)),
+	fIconLoader(std::make_unique<IconLoader>(this))
 {
+	fBookmarkManager->SetDataLoader(fDataLoader.get());
 	// Begin listening to settings changes and read some current values.
 	fAppSettings->AddListener(BMessenger(this));
-	fDataLoader->Start();
+	fDataLoader->PostMessage(MSG_LOAD_HISTORY);
 	fZoomTextOnly = fAppSettings->GetValue("zoom text only", fZoomTextOnly);
 	fShowTabsIfSinglePageOpen = fAppSettings->GetValue(
 		kSettingsKeyShowTabsIfSinglePageOpen, fShowTabsIfSinglePageOpen);
@@ -820,6 +824,32 @@ BrowserWindow::MessageReceived(BMessage* message)
 		case B_PAGE_SOURCE_RESULT:
 			_HandlePageSourceResult(message);
 			break;
+
+		case B_ICON_RESULT:
+		{
+			BBitmap* icon;
+			if (message->FindPointer("icon", (void**)&icon) != B_OK)
+				break;
+			BMessage originalRequest;
+			if (message->FindMessage("original", &originalRequest) != B_OK)
+				break;
+			BWebView* webView;
+			if (originalRequest.FindPointer("view", (void**)&webView) != B_OK)
+				break;
+			_SetPageIcon(webView, icon);
+			delete icon;
+			break;
+		}
+
+		case MSG_HISTORY_LOADED:
+		{
+			BObjectList<BrowsingHistoryItem, true>* historyItems;
+			if (message->FindPointer("history",
+					(void**)&historyItems) != B_OK)
+				break;
+			fHistoryItems = historyItems;
+			break;
+		}
 
 		case EDIT_FIND_NEXT:
 		case MSG_FIND_NEXT:
@@ -1491,7 +1521,12 @@ BrowserWindow::IconReceived(const BBitmap* icon, BWebView* view)
 	if (!fTabManager->HasView(view))
 		return;
 
-	_SetPageIcon(view, icon);
+	BMessage message(B_ICON_REQUEST);
+	message.AddPointer("view", view);
+	BMessage iconArchive;
+	if (icon->Archive(&iconArchive, true) == B_OK)
+		message.AddMessage("icon", &iconArchive);
+	fIconLoader->PostMessage(&message);
 }
 
 

@@ -21,6 +21,7 @@ local sources =
 	BookmarkBar.cpp
 	BookmarkManager.cpp
 	FontSelectionView.cpp
+	IconLoader.cpp
 	URLUtils.cpp
 
 	# tabview

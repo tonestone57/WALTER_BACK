@@ -23,6 +23,8 @@
 
 #include "BrowserApp.h"
 #include "BrowserWindow.h"
+#include "DataLoader.h"
+#include "WebViewConstants.h"
 
 
 #undef B_TRANSLATION_CONTEXT
@@ -31,7 +33,8 @@
 
 BookmarkManager::BookmarkManager()
 	:
-	fBookmarksLoaded(false)
+	fBookmarksLoaded(false),
+	fDataLoader(NULL)
 {
 }
 
@@ -212,8 +215,23 @@ BookmarkManager::CreateBookmark(const BPath& path, BString fileName,
 
 
 void
+BookmarkManager::SetDataLoader(DataLoader* loader)
+{
+	fDataLoader = loader;
+}
+
+
+void
 BookmarkManager::CreateBookmark(BMessage* message)
 {
+	if (fDataLoader) {
+		BMessage createMessage(MSG_CREATE_BOOKMARK);
+		createMessage.AddPointer("manager", this);
+		createMessage.AddMessage("data", message);
+		fDataLoader->PostMessage(&createMessage);
+	} else {
+		// This should not happen in WebPositive, but as a fallback, do it
+		// synchronously.
 		entry_ref ref;
 		BMessage originatorData;
 		const char* url;
@@ -245,7 +263,7 @@ BookmarkManager::CreateBookmark(BMessage* message)
 			fprintf(stderr, "BookmarkManager: There was an error setting up "
 				"the bookmark.\n");
 		}
-		return;
+	}
 }
 
 

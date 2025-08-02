@@ -1,18 +1,19 @@
 /*
- * Copyright 2025, Your Name <your@email.com>
+ * Copyright 2023, Haiku, Inc.
  * All rights reserved. Distributed under the terms of the MIT License.
  */
-#ifndef DATA_LOADER_H
-#define DATA_LOADER_H
+#ifndef ICON_LOADER_H
+#define ICON_LOADER_H
 
 #include <Looper.h>
-#include <Messenger.h>
 
+class BBitmap;
+class BHandler;
 class BMessage;
 
-class DataLoader : public BLooper {
+class IconLoader : public BLooper {
 public:
-						DataLoader(BHandler* target);
+						IconLoader(BHandler* target);
 
 	virtual void		MessageReceived(BMessage* message);
 
@@ -20,4 +21,4 @@ private:
 			BHandler*	fTarget;
 };
 
-#endif // DATA_LOADER_H
+#endif // ICON_LOADER_H
