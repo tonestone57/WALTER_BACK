@@ -11,6 +11,7 @@
 #include <Window.h>
 
 #include <map>
+#include <memory>
 
 class BButton;
 class BFile;
@@ -47,10 +48,10 @@ private:
 			bool				_OpenSettingsFile(BFile& file, uint32 mode);
 
 private:
-			BMessageRunner*		fSaveSettingsRunner;
+			std::unique_ptr<BMessageRunner>		fSaveSettingsRunner;
 			BScrollView*		fDownloadsScrollView;
 			BGroupLayout*		fDownloadViewsLayout;
-			std::map<BString, DownloadProgressView*> fDownloadViews;
+			std::map<BString, std::unique_ptr<DownloadProgressView>> fDownloadViews;
 			BButton*			fRemoveFinishedButton;
 			BButton*			fRemoveMissingButton;
 			BString				fDownloadPath;

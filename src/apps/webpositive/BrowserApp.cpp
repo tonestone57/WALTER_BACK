@@ -75,7 +75,7 @@ BrowserApp::BrowserApp()
 	fLaunchRefsMessage(nullptr),
 	fInitialized(false),
 	fSettings(),
-	fSessionManager(NULL),
+	fSessionManager(nullptr),
 	fContext(NULL),
 	fDownloadWindow(NULL),
 	fSettingsWindow(NULL),
@@ -115,7 +115,7 @@ BrowserApp::BrowserApp()
 		setenv("CURL_COOKIE_JAR_PATH", curlCookies.Path(), 0);
 	}
 
-	fSessionManager = new SessionManager("session manager", B_NORMAL_PRIORITY,
+	fSessionManager = std::make_unique<SessionManager>("session manager", B_NORMAL_PRIORITY,
 		this);
 	fSessionManager->Run();
 }

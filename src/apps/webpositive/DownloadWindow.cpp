@@ -120,7 +120,7 @@ DownloadWindow::DownloadWindow(BRect frame, bool visible,
 	: BWindow(frame, B_TRANSLATE("Downloads"),
 		B_TITLED_WINDOW_LOOK, B_NORMAL_WINDOW_FEEL,
 		B_AUTO_UPDATE_SIZE_LIMITS | B_ASYNCHRONOUS_CONTROLS | B_NOT_ZOOMABLE),
-	fSaveSettingsRunner(NULL),
+	fSaveSettingsRunner(nullptr),
 	fMinimizeOnClose(false)
 {
 	SetPulseRate(1000000);
@@ -188,7 +188,6 @@ DownloadWindow::DownloadWindow(BRect frame, bool visible,
 
 DownloadWindow::~DownloadWindow()
 {
-	delete fSaveSettingsRunner;
 	// Only necessary to save the current progress of unfinished downloads:
 	if (fSaveSettingsRunner)
 		_SaveSettings();
@@ -366,13 +365,12 @@ DownloadWindow::_DownloadStarted(BDownload* download)
 
 	if (fDownloadViews.find(download->Url().UrlString()) != fDownloadViews.end())
 		return;
-	DownloadProgressView* view = new DownloadProgressView(download);
+	auto view = std::make_unique<DownloadProgressView>(download);
 	if (!view->Init()) {
-		delete view;
 		return;
 	}
-	fDownloadViews[download->Url().UrlString()] = view;
-	fDownloadViewsLayout->AddView(view);
+	fDownloadViews[download->Url().UrlString()] = std::move(view);
+	fDownloadViewsLayout->AddView(fDownloadViews[download->Url().UrlString()].get());
 
 	// Scroll new download into view
 	if (BScrollBar* scrollBar = fDownloadsScrollView->ScrollBar(B_VERTICAL)) {
@@ -399,7 +397,7 @@ DownloadWindow::_DownloadStarted(BDownload* download)
 		Show();
 
 	if (fSaveSettingsRunner == NULL) {
-		fSaveSettingsRunner = new BMessageRunner(BMessenger(this),
+		fSaveSettingsRunner = std::make_unique<BMessageRunner>(BMessenger(this),
 			new BMessage(SAVE_SETTINGS), 5 * 1000000, -1);
 	}
 }
@@ -409,9 +407,9 @@ void
 DownloadWindow::_DownloadFinished(BDownload* download)
 {
 	if (download) {
-		DownloadProgressView* view = fDownloadViews[download->Url().UrlString()];
-		if (view)
-			view->DownloadFinished();
+		auto it = fDownloadViews.find(download->Url().UrlString());
+		if (it != fDownloadViews.end())
+			it->second->DownloadFinished();
 	}
 	_ValidateButtonStatus();
 	if (download)
@@ -426,7 +424,6 @@ DownloadWindow::_RemoveFinishedDownloads()
 	for (auto it = fDownloadViews.begin(); it != fDownloadViews.end();) {
 		if (it->second->IsFinished()) {
 			it->second->RemoveSelf();
-			delete it->second;
 			it = fDownloadViews.erase(it);
 		} else {
 			++it;
@@ -444,7 +441,6 @@ DownloadWindow::_RemoveMissingDownloads()
 	for (auto it = fDownloadViews.begin(); it != fDownloadViews.end();) {
 		if (it->second->IsMissing()) {
 			it->second->RemoveSelf();
-			delete it->second;
 			it = fDownloadViews.erase(it);
 		} else {
 			++it;
@@ -480,8 +476,7 @@ void
 DownloadWindow::_SaveSettingsIfNeeded()
 {
 	if (!DownloadsInProgress()) {
-		delete fSaveSettingsRunner;
-		fSaveSettingsRunner = NULL;
+		fSaveSettingsRunner.reset();
 	}
 	_ValidateButtonStatus();
 	_SaveSettings();
@@ -528,15 +523,15 @@ DownloadWindow::_LoadSettings()
 	for (int32 i = 0;
 			message.FindMessage("download", i, &downloadArchive) == B_OK;
 			i++) {
-		DownloadProgressView* view = new(std::nothrow) DownloadProgressView(
+		auto view = std::make_unique<DownloadProgressView>(
 			&downloadArchive);
 		if (view == NULL)
 			continue;
 		if (!view->Init(&downloadArchive)) {
-			delete view;
 			continue;
 		}
-		fDownloadViewsLayout->AddView(0, view);
+		fDownloadViewsLayout->AddView(0, view.get());
+		fDownloadViews[view->Url()] = std::move(view);
 	}
 }
 
@@ -552,5 +547,3 @@ DownloadWindow::_OpenSettingsFile(BFile& file, uint32 mode)
 	}
 	return file.SetTo(path.Path(), mode) == B_OK;
 }
-
-
