@@ -23,7 +23,8 @@
 Credentials::Credentials()
 	:
 	fUsername(),
-	fPassword()
+	fPassword(),
+	fSalt()
 {
 }
 
@@ -33,6 +34,10 @@ Credentials::Credentials(const BString& username, const BString& password)
 	fUsername(username),
 	fPassword(password)
 {
+	char salt[21];
+	arc4random_buf(salt, sizeof(salt));
+	_convertToB64(salt, sizeof(salt));
+	fSalt = salt;
 }
 
 
@@ -42,16 +47,26 @@ Credentials::Credentials(const Credentials& other)
 }
 
 
+static void
+_convertToB64(char* salt, int size)
+{
+	const char* b64chars =
+		"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+	for (int i = 0; i < size; i++)
+		salt[i] = b64chars[salt[i] % 64];
+	salt[size - 1] = 0;
+}
+
+
 Credentials::Credentials(const BMessage* archive)
 {
 	if (archive == NULL)
 		return;
 	archive->FindString("username", &fUsername);
+	archive->FindString("salt", &fSalt);
 	BString encryptedPassword;
-	if (archive->FindString("password", &encryptedPassword) == B_OK) {
-		BString salt = fUsername;
-		Bcrypt::Decrypt(encryptedPassword, salt, fPassword);
-	}
+	if (archive->FindString("password", &encryptedPassword) == B_OK)
+		Bcrypt::Decrypt(encryptedPassword, fSalt, fPassword);
 }
 
 
@@ -66,10 +81,11 @@ Credentials::Archive(BMessage* archive) const
 	if (archive == NULL)
 		return B_BAD_VALUE;
 	status_t status = archive->AddString("username", fUsername);
+	if (status == B_OK)
+		status = archive->AddString("salt", fSalt);
 	if (status == B_OK) {
-		BString salt = fUsername;
 		BString encryptedPassword;
-		if (Bcrypt::Encrypt(fPassword, salt, encryptedPassword) == B_OK)
+		if (Bcrypt::Encrypt(fPassword, fSalt, encryptedPassword) == B_OK)
 			status = archive->AddString("password", encryptedPassword);
 		else
 			status = B_ERROR;

@@ -42,6 +42,7 @@ public:
 private:
 			BString				fUsername;
 			BString				fPassword;
+			BString				fSalt;
 };
 
 
