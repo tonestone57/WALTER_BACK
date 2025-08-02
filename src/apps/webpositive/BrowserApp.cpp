@@ -264,10 +264,21 @@ BrowserApp::ReadyToRun()
 			for (int i = 0; fSession->FindMessage("window", i, &archivedWindow)
 				== B_OK; i++) {
 				BRect frame = archivedWindow.FindRect("window frame");
+				BScreen screen;
+				if (!screen.Frame().Intersects(frame))
+					frame.OffsetTo(50, 50);
 				uint32 workspaces = B_CURRENT_WORKSPACE;
 				archivedWindow.FindUInt32("window workspaces", 0, &workspaces);
 				BString url;
 				archivedWindow.FindString("tab", 0, &url);
+				BUrl urlParser(url);
+				if (!urlParser.IsValid())
+					url = "about:blank";
+				else if (strcmp(urlParser.Protocol(), "file") == 0) {
+					BEntry entry(urlParser.Path());
+					if (!entry.Exists())
+						url = "about:blank";
+				}
 				BrowserWindow* window = new(std::nothrow) BrowserWindow(frame, fSettings, url,
 					fContext, INTERFACE_ELEMENT_ALL, NULL, workspaces);
 
@@ -277,7 +288,14 @@ BrowserApp::ReadyToRun()
 
 					for (int j = 1; archivedWindow.FindString("tab", j, &url)
 						== B_OK; j++) {
-						printf("Create %d:%d\n", i, j);
+						BUrl urlParser(url);
+						if (!urlParser.IsValid())
+							url = "about:blank";
+						else if (strcmp(urlParser.Protocol(), "file") == 0) {
+							BEntry entry(urlParser.Path());
+							if (!entry.Exists())
+								url = "about:blank";
+						}
 						_CreateNewTab(window, url, false);
 						pagesCreated++;
 					}
