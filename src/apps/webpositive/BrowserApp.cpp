@@ -50,7 +50,8 @@
 #include "SettingsWindow.h"
 #include "ConsoleWindow.h"
 #include "CookieWindow.h"
-#include "NetworkCookieJar.h"
+#include "SessionManager.h"
+#include <NetworkCookieJar.h>
 #include "WebKitInfo.h"
 #include "WebPage.h"
 #include "WebSettings.h"
@@ -74,8 +75,7 @@ BrowserApp::BrowserApp()
 	fLaunchRefsMessage(0),
 	fInitialized(false),
 	fSettings(),
-	fCookies(),
-	fSession(),
+	fSessionManager(NULL),
 	fContext(NULL),
 	fDownloadWindow(NULL),
 	fSettingsWindow(NULL),
@@ -97,16 +97,15 @@ BrowserApp::BrowserApp()
 	}
 #endif
 
-	BString cookieStorePath = kApplicationName;
-	cookieStorePath << "/Cookies";
-	fCookies.reset(new SettingsMessage(B_USER_SETTINGS_DIRECTORY,
-		cookieStorePath.String()));
-	fContext = new BPrivate::Network::BUrlContext();
-	if (fCookies->InitCheck() == B_OK) {
-		BMessage cookieArchive = fCookies->GetValue("cookies", cookieArchive);
-		fContext->SetCookieJar(
-			BPrivate::Network::BNetworkCookieJar(&cookieArchive));
+	BPath cookiePath;
+	if (find_directory(B_USER_SETTINGS_DIRECTORY, &cookiePath) == B_OK) {
+		cookiePath.Append(kApplicationName);
+		create_directory(cookiePath.Path(), 0777);
+		cookiePath.Append("Cookies");
 	}
+
+	fContext = new BPrivate::Network::BUrlContext();
+	fContext->SetCookieJar(BNetworkCookieJar(cookiePath));
 
 	BPath curlCookies;
 	if (find_directory(B_USER_SETTINGS_DIRECTORY, &curlCookies) == B_OK
@@ -116,10 +115,9 @@ BrowserApp::BrowserApp()
 		setenv("CURL_COOKIE_JAR_PATH", curlCookies.Path(), 0);
 	}
 
-	BString sessionStorePath = kApplicationName;
-	sessionStorePath << "/Session";
-	fSession.reset(new SettingsMessage(B_USER_SETTINGS_DIRECTORY,
-		sessionStorePath.String()));
+	fSessionManager = new SessionManager("session manager", B_NORMAL_PRIORITY,
+		this);
+	fSessionManager->Run();
 }
 
 
@@ -208,35 +206,10 @@ BrowserApp::ReadyToRun()
 		mainSettingsPath.String()));
 
 	fLastWindowFrame = fSettings->GetValue("window frame", fLastWindowFrame);
-	BRect defaultDownloadWindowFrame(-10, -10, 365, 265);
-	BRect downloadWindowFrame = fSettings->GetValue("downloads window frame",
-		defaultDownloadWindowFrame);
-	BRect settingsWindowFrame = fSettings->GetValue("settings window frame",
-		BRect());
 	BRect consoleWindowFrame = fSettings->GetValue("console window frame",
 		BRect(50, 50, 400, 300));
 	BRect cookieWindowFrame = fSettings->GetValue("cookie window frame",
 		BRect(50, 50, 400, 300));
-	bool showDownloads = fSettings->GetValue("show downloads", false);
-
-	fDownloadWindow = new DownloadWindow(downloadWindowFrame, showDownloads,
-		fSettings);
-	if (downloadWindowFrame == defaultDownloadWindowFrame) {
-		// Initially put download window in lower right of screen.
-		BRect screenFrame = BScreen().Frame();
-		BMessage decoratorSettings;
-		fDownloadWindow->GetDecoratorSettings(&decoratorSettings);
-		float borderWidth = 0;
-		if (decoratorSettings.FindFloat("border width", &borderWidth) != B_OK)
-			borderWidth = 5;
-		fDownloadWindow->MoveTo(screenFrame.Width()
-			- fDownloadWindow->Frame().Width() - borderWidth,
-			screenFrame.Height() - fDownloadWindow->Frame().Height()
-			- borderWidth);
-	}
-	fSettingsWindow = new SettingsWindow(settingsWindowFrame, fSettings);
-
-	BWebPage::SetDownloadListener(BMessenger(fDownloadWindow));
 
 	fConsoleWindow = new ConsoleWindow(consoleWindowFrame);
 	fCookieWindow = new CookieWindow(cookieWindowFrame, fContext->GetCookieJar());
@@ -247,62 +220,7 @@ BrowserApp::ReadyToRun()
 	bool fullscreen = false;
 
 	// Handle startup session / page
-	if (fSession->InitCheck() == B_OK) {
-		const char* kSettingsKeyStartUpPolicy = "start up policy";
-		uint32 fStartUpPolicy = fSettings->GetValue(kSettingsKeyStartUpPolicy,
-			(uint32)ResumePriorSession);
-		// If requested not to load previous session
-		if (fStartUpPolicy == StartNewSession) {
-			// Check if lauchrefs will open a page
-			if (fLaunchRefsMessage == NULL) {
-				// else open new window
-				PostMessage(NEW_WINDOW);
-			}
-		} else {
-			// otherwise, restore previous session
-			BMessage archivedWindow;
-			for (int i = 0; fSession->FindMessage("window", i, &archivedWindow)
-				== B_OK; i++) {
-				BRect frame = archivedWindow.FindRect("window frame");
-				BScreen screen;
-				if (!screen.Frame().Intersects(frame))
-					frame.OffsetTo(50, 50);
-				uint32 workspaces = B_CURRENT_WORKSPACE;
-				archivedWindow.FindUInt32("window workspaces", 0, &workspaces);
-				BString url;
-				archivedWindow.FindString("tab", 0, &url);
-				BUrl urlParser(url);
-				if (!urlParser.IsValid())
-					url = "about:blank";
-				else if (strcmp(urlParser.Protocol(), "file") == 0) {
-					BEntry entry(urlParser.Path());
-					if (!entry.Exists())
-						url = "about:blank";
-				}
-				BrowserWindow* window = new(std::nothrow) BrowserWindow(frame, fSettings, url,
-					fContext, INTERFACE_ELEMENT_ALL, NULL, workspaces);
-
-				if (window != NULL) {
-					window->Show();
-					pagesCreated++;
-
-					for (int j = 1; archivedWindow.FindString("tab", j, &url)
-						== B_OK; j++) {
-						BUrl urlParser(url);
-						if (!urlParser.IsValid())
-							url = "about:blank";
-						else if (strcmp(urlParser.Protocol(), "file") == 0) {
-							BEntry entry(urlParser.Path());
-							if (!entry.Exists())
-								url = "about:blank";
-						}
-						_CreateNewTab(window, url, false);
-						pagesCreated++;
-					}
-				}
-			}
-		}
-	}
+	fSessionManager->PostMessage('load');
 	// If there is fLauchRefs message,
 	if (fLaunchRefsMessage != NULL) {
 		_RefsReceived(fLaunchRefsMessage, &pagesCreated, &fullscreen);
@@ -327,6 +245,67 @@ BrowserApp::MessageReceived(BMessage* message)
 		// Accessing the default instance will load the history from disk.
 		BrowsingHistory::DefaultInstance();
 		break;
+	case 'load':
+	{
+		BMessage session;
+		if (message->FindMessage("session", &session) == B_OK) {
+			const char* kSettingsKeyStartUpPolicy = "start up policy";
+			uint32 fStartUpPolicy = fSettings->GetValue(kSettingsKeyStartUpPolicy,
+				(uint32)ResumePriorSession);
+			// If requested not to load previous session
+			if (fStartUpPolicy == StartNewSession) {
+				// Check if lauchrefs will open a page
+				if (fLaunchRefsMessage == NULL) {
+					// else open new window
+					PostMessage(NEW_WINDOW);
+				}
+			} else {
+				// otherwise, restore previous session
+				BMessage archivedWindow;
+				for (int i = 0; session.FindMessage("window", i, &archivedWindow)
+					== B_OK; i++) {
+					BRect frame = archivedWindow.FindRect("window frame");
+					BScreen screen;
+					if (!screen.Frame().Intersects(frame))
+						frame.OffsetTo(50, 50);
+					uint32 workspaces = B_CURRENT_WORKSPACE;
+					archivedWindow.FindUInt32("window workspaces", 0, &workspaces);
+					BString url;
+					archivedWindow.FindString("tab", 0, &url);
+					BUrl urlParser(url);
+					if (!urlParser.IsValid())
+						url = "about:blank";
+					else if (strcmp(urlParser.Protocol(), "file") == 0) {
+						BEntry entry(urlParser.Path());
+						if (!entry.Exists())
+							url = "about:blank";
+					}
+					BrowserWindow* window = new(std::nothrow) BrowserWindow(frame, fSettings, url,
+						fContext, INTERFACE_ELEMENT_ALL, NULL, workspaces);
+
+					if (window != NULL) {
+						window->Show();
+						int32 pagesCreated = 1;
+
+						for (int j = 1; archivedWindow.FindString("tab", j, &url)
+							== B_OK; j++) {
+							BUrl urlParser(url);
+							if (!urlParser.IsValid())
+								url = "about:blank";
+							else if (strcmp(urlParser.Protocol(), "file") == 0) {
+								BEntry entry(urlParser.Path());
+								if (!entry.Exists())
+									url = "about:blank";
+							}
+							_CreateNewTab(window, url, false);
+							pagesCreated++;
+						}
+					}
+				}
+			}
+		}
+		break;
+	}
 	case B_SILENT_RELAUNCH:
 		_CreateNewPage("");
 		break;
@@ -364,9 +343,36 @@ BrowserApp::MessageReceived(BMessage* message)
 		break;
 
 	case SHOW_DOWNLOAD_WINDOW:
+		if (fDownloadWindow == NULL) {
+			BRect defaultDownloadWindowFrame(-10, -10, 365, 265);
+			BRect downloadWindowFrame = fSettings->GetValue("downloads window frame",
+				defaultDownloadWindowFrame);
+			bool showDownloads = fSettings->GetValue("show downloads", false);
+			fDownloadWindow = new DownloadWindow(downloadWindowFrame, showDownloads,
+				fSettings);
+			if (downloadWindowFrame == defaultDownloadWindowFrame) {
+				// Initially put download window in lower right of screen.
+				BRect screenFrame = BScreen().Frame();
+				BMessage decoratorSettings;
+				fDownloadWindow->GetDecoratorSettings(&decoratorSettings);
+				float borderWidth = 0;
+				if (decoratorSettings.FindFloat("border width", &borderWidth) != B_OK)
+					borderWidth = 5;
+				fDownloadWindow->MoveTo(screenFrame.Width()
+					- fDownloadWindow->Frame().Width() - borderWidth,
+					screenFrame.Height() - fDownloadWindow->Frame().Height()
+					- borderWidth);
+			}
+			BWebPage::SetDownloadListener(BMessenger(fDownloadWindow));
+		}
 		_ShowWindow(message, fDownloadWindow);
 		break;
 	case SHOW_SETTINGS_WINDOW:
+		if (fSettingsWindow == NULL) {
+			BRect settingsWindowFrame = fSettings->GetValue("settings window frame",
+				BRect());
+			fSettingsWindow = new SettingsWindow(settingsWindowFrame, fSettings);
+		}
 		_ShowWindow(message, fSettingsWindow);
 		break;
 	case SHOW_CONSOLE_WINDOW:
@@ -433,8 +439,7 @@ BrowserApp::QuitRequested()
 		}
 	}
 
-	fSession->MakeEmpty();
-
+	BMessage session;
 	/* See if we got here because the last window is already closed.
 	 * In that case we only need to save that one, which is already archived */
 	BMessage* message = CurrentMessage();
@@ -442,7 +447,7 @@ BrowserApp::QuitRequested()
 
 	status_t ret = message->FindMessage("window", &windowMessage);
 	if (ret == B_OK) {
-		fSession->AddMessage("window", &windowMessage);
+		session.AddMessage("window", &windowMessage);
 	} else {
 		for (int i = 0; BWindow* window = WindowAt(i); i++) {
 			BrowserWindow* webWindow = dynamic_cast<BrowserWindow*>(window);
@@ -453,7 +458,7 @@ BrowserApp::QuitRequested()
 
 			BMessage windowArchive;
 			webWindow->Archive(&windowArchive, true);
-			fSession->AddMessage("window", &windowArchive);
+			session.AddMessage("window", &windowArchive);
 
 			if (webWindow->QuitRequested()) {
 				fLastWindowFrame = webWindow->WindowFrame();
@@ -465,6 +470,9 @@ BrowserApp::QuitRequested()
 			}
 		}
 	}
+	BMessage saveMessage('save');
+	saveMessage.AddMessage("session", &session);
+	fSessionManager->PostMessage(&saveMessage);
 
 	BWebPage::ShutdownOnce();
 
@@ -486,12 +494,6 @@ BrowserApp::QuitRequested()
 		fSettings->SetValue("cookie window frame", fCookieWindow->Frame());
 		fCookieWindow->Unlock();
 	}
-
-	BMessage cookieArchive;
-	BPrivate::Network::BNetworkCookieJar& cookieJar = fContext->GetCookieJar();
-	cookieJar.PurgeForExit();
-	if (cookieJar.Archive(&cookieArchive) == B_OK)
-		fCookies->SetValue("cookies", cookieArchive);
 
 	BrowsingHistory::DefaultInstance()->Save();
 

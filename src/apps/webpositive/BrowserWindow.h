@@ -263,7 +263,7 @@ private:
 			BString				fStartPageURL;
 			BString				fSearchPageURL;
 
-			BookmarkBar*		fBookmarkBar;
+			std::unique_ptr<BookmarkBar>		fBookmarkBar;
 			std::unique_ptr<BFilePanel>			fSavePanel;
 			std::unique_ptr<BookmarkManager>	fBookmarkManager;
 			std::unique_ptr<DataLoader>			fDataLoader;

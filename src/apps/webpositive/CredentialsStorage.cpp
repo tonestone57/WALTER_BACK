@@ -8,6 +8,7 @@
 
 #include <new>
 #include <stdio.h>
+#include <Bcrypt.h>
 
 #include <Autolock.h>
 #include <Entry.h>
@@ -41,12 +42,27 @@ Credentials::Credentials(const Credentials& other)
 }
 
 
+static void
+_convertToB64(char* salt, int size)
+{
+	const char* b64chars =
+		"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+	for (int i = 0; i < size; i++)
+		salt[i] = b64chars[salt[i] % 64];
+	salt[size - 1] = 0;
+}
+
+
 Credentials::Credentials(const BMessage* archive)
 {
 	if (archive == NULL)
 		return;
 	archive->FindString("username", &fUsername);
-	archive->FindString("password", &fPassword);
+	BString encryptedPassword;
+	if (archive->FindString("password", &encryptedPassword) == B_OK) {
+		BString salt = fUsername;
+		Bcrypt::Decrypt(encryptedPassword, salt, fPassword);
+	}
 }
 
 
@@ -61,8 +77,14 @@ Credentials::Archive(BMessage* archive) const
 	if (archive == NULL)
 		return B_BAD_VALUE;
 	status_t status = archive->AddString("username", fUsername);
-	if (status == B_OK)
-		status = archive->AddString("password", fPassword);
+	if (status == B_OK) {
+		BString salt = fUsername;
+		BString encryptedPassword;
+		if (Bcrypt::Encrypt(fPassword, salt, encryptedPassword) == B_OK)
+			status = archive->AddString("password", encryptedPassword);
+		else
+			status = B_ERROR;
+	}
 	return status;
 }
 
@@ -217,26 +239,30 @@ void
 CredentialsStorage::_SaveSettings() const
 {
 	BFile settingsFile;
-	if (_OpenSettingsFile(settingsFile,
+	if (!_OpenSettingsFile(settingsFile,
 			B_CREATE_FILE | B_ERASE_FILE | B_WRITE_ONLY)) {
-		BMessage settingsArchive;
-		BMessage credentialsArchive;
-		CredentialMap::Iterator iterator = fCredentialMap.GetIterator();
-		while (iterator.HasNext()) {
-			const CredentialMap::Entry& entry = iterator.Next();
-			if (entry.value.Archive(&credentialsArchive) != B_OK
-				|| credentialsArchive.AddString("key",
-					entry.key.GetString()) != B_OK) {
-				break;
-			}
-			if (settingsArchive.AddMessage("credentials",
-					&credentialsArchive) != B_OK) {
-				break;
-			}
-			credentialsArchive.MakeEmpty();
-		}
-		settingsArchive.Flatten(&settingsFile);
+		fprintf(stderr, "Failed to open credentials settings file for writing.\n");
+		return;
 	}
+
+	BMessage settingsArchive;
+	BMessage credentialsArchive;
+	CredentialMap::Iterator iterator = fCredentialMap.GetIterator();
+	while (iterator.HasNext()) {
+		const CredentialMap::Entry& entry = iterator.Next();
+		if (entry.value.Archive(&credentialsArchive) != B_OK
+			|| credentialsArchive.AddString("key",
+				entry.key.GetString()) != B_OK) {
+			break;
+		}
+		if (settingsArchive.AddMessage("credentials",
+				&credentialsArchive) != B_OK) {
+			break;
+		}
+		credentialsArchive.MakeEmpty();
+	}
+	if (settingsArchive.Flatten(&settingsFile) != B_OK)
+		fprintf(stderr, "Failed to save credentials settings.\n");
 }
 
 

@@ -263,7 +263,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	fShowTabsIfSinglePageOpen(true),
 	fAutoHideInterfaceInFullscreenMode(false),
 	fAutoHidePointer(false),
-	fBookmarkBar(NULL),
+	fBookmarkBar(),
 	fBookmarkManager(std::make_unique<BookmarkManager>()),
 	fDataLoader(std::make_unique<DataLoader>(BMessenger(this)))
 {
@@ -364,6 +364,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 		)
 	;
 
+
 	BBitmapButton* toggleFullscreenButton = new BBitmapButton(kWindowIconBits,
 		kWindowIconWidth, kWindowIconHeight, kWindowIconFormat,
 		new BMessage(TOGGLE_FULLSCREEN));
@@ -390,13 +391,12 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 		if (bookmarkBar.Exists() && bookmarkBar.GetRef(&bookmarkBarRef) == B_OK) {
 			BDirectory dir(&bookmarkBarRef);
 			if (dir.CountEntries() > 0) {
-				fBookmarkBar = new BookmarkBar("Bookmarks", this, &bookmarkBarRef);
+				fBookmarkBar.reset(new BookmarkBar("Bookmarks", this, &bookmarkBarRef));
 			}
 		}
 	}
 
-	fSavePanel = std::make_unique<BFilePanel>(B_SAVE_PANEL, new BMessenger(this), nullptr, 0,
-		false);
+	fSavePanel = std::make_unique<BFilePanel>(B_SAVE_PANEL, new BMessenger(this), nullptr, 0, false);
 
 	// Layout
 	BGroupView* topView = new BGroupView(B_VERTICAL, 0.0);
@@ -411,15 +411,15 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 #endif
 	container->AddChild(fTabManager->TabGroup());
 	container->AddChild(navigationGroup);
-	if (fBookmarkBar != NULL)
-		container->AddChild(fBookmarkBar);
+	if (fBookmarkBar)
+		container->AddChild(fBookmarkBar.get());
 	topView->AddChild(fTabManager->ContainerView());
 	container->AddChild(fFindView);
 	container->AddChild(statusGroup);
 
 	fURLInputGroup->MakeFocus(true);
 
-	fTabGroup = fTabManager->TabG-roup()->GetLayout();
+	fTabGroup = fTabManager->TabGroup()->GetLayout();
 	fNavigationGroup = navigationGroup;
 	fStatusGroup = statusGroup;
 	fToggleFullscreenButton = layoutItemFor(toggleFullscreenButton);
@@ -475,6 +475,7 @@ BrowserWindow::~BrowserWindow()
 {
 	fAppSettings->RemoveListener(BMessenger(this));
 	delete fHistoryItems;
+	delete fMenuManager;
 }
 
 
@@ -727,7 +728,7 @@ BrowserWindow::MessageReceived(BMessage* message)
 			const char* filetype = message->GetString("be:filetypes");
 			if (filetype != NULL
 				&& strcmp(filetype, "application/x-vnd.Be-bookmark") == 0
-				&& LastMouseMovedView() == fBookmarkBar) {
+				&& LastMouseMovedView() == fBookmarkBar.get()) {
 				// Something that can be made into a bookmark (e.g. the page icon)
 				// was dragged and dropped on the bookmark bar.
 				BPath path;

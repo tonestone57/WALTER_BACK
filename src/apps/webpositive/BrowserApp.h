@@ -31,7 +31,6 @@
 
 #include <Application.h>
 #include <Catalog.h>
-#include <NetworkCookieJar.h>
 #include <Rect.h>
 #include <UrlContext.h>
 
@@ -41,6 +40,7 @@ class ConsoleWindow;
 class CookieWindow;
 class DownloadWindow;
 class BrowserWindow;
+class SessionManager;
 class SettingsMessage;
 class SettingsWindow;
 
@@ -83,8 +83,7 @@ private:
 			bool				fInitialized;
 
 			std::unique_ptr<SettingsMessage>	fSettings;
-			std::unique_ptr<SettingsMessage>	fCookies;
-			std::unique_ptr<SettingsMessage>	fSession;
+			SessionManager*		fSessionManager;
 			BReference<BPrivate::Network::BUrlContext>	fContext;
 
 			DownloadWindow*		fDownloadWindow;
