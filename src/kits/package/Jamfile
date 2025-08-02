@@ -1,7 +1,5 @@
 SubDir HAIKU_TOP src kits package ;
 
-UseHeadersIn $(HAIKU_TOP) src kits shared ;
-
 AddResources libpackage.so : libpackage.rdef ;
 
 UsePrivateHeaders
@@ -130,6 +128,7 @@ for architectureObject in [ MultiArchSubDirSetup ] {
 			shared
 			bnetapi
 			be localestub
+			shared
 			[ MultiArchDefaultGristFiles libnetservices.a ]
 			[ TargetLibstdc++ ]
 			$(TARGET_NETWORK_LIBS)
