@@ -7,7 +7,7 @@
 
 #include <SupportDefs.h>
 
-#include "blake3.h"
+#include <shared/blake3.h>
 
 
 static inline uint32
