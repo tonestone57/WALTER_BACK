@@ -476,7 +476,6 @@ BrowserWindow::~BrowserWindow()
 {
 	fAppSettings->RemoveListener(BMessenger(this));
 	delete fHistoryItems;
-	delete fMenuManager;
 }
 
 

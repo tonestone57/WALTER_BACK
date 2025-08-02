@@ -7,7 +7,7 @@
 
 
 #include <Path.h>
-#include <ObjectList.h>
+#include <set>
 #include <String.h>
 
 #include "PageUserData.h"
@@ -45,7 +45,7 @@ private:
 			bool				_CheckBookmarkExists(const BString& url) const;
 
 private:
-			BObjectList<BString>	fBookmarkURLs;
+			std::set<BString>	fBookmarkURLs;
 			bool				fBookmarksLoaded;
 };
 

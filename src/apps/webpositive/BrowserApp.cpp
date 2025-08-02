@@ -72,7 +72,7 @@ BrowserApp::BrowserApp()
 	BApplication(kApplicationSignature),
 	fWindowCount(0),
 	fLastWindowFrame(50, 50, 950, 750),
-	fLaunchRefsMessage(0),
+	fLaunchRefsMessage(nullptr),
 	fInitialized(false),
 	fSettings(),
 	fSessionManager(NULL),
@@ -100,7 +100,7 @@ BrowserApp::BrowserApp()
 	BPath cookiePath;
 	if (find_directory(B_USER_SETTINGS_DIRECTORY, &cookiePath) == B_OK) {
 		cookiePath.Append(kApplicationName);
-		create_directory(cookiePath.Path(), 0777);
+		create_directory(cookiePath.Path(), 0700);
 		cookiePath.Append("Cookies");
 	}
 
@@ -123,7 +123,6 @@ BrowserApp::BrowserApp()
 
 BrowserApp::~BrowserApp()
 {
-	delete fLaunchRefsMessage;
 }
 
 
@@ -222,10 +221,9 @@ BrowserApp::ReadyToRun()
 	// Handle startup session / page
 	fSessionManager->PostMessage('load');
 	// If there is fLauchRefs message,
-	if (fLaunchRefsMessage != NULL) {
-		_RefsReceived(fLaunchRefsMessage, &pagesCreated, &fullscreen);
-		delete fLaunchRefsMessage;
-		fLaunchRefsMessage = NULL;
+	if (fLaunchRefsMessage) {
+		_RefsReceived(fLaunchRefsMessage.get(), &pagesCreated, &fullscreen);
+		fLaunchRefsMessage.reset();
 	}
 
 	// If previous session did not contain any window on this workspace, create a new empty one.
@@ -404,8 +402,7 @@ void
 BrowserApp::RefsReceived(BMessage* message)
 {
 	if (!fInitialized) {
-		delete fLaunchRefsMessage;
-		fLaunchRefsMessage = new BMessage(*message);
+		fLaunchRefsMessage.reset(new BMessage(*message));
 		return;
 	}
 
@@ -681,4 +678,3 @@ main(int, char**)
 
 	return 0;
 }
-

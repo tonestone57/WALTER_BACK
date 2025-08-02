@@ -40,14 +40,6 @@
 #include "WebSettings.h"
 
 
-struct Setting {
-	BControl* control;
-	const char* key;
-	type_code type;
-	BVariant defaultValue;
-};
-
-
 #undef B_TRANSLATION_CONTEXT
 #define B_TRANSLATION_CONTEXT "Settings Window"
 
@@ -153,21 +145,11 @@ SettingsWindow::SettingsWindow(BRect frame, SettingsMessage* settings)
 	// Start hidden
 	Hide();
 	Show();
-
-	fSettingsCount = 5;
-	fSettingsData = new Setting[fSettingsCount];
-
-	fSettingsData[0] = Setting{ fStartPageControl, kSettingsKeyStartPageURL, B_STRING_TYPE, BVariant(kDefaultStartPageURL) };
-	fSettingsData[1] = Setting{ fSearchPageControl, kSettingsKeySearchPageURL, B_STRING_TYPE, BVariant(kDefaultSearchPageURL) };
-	fSettingsData[2] = Setting{ fDownloadFolderControl, kSettingsKeyDownloadPath, B_STRING_TYPE, BVariant(kDefaultDownloadPath) };
-	fSettingsData[3] = Setting{ fShowTabsIfOnlyOnePage, kSettingsKeyShowTabsIfSinglePageOpen, B_BOOL_TYPE, BVariant(true) };
-	fSettingsData[4] = Setting{ fAutoHideInterfaceInFullscreenMode, kSettingsKeyAutoHideInterfaceInFullscreenMode, B_BOOL_TYPE, BVariant(false) };
 }
 
 
 SettingsWindow::~SettingsWindow()
 {
-	delete[] fSettingsData;
 	RemoveHandler(fStandardFontView);
 	delete fStandardFontView;
 	RemoveHandler(fSerifFontView);
@@ -630,35 +612,32 @@ SettingsWindow::_SetupFontSelectionView(FontSelectionView* view,
 bool
 SettingsWindow::_CanApplySettings() const
 {
-	for (int32 i = 0; i < fSettingsCount; i++) {
-		const Setting& setting = fSettingsData[i];
-		if (setting.control == NULL)
-			continue;
-		switch (setting.type) {
-			case B_STRING_TYPE:
-			{
-				BTextControl* textControl
-					= dynamic_cast<BTextControl*>(setting.control);
-				if (textControl && textControl->Text() != fSettings->GetValue(setting.key,
-						setting.defaultValue.ToString())) {
-					return true;
-				}
-				break;
-			}
-			case B_BOOL_TYPE:
-			{
-				BCheckBox* checkBox
-					= dynamic_cast<BCheckBox*>(setting.control);
-				if (checkBox && (checkBox->Value() == B_CONTROL_ON) != fSettings->GetValue(
-						setting.key, setting.defaultValue.ToBool())) {
-					return true;
-				}
-				break;
-			}
-			default:
-				break;
-		}
-	}
+	if (strcmp(fStartPageControl->Text(), fSettings->GetValue(kSettingsKeyStartPageURL, kDefaultStartPageURL)) != 0)
+		return true;
+
+	if (strcmp(fSearchPageControl->Text(), fSettings->GetValue(kSettingsKeySearchPageURL, kDefaultSearchPageURL)) != 0)
+		return true;
+
+	if (strcmp(fDownloadFolderControl->Text(), fSettings->GetValue(kSettingsKeyDownloadPath, kDefaultDownloadPath)) != 0)
+		return true;
+
+	if ((fShowTabsIfOnlyOnePage->Value() == B_CONTROL_ON) != fSettings->GetValue(kSettingsKeyShowTabsIfSinglePageOpen, true))
+		return true;
+
+	if ((fAutoHideInterfaceInFullscreenMode->Value() == B_CONTROL_ON) != fSettings->GetValue(kSettingsKeyAutoHideInterfaceInFullscreenMode, false))
+		return true;
+
+	if ((fAutoHidePointer->Value() == B_CONTROL_ON)
+		!= fSettings->GetValue(kSettingsKeyAutoHidePointer, false))
+		return true;
+
+	if ((fShowHomeButton->Value() == B_CONTROL_ON)
+		!= fSettings->GetValue(kSettingsKeyShowHomeButton, true))
+		return true;
+
+	if (fAutoHideTimeout->Value()
+		!= (fSettings->GetValue("auto_hide_timeout", 1000000) / 1000000))
+		return true;
 
 	if (fDaysInHistory->Value()
 		!= BrowsingHistory::DefaultInstance()->MaxHistoryItemAge())
@@ -734,30 +713,6 @@ SettingsWindow::_CanApplySettings() const
 void
 SettingsWindow::_ApplySettings()
 {
-	for (int32 i = 0; i < fSettingsCount; i++) {
-		const Setting& setting = fSettingsData[i];
-		switch (setting.type) {
-			case B_STRING_TYPE:
-			{
-				BTextControl* textControl
-					= dynamic_cast<BTextControl*>(setting.control);
-				if (textControl)
-					fSettings->SetValue(setting.key, textControl->Text());
-				break;
-			}
-			case B_BOOL_TYPE:
-			{
-				BCheckBox* checkBox
-					= dynamic_cast<BCheckBox*>(setting.control);
-				if (checkBox)
-					fSettings->SetValue(setting.key, checkBox->Value() == B_CONTROL_ON);
-				break;
-			}
-			default:
-				break;
-		}
-	}
-#if 0
 	// Store general settings
 	BrowsingHistory::DefaultInstance()->SetMaxHistoryItemAge(
 		(uint32)fDaysInHistory->Value());
@@ -791,7 +746,6 @@ SettingsWindow::_ApplySettings()
 	fSettings->SetValue("fixed font size", fixedFontSize);
 
 	// Store proxy settings
-
 	fSettings->SetValue(kSettingsKeyUseProxy,
 		fUseProxyCheckBox->Value() == B_CONTROL_ON);
 	fSettings->SetValue(kSettingsKeyProxyAddress,
@@ -804,7 +758,6 @@ SettingsWindow::_ApplySettings()
 		fProxyUsernameControl->Text());
 	fSettings->SetValue(kSettingsKeyProxyPassword,
 		fProxyPasswordControl->Text());
-#endif
 	fSettings->Save();
 
 	// Apply settings to default web page settings.
@@ -838,34 +791,6 @@ SettingsWindow::_ApplySettings()
 void
 SettingsWindow::_RevertSettings()
 {
-	for (int32 i = 0; i < fSettingsCount; i++) {
-		const Setting& setting = fSettingsData[i];
-		switch (setting.type) {
-			case B_STRING_TYPE:
-			{
-				BTextControl* textControl
-					= dynamic_cast<BTextControl*>(setting.control);
-				if (textControl) {
-					textControl->SetText(fSettings->GetValue(setting.key,
-						setting.defaultValue.ToString()));
-				}
-				break;
-			}
-			case B_BOOL_TYPE:
-			{
-				BCheckBox* checkBox
-					= dynamic_cast<BCheckBox*>(setting.control);
-				if (checkBox) {
-					checkBox->SetValue(fSettings->GetValue(setting.key,
-						setting.defaultValue.ToBool()));
-				}
-				break;
-			}
-			default:
-				break;
-		}
-	}
-#if 0
 	fStartPageControl->SetText(
 		fSettings->GetValue(kSettingsKeyStartPageURL, kDefaultStartPageURL));
 
@@ -989,7 +914,6 @@ SettingsWindow::_RevertSettings()
 		""));
 	fProxyPasswordControl->SetText(fSettings->GetValue(kSettingsKeyProxyPassword,
 		""));
-#endif
 	_ValidateProxyPort();
 	_ValidateStartPage();
 	_ValidateSearchPage();
@@ -1099,9 +1023,9 @@ SettingsWindow::_ValidateProxyPort()
 	const char* text = fProxyPortControl->Text();
 	char* end;
 	errno = 0;
-	long port = strtoul(text, &end, 10);
+	unsigned long port = strtoul(text, &end, 10);
 
-	if (errno != 0 || *end != '\0' || port < 0 || port > 65535) {
+	if (errno != 0 || *end != '\0' || port > 65535) {
 		// Invalid input
 		fProxyPortControl->TextView()->SetViewColor(255, 200, 200);
 		fProxyPortValid = false;

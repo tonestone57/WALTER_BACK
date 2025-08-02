@@ -237,6 +237,7 @@ BrowsingHistory::SetMaxHistoryItemAge(int32 days)
 int32
 BrowsingHistory::MaxHistoryItemAge() const
 {
+	BAutolock _(const_cast<BrowsingHistory*>(this));
 	return fMaxHistoryItemAge;
 }	
 
@@ -248,17 +249,31 @@ bool
 BrowsingHistory::_AddItem(const BrowsingHistoryItem& item, bool internal)
 {
 	int32 count = CountItems();
-	int32 insertionIndex = count;
+	// First, check for duplicate URL.
 	for (int32 i = 0; i < count; i++) {
-		BrowsingHistoryItem* existingItem
-			= fHistoryItems.ItemAt(i);
-		if (item.URL() == existingItem->URL()) {
-			if (!internal)
+		BrowsingHistoryItem* existingItem = fHistoryItems.ItemAt(i);
+		if (existingItem->URL() == item.URL()) {
+			if (!internal) {
 				existingItem->Invoked();
+				// The list is now potentially unsorted. This is a pre-existing issue.
+				// TODO: Fix this by re-sorting or using a better data structure.
+			}
 			return true;
 		}
-		if (item < *existingItem)
-			insertionIndex = i;
+	}
+
+	// No duplicate. Find insertion point with binary search.
+	int32 low = 0;
+	int32 high = count - 1;
+	int32 insertionIndex = count;
+	while (low <= high) {
+		int32 mid = low + (high - low) / 2;
+		if (item < *fHistoryItems.ItemAt(mid)) {
+			insertionIndex = mid;
+			high = mid - 1;
+		} else {
+			low = mid + 1;
+		}
 	}
 	BrowsingHistoryItem* newItem = new(std::nothrow) BrowsingHistoryItem(item);
 	if (!newItem || !fHistoryItems.AddItem(newItem, insertionIndex)) {

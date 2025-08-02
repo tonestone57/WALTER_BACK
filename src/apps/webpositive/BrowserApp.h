@@ -79,7 +79,7 @@ private:
 private:
 			int					fWindowCount;
 			BRect				fLastWindowFrame;
-			BMessage*			fLaunchRefsMessage;
+			std::unique_ptr<BMessage>	fLaunchRefsMessage;
 			bool				fInitialized;
 
 			std::unique_ptr<SettingsMessage>	fSettings;

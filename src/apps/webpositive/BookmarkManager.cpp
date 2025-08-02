@@ -10,6 +10,8 @@
 #include <Application.h>
 #include <Bitmap.h>
 #include <memory>
+#include <set>
+#include <vector>
 #include <Directory.h>
 #include <Entry.h>
 #include <File.h>
@@ -23,16 +25,12 @@
 #include "BrowserWindow.h"
 
 
-#include <ObjectList.h>
-
-
 #undef B_TRANSLATION_CONTEXT
 #define B_TRANSLATION_CONTEXT "BookmarkManager"
 
 
 BookmarkManager::BookmarkManager()
 	:
-	fBookmarkURLs(20),
 	fBookmarksLoaded(false)
 {
 }
@@ -209,7 +207,7 @@ BookmarkManager::CreateBookmark(const BPath& path, BString fileName,
 		fprintf(stderr, "BookmarkManager: There was an error creating the "
 			"bookmark file: %s\n", strerror(status));
 	} else
-		fBookmarkURLs.AddItem(new BString(url));
+		fBookmarkURLs.insert(url);
 }
 
 
@@ -291,11 +289,7 @@ BookmarkManager::_CheckBookmarkExists(const BString& url)
 		fBookmarksLoaded = true;
 	}
 
-	for (int32 i = 0; i < fBookmarkURLs.CountItems(); i++) {
-		if (*fBookmarkURLs.ItemAt(i) == url)
-			return true;
-	}
-	return false;
+	return fBookmarkURLs.count(url) > 0;
 }
 
 
@@ -311,15 +305,16 @@ void
 BookmarkManager::_AddBookmarkURLsRecursively(BDirectory& directory,
 	BMessage* message, uint32& addedCount)
 {
-	BObjectList<BDirectory, true> directories(10);
-	directories.AddItem(new BDirectory(directory));
+	std::vector<BDirectory*> directories;
+	directories.push_back(new BDirectory(directory));
 
-	while (!directories.IsEmpty()) {
-		BDirectory* currentDir = directories.RemoveItemAt(0);
+	while (!directories.empty()) {
+		BDirectory* currentDir = directories.back();
+		directories.pop_back();
 		BEntry entry;
 		while (currentDir->GetNextEntry(&entry) == B_OK) {
 			if (entry.IsDirectory()) {
-				directories.AddItem(new BDirectory(&entry));
+				directories.push_back(new BDirectory(&entry));
 			} else {
 				BString storedURL;
 				BFile file(&entry, B_READ_ONLY);
@@ -327,7 +322,7 @@ BookmarkManager::_AddBookmarkURLsRecursively(BDirectory& directory,
 					if (message != NULL)
 						message->AddString("url", storedURL.String());
 					else
-						fBookmarkURLs.AddItem(new BString(storedURL));
+						fBookmarkURLs.insert(storedURL);
 					addedCount++;
 				}
 			}

@@ -102,6 +102,7 @@ Credentials::operator=(const Credentials& other)
 
 	fUsername = other.fUsername;
 	fPassword = other.fPassword;
+	fSalt = other.fSalt;
 
 	return *this;
 }
@@ -280,6 +281,10 @@ CredentialsStorage::_OpenSettingsFile(BFile& file, uint32 mode) const
 		|| path.Append("CredentialsStorage") != B_OK) {
 		return false;
 	}
-	return file.SetTo(path.Path(), mode) == B_OK;
+	status_t status = file.SetTo(path.Path(), mode);
+	if (status == B_OK && (mode & B_CREATE_FILE) != 0)
+		file.SetPermissions(0600);
+
+	return status == B_OK;
 }
 

@@ -380,6 +380,7 @@ DownloadWindow::_DownloadStarted(BDownload* download)
 		float max;
 		scrollBar->GetRange(&min, &max);
 		float viewHeight = view->MinSize().height + 1;
+		int32 index = fDownloadViewsLayout->CountItems() -1;
 		float scrollOffset = min + index * viewHeight;
 		float scrollBarHeight = scrollBar->Bounds().Height() - 1;
 		float value = scrollBar->Value();
