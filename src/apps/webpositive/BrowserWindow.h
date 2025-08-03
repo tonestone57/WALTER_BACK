@@ -52,12 +52,12 @@ class BPath;
 class BStatusBar;
 class BStringView;
 class BWebView;
+class FindView;
 
 class BookmarkBar;
 class BrowsingHistoryItem;
 class BookmarkManager;
 class DataLoader;
-class FindView;
 class MenuManager;
 class SettingsMessage;
 class TabManager;
@@ -137,8 +137,6 @@ public:
 			BRect				WindowFrame() const;
 
 			void				ToggleFullscreen();
-
-			status_t			_BookmarkPath(BPath& path) const;
 
 private:
 	// WebPage notification API implementations

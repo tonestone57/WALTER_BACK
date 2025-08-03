@@ -52,6 +52,7 @@
 #include "CookieWindow.h"
 #include "SessionManager.h"
 #include <NetworkCookieJar.h>
+#include <NetworkKit.h>
 #include "WebKitInfo.h"
 #include "WebPage.h"
 #include "WebSettings.h"
@@ -270,7 +271,7 @@ BrowserApp::MessageReceived(BMessage* message)
 					archivedWindow.FindUInt32("window workspaces", 0, &workspaces);
 					BString url;
 					archivedWindow.FindString("tab", 0, &url);
-					BUrl urlParser(url);
+					BUrl urlParser(url.String());
 					if (!urlParser.IsValid())
 						url = "about:blank";
 					else if (strcmp(urlParser.Protocol(), "file") == 0) {
@@ -278,7 +279,7 @@ BrowserApp::MessageReceived(BMessage* message)
 						if (!entry.Exists())
 							url = "about:blank";
 					}
-					BrowserWindow* window = new(std::nothrow) BrowserWindow(frame, fSettings, url,
+					BrowserWindow* window = new(std::nothrow) BrowserWindow(frame, fSettings.get(), url,
 						fContext, INTERFACE_ELEMENT_ALL, NULL, workspaces);
 
 					if (window != NULL) {
@@ -287,7 +288,7 @@ BrowserApp::MessageReceived(BMessage* message)
 
 						for (int j = 1; archivedWindow.FindString("tab", j, &url)
 							== B_OK; j++) {
-							BUrl urlParser(url);
+							BUrl urlParser(url.String());
 							if (!urlParser.IsValid())
 								url = "about:blank";
 							else if (strcmp(urlParser.Protocol(), "file") == 0) {
@@ -347,7 +348,7 @@ BrowserApp::MessageReceived(BMessage* message)
 				defaultDownloadWindowFrame);
 			bool showDownloads = fSettings->GetValue("show downloads", false);
 			fDownloadWindow = new DownloadWindow(downloadWindowFrame, showDownloads,
-				fSettings);
+				fSettings.get());
 			if (downloadWindowFrame == defaultDownloadWindowFrame) {
 				// Initially put download window in lower right of screen.
 				BRect screenFrame = BScreen().Frame();
@@ -369,7 +370,7 @@ BrowserApp::MessageReceived(BMessage* message)
 		if (fSettingsWindow == NULL) {
 			BRect settingsWindowFrame = fSettings->GetValue("settings window frame",
 				BRect());
-			fSettingsWindow = new SettingsWindow(settingsWindowFrame, fSettings);
+			fSettingsWindow = new SettingsWindow(settingsWindowFrame, fSettings.get());
 			fSettingsWindow->Show();
 		}
 		_ShowWindow(message, fSettingsWindow);
@@ -621,7 +622,7 @@ BrowserApp::_CreateNewWindow(const BString& url, bool fullscreen)
 	if (!BScreen().Frame().Contains(fLastWindowFrame))
 		fLastWindowFrame.OffsetTo(50, 50);
 
-	BrowserWindow* window = new BrowserWindow(fLastWindowFrame, fSettings,
+	BrowserWindow* window = new BrowserWindow(fLastWindowFrame, fSettings.get(),
 		url, fContext);
 	if (fullscreen)
 		window->ToggleFullscreen();

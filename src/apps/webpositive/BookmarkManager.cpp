@@ -282,11 +282,11 @@ BookmarkManager::_LoadBookmarkURLs()
 
 
 bool
-BookmarkManager::_CheckBookmarkExists(const BString& url)
+BookmarkManager::_CheckBookmarkExists(const BString& url) const
 {
 	if (!fBookmarksLoaded) {
-		_LoadBookmarkURLs();
-		fBookmarksLoaded = true;
+		const_cast<BookmarkManager*>(this)->_LoadBookmarkURLs();
+		const_cast<BookmarkManager*>(this)->fBookmarksLoaded = true;
 	}
 
 	return fBookmarkURLs.count(url) > 0;

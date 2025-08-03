@@ -18,6 +18,7 @@ class BFile;
 class BGroupLayout;
 class BScrollView;
 class BDownload;
+class DownloadProgressView;
 class SettingsMessage;
 
 
