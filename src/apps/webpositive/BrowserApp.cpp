@@ -53,7 +53,9 @@
 #include "SessionManager.h"
 #include <NetworkCookieJar.h>
 #include <NetworkKit.h>
-#include <private/netservices/BNetworkCookieJar.h>
+// TODO: This header is not in the repository. It is expected to be
+// available in the Haiku build environment.
+// #include <private/netservices/BNetworkCookieJar.h>
 #include "WebKitInfo.h"
 #include "WebPage.h"
 #include "WebSettings.h"
