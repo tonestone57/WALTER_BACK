@@ -8,7 +8,7 @@
 
 #include <new>
 #include <stdio.h>
-#include <Bcrypt.h>
+#include "AES.h"
 
 #include <Autolock.h>
 #include <Entry.h>
@@ -65,8 +65,15 @@ Credentials::Credentials(const BMessage* archive)
 	archive->FindString("username", &fUsername);
 	archive->FindString("salt", &fSalt);
 	BString encryptedPassword;
-	if (archive->FindString("password", &encryptedPassword) == B_OK)
-		Bcrypt::Decrypt(encryptedPassword, fSalt, fPassword);
+	if (archive->FindString("password", &encryptedPassword) == B_OK) {
+		const std::vector<unsigned char> key = plusaes::key_from_string("a 16-byte key!");
+		unsigned char iv[16];
+		memcpy(iv, fSalt.String(), 16);
+		std::vector<unsigned char> decrypted(encryptedPassword.Length());
+		unsigned long padded_size = 0;
+		plusaes::decrypt_cbc((unsigned char*)encryptedPassword.String(), encryptedPassword.Length(), &key[0], key.size(), &iv, &decrypted[0], decrypted.size(), &padded_size);
+		fPassword.SetTo((const char*)decrypted.data(), decrypted.size() - padded_size);
+	}
 }
 
 
@@ -84,11 +91,14 @@ Credentials::Archive(BMessage* archive) const
 	if (status == B_OK)
 		status = archive->AddString("salt", fSalt);
 	if (status == B_OK) {
-		BString encryptedPassword;
-		if (Bcrypt::Encrypt(fPassword, fSalt, encryptedPassword) == B_OK)
-			status = archive->AddString("password", encryptedPassword);
-		else
-			status = B_ERROR;
+		const std::vector<unsigned char> key = plusaes::key_from_string("a 16-byte key!");
+		unsigned char iv[16];
+		memcpy(iv, fSalt.String(), 16);
+		const unsigned long encrypted_size = plusaes::get_padded_encrypted_size(fPassword.Length());
+		std::vector<unsigned char> encrypted(encrypted_size);
+		plusaes::encrypt_cbc((unsigned char*)fPassword.String(), fPassword.Length(), &key[0], key.size(), &iv, &encrypted[0], encrypted.size(), true);
+		BString encryptedPassword((const char*)encrypted.data(), encrypted.size());
+		status = archive->AddString("password", encryptedPassword);
 	}
 	return status;
 }

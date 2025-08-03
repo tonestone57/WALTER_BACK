@@ -38,6 +38,7 @@ local sources =
 	Download.cpp
 	DownloadProgressView.cpp
 	DownloadWindow.cpp
+	FindView.cpp
 	SettingsKeys.cpp
 	SettingsWindow.cpp
 	SourceWindow.cpp

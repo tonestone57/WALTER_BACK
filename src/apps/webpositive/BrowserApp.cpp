@@ -55,7 +55,7 @@
 #include <NetworkKit.h>
 // TODO: This header is not in the repository. It is expected to be
 // available in the Haiku build environment.
-#include <private/netservices/BNetworkCookieJar.h>
+// #include <private/netservices/BNetworkCookieJar.h>
 #include "WebKitInfo.h"
 #include "WebPage.h"
 #include "WebSettings.h"
@@ -109,7 +109,14 @@ BrowserApp::BrowserApp()
 	}
 
 	fContext = new BPrivate::Network::BUrlContext();
-	fContext->SetCookieJar(BNetworkCookieJar(cookiePath));
+	BFile cookieFile(cookiePath.Path(), B_READ_ONLY);
+	if (cookieFile.InitCheck() == B_OK) {
+		BMessage cookieArchive;
+		if (cookieArchive.Unflatten(&cookieFile) == B_OK) {
+			BPrivate::Network::BNetworkCookieJar cookieJar(&cookieArchive);
+			fContext->SetCookieJar(cookieJar);
+		}
+	}
 
 	BPath curlCookies;
 	if (find_directory(B_USER_SETTINGS_DIRECTORY, &curlCookies) == B_OK
@@ -274,7 +281,7 @@ BrowserApp::MessageReceived(BMessage* message)
 					archivedWindow.FindUInt32("window workspaces", 0, &workspaces);
 					BString url;
 					archivedWindow.FindString("tab", 0, &url);
-					BUrl urlParser(url);
+					BUrl urlParser(url.String());
 					if (!urlParser.IsValid())
 						url = "about:blank";
 					else if (strcmp(urlParser.Protocol(), "file") == 0) {
@@ -291,7 +298,7 @@ BrowserApp::MessageReceived(BMessage* message)
 
 						for (int j = 1; archivedWindow.FindString("tab", j, &url)
 							== B_OK; j++) {
-							BUrl urlParser(url);
+							BUrl urlParser(url.String());
 							if (!urlParser.IsValid())
 								url = "about:blank";
 							else if (strcmp(urlParser.Protocol(), "file") == 0) {
