@@ -54,11 +54,12 @@ class BStatusBar;
 class BStringView;
 class BWebView;
 
+#include "FindView.h"
+
 class BookmarkBar;
 class BrowsingHistoryItem;
 class BookmarkManager;
 class DataLoader;
-class FindView;
 class MenuManager;
 class SettingsMessage;
 class TabManager;

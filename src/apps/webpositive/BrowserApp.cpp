@@ -34,6 +34,7 @@
 #include <Catalog.h>
 #include <Directory.h>
 #include <Entry.h>
+#include <File.h>
 #include <FindDirectory.h>
 #include <Locale.h>
 #include <Path.h>
@@ -281,7 +282,7 @@ BrowserApp::MessageReceived(BMessage* message)
 					archivedWindow.FindUInt32("window workspaces", 0, &workspaces);
 					BString url;
 					archivedWindow.FindString("tab", 0, &url);
-					BUrl urlParser(url.String());
+					BUrl urlParser(url);
 					if (!urlParser.IsValid())
 						url = "about:blank";
 					else if (strcmp(urlParser.Protocol(), "file") == 0) {
@@ -298,7 +299,7 @@ BrowserApp::MessageReceived(BMessage* message)
 
 						for (int j = 1; archivedWindow.FindString("tab", j, &url)
 							== B_OK; j++) {
-							BUrl urlParser(url.String());
+							BUrl urlParser(url);
 							if (!urlParser.IsValid())
 								url = "about:blank";
 							else if (strcmp(urlParser.Protocol(), "file") == 0) {

@@ -8,6 +8,7 @@
 
 #include <new>
 #include <stdio.h>
+#include <stdlib.h>
 #include "AES.h"
 
 #include <Autolock.h>
@@ -29,6 +30,17 @@ Credentials::Credentials()
 }
 
 
+static void
+_convertToB64(char* salt, int size)
+{
+	const char* b64chars =
+		"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+	for (int i = 0; i < size; i++)
+		salt[i] = b64chars[salt[i] % 64];
+	salt[size - 1] = 0;
+}
+
+
 Credentials::Credentials(const BString& username, const BString& password)
 	:
 	fUsername(username),
@@ -47,17 +59,6 @@ Credentials::Credentials(const Credentials& other)
 }
 
 
-static void
-_convertToB64(char* salt, int size)
-{
-	const char* b64chars =
-		"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-	for (int i = 0; i < size; i++)
-		salt[i] = b64chars[salt[i] % 64];
-	salt[size - 1] = 0;
-}
-
-
 Credentials::Credentials(const BMessage* archive)
 {
 	if (archive == NULL)
@@ -66,7 +67,7 @@ Credentials::Credentials(const BMessage* archive)
 	archive->FindString("salt", &fSalt);
 	BString encryptedPassword;
 	if (archive->FindString("password", &encryptedPassword) == B_OK) {
-		const std::vector<unsigned char> key = plusaes::key_from_string("a 16-byte key!");
+		const std::vector<unsigned char> key = plusaes::key_from_string("a 16-byte key!!");
 		unsigned char iv[16];
 		memcpy(iv, fSalt.String(), 16);
 		std::vector<unsigned char> decrypted(encryptedPassword.Length());
@@ -91,7 +92,7 @@ Credentials::Archive(BMessage* archive) const
 	if (status == B_OK)
 		status = archive->AddString("salt", fSalt);
 	if (status == B_OK) {
-		const std::vector<unsigned char> key = plusaes::key_from_string("a 16-byte key!");
+		const std::vector<unsigned char> key = plusaes::key_from_string("a 16-byte key!!");
 		unsigned char iv[16];
 		memcpy(iv, fSalt.String(), 16);
 		const unsigned long encrypted_size = plusaes::get_padded_encrypted_size(fPassword.Length());
