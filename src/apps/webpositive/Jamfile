@@ -44,6 +44,7 @@ local sources =
 	SourceWindow.cpp
 	URLInputGroup.cpp
 	URLHandler.cpp
+	arc4random.cpp
 ;
 
 # We build WebPositive only for one architecture -- the first architecture for

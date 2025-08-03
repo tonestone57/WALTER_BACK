@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "AES.h"
+#include "arc4random.h"
 
 #include <Autolock.h>
 #include <Entry.h>
@@ -67,7 +68,8 @@ Credentials::Credentials(const BMessage* archive)
 	archive->FindString("salt", &fSalt);
 	BString encryptedPassword;
 	if (archive->FindString("password", &encryptedPassword) == B_OK) {
-		const std::vector<unsigned char> key = plusaes::key_from_string("a 16-byte key!!");
+		const char key_str[17] = "a 16-byte key!!";
+		const std::vector<unsigned char> key = plusaes::key_from_string(&key_str);
 		unsigned char iv[16];
 		memcpy(iv, fSalt.String(), 16);
 		std::vector<unsigned char> decrypted(encryptedPassword.Length());
@@ -92,7 +94,8 @@ Credentials::Archive(BMessage* archive) const
 	if (status == B_OK)
 		status = archive->AddString("salt", fSalt);
 	if (status == B_OK) {
-		const std::vector<unsigned char> key = plusaes::key_from_string("a 16-byte key!!");
+		const char key_str[17] = "a 16-byte key!!";
+		const std::vector<unsigned char> key = plusaes::key_from_string(&key_str);
 		unsigned char iv[16];
 		memcpy(iv, fSalt.String(), 16);
 		const unsigned long encrypted_size = plusaes::get_padded_encrypted_size(fPassword.Length());

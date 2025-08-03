@@ -282,7 +282,7 @@ BrowserApp::MessageReceived(BMessage* message)
 					archivedWindow.FindUInt32("window workspaces", 0, &workspaces);
 					BString url;
 					archivedWindow.FindString("tab", 0, &url);
-					BUrl urlParser(url);
+					BUrl urlParser(url.String(), true);
 					if (!urlParser.IsValid())
 						url = "about:blank";
 					else if (strcmp(urlParser.Protocol(), "file") == 0) {
@@ -299,7 +299,7 @@ BrowserApp::MessageReceived(BMessage* message)
 
 						for (int j = 1; archivedWindow.FindString("tab", j, &url)
 							== B_OK; j++) {
-							BUrl urlParser(url);
+							BUrl urlParser(url.String(), true);
 							if (!urlParser.IsValid())
 								url = "about:blank";
 							else if (strcmp(urlParser.Protocol(), "file") == 0) {
