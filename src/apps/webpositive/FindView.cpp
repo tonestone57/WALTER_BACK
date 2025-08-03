@@ -73,7 +73,6 @@ FindView::~FindView()
 void
 FindView::AttachedToWindow()
 {
-	SetTarget(this);
 	fFindCloseButton->SetTarget(this);
 	fFindPreviousButton->SetTarget(this);
 	fFindNextButton->SetTarget(this);
@@ -82,14 +81,15 @@ FindView::AttachedToWindow()
 
 
 void
-FindView::DispatchMessage(BMessage* message, BHandler* handler)
+FindView::MessageReceived(BMessage* message)
 {
 	const char* bytes;
 	int32 modifiers;
 	if ((message->what == B_KEY_DOWN || message->what == B_UNMAPPED_KEY_DOWN)
 		&& message->FindString("bytes", &bytes) == B_OK
 		&& message->FindInt32("modifiers", &modifiers) == B_OK) {
-		if (handler == fFindTextControl->TextView()) {
+		BView* focus = Window()->CurrentFocus();
+		if (focus == fFindTextControl->TextView()) {
 			if (bytes[0] == B_RETURN) {
 				if ((modifiers & B_SHIFT_KEY) != 0)
 					_InvokeButtonVisibly(fFindPreviousButton);
@@ -102,13 +102,7 @@ FindView::DispatchMessage(BMessage* message, BHandler* handler)
 			}
 		}
 	}
-	BGroupView::DispatchMessage(message, handler);
-}
 
-
-void
-FindView::MessageReceived(BMessage* message)
-{
 	switch (message->what) {
 		case MSG_FIND_PREVIOUS:
 		case MSG_FIND_NEXT:

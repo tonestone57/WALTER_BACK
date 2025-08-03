@@ -75,8 +75,8 @@ typedef struct
   a = PLUS(a,b); d = ROTATE(XOR(d,a), 8); \
   c = PLUS(c,d); b = ROTATE(XOR(b,c), 7);
 
-static const char sigma[16] = "expand 32-byte k";
-static const char tau[16] = "expand 16-byte k";
+static const char sigma[18] = "expand 32-byte k";
+static const char tau[19] = "expand 16-byte k";
 
 static void
 chacha_keysetup(chacha_ctx *x,const u8 *k,u32 kbits)
@@ -296,7 +296,7 @@ _rs_stir(void)
                 _rs_init(rnd, sizeof(rnd));
         else
                 _rs_rekey(rnd, sizeof(rnd));
-        explicit_bzero(rnd, sizeof(rnd));       /* discard source seed */
+        memset(rnd, 0, sizeof(rnd));       /* discard source seed */
 
         /* invalidate rs_buf */
         rs->rs_have = 0;

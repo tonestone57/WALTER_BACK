@@ -21,7 +21,6 @@ public:
 	virtual						~FindView();
 
 	virtual void				AttachedToWindow();
-	virtual void				DispatchMessage(BMessage* message, BHandler* handler);
 	virtual void				MessageReceived(BMessage* message);
 
 			void				MakeFocus(bool focused);
