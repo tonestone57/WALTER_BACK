@@ -62,6 +62,7 @@ class MenuManager;
 class SettingsMessage;
 class TabManager;
 class URLInputGroup;
+class URLHandler;
 
 namespace BPrivate {
 	class BIconButton;
@@ -180,6 +181,7 @@ private:
 									uint32 failureCount, BWebView* view);
 
 private:
+			BString				_SanitizeTitle(const BString& title) const;
 			void				_UpdateTitle(const BString &title);
 			void				_UpdateTabGroupVisibility();
 			bool				_TabGroupShouldBeVisible() const;
@@ -205,12 +207,6 @@ private:
 			void				_InvokeButtonVisibly(BButton* button);
 
 			BString				_NewTabURL(bool isNewWindow) const;
-
-			BString				_EncodeURIComponent(const BString& search);
-			void				_VisitURL(const BString& url);
-			void				_VisitSearchEngine(const BString& search);
-	inline 	bool				_IsValidDomainChar(char ch);
-			void 				_SmartURLHandler(const BString& url);
 
 			void				_HandlePageSourceResult(
 									const BMessage* message);
@@ -240,6 +236,7 @@ private:
 			FindView*			fFindView;
 			std::unique_ptr<MenuManager>		fMenuManager;
 			std::unique_ptr<TabManager>			fTabManager;
+			std::unique_ptr<URLHandler>			fURLHandler;
 
 			bool				fIsFullscreen;
 			bool				fInterfaceVisible;
@@ -267,6 +264,7 @@ private:
 			std::unique_ptr<BookmarkBar>		fBookmarkBar;
 			std::unique_ptr<BFilePanel>			fSavePanel;
 			std::unique_ptr<BookmarkManager>	fBookmarkManager;
+			std::unique_ptr<SettingsMessage>	fProtocolHandlers;
 			std::unique_ptr<DataLoader>			fDataLoader;
 };
 

@@ -70,13 +70,24 @@ SettingsMessage::Save() const
 {
 	BAutolock _(const_cast<SettingsMessage*>(this));
 
-	BFile file(fPath.Path(), B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE);
+	BPath tempPath(fPath);
+	tempPath.set_path(BString(fPath.Path()).Append(".tmp").String());
+
+	BFile file(tempPath.Path(), B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE);
 	status_t status = file.InitCheck();
 
-	if (status == B_OK)
-		status = Flatten(&file);
+	if (status != B_OK)
+		return status;
 
-	return status;
+	status = Flatten(&file);
+	if (status != B_OK) {
+		BEntry(tempPath.Path()).Remove();
+		return status;
+	}
+
+	// The file is now written, we can rename it to the final destination.
+	BEntry entry(tempPath.Path());
+	return entry.Rename(fPath.Path(), true);
 }
 
 

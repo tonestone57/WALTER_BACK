@@ -91,6 +91,7 @@
 #include "SettingsMessage.h"
 #include "TabManager.h"
 #include "URLInputGroup.h"
+#include "URLHandler.h"
 #include "WebPage.h"
 #include "WebView.h"
 #include "WebViewConstants.h"
@@ -266,6 +267,9 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	fAutoHidePointer(false),
 	fBookmarkBar(),
 	fBookmarkManager(std::make_unique<BookmarkManager>()),
+	fProtocolHandlers(std::make_unique<SettingsMessage>(B_USER_SETTINGS_DIRECTORY,
+		"WebPositive/ProtocolHandlers")),
+	fURLHandler(std::make_unique<URLHandler>(CurrentWebView(), fProtocolHandlers.get())),
 	fDataLoader(std::make_unique<DataLoader>(BMessenger(this)))
 {
 	// Begin listening to settings changes and read some current values.
@@ -596,7 +600,7 @@ BrowserWindow::MessageReceived(BMessage* message)
 				url = fURLInputGroup->Text();
 
 			_SetPageIcon(CurrentWebView(), NULL);
-			_SmartURLHandler(url);
+			fURLHandler->Handle(url);
 
 			break;
 		}
@@ -1471,12 +1475,13 @@ BrowserWindow::TitleChanged(const BString& title, BWebView* view)
 	if (tabIndex < 0)
 		return;
 
-	fTabManager->SetTabLabel(tabIndex, title);
+	BString sanitizedTitle = _SanitizeTitle(title);
+	fTabManager->SetTabLabel(tabIndex, sanitizedTitle);
 
 	if (view != CurrentWebView())
 		return;
 
-	_UpdateTitle(title);
+	_UpdateTitle(sanitizedTitle);
 }
 
 
@@ -1666,6 +1671,23 @@ BrowserWindow::AuthenticationChallenge(BString message, BString& inOutUser,
 // #pragma mark - private
 
 
+BString
+BrowserWindow::_SanitizeTitle(const BString& title) const
+{
+	BString sanitizedTitle;
+	for (int32 i = 0; i < title.Length(); i++) {
+		char c = title[i];
+		if (c >= 0 && c < ' ') {
+			// Replace control characters with a space.
+			sanitizedTitle += ' ';
+		} else {
+			sanitizedTitle += c;
+		}
+	}
+	return sanitizedTitle;
+}
+
+
 bool
 BrowserWindow::_HistoryMenuHook(BMenu* menu, void* userData)
 {
@@ -1683,7 +1705,7 @@ BrowserWindow::_UpdateTitle(const BString& title)
 	BString windowTitle;
 
 	if (title.Length() > 0)
-		windowTitle = title;
+		windowTitle = _SanitizeTitle(title);
 	else {
 		BWebView* webView = CurrentWebView();
 		if (webView != NULL) {
@@ -2028,108 +2050,6 @@ BrowserWindow::_NewTabURL(bool isNewWindow) const
 }
 
 
-BString
-BrowserWindow::_EncodeURIComponent(const BString& search)
-{
-	static const char* hex = "0123456789ABCDEF";
-	BString result;
-	for (int32 i = 0; i < search.Length(); i++) {
-		char c = search[i];
-		if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~')
-			result += c;
-		else {
-			result += '%';
-			result += hex[c >> 4];
-			result += hex[c & 0xf];
-		}
-	}
-	return result;
-}
-
-
-void
-BrowserWindow::_VisitURL(const BString& url)
-{
-	// fURLInputGroup->TextView()->SetText(url);
-	CurrentWebView()->LoadURL(url.String());
-}
-
-
-void
-BrowserWindow::_VisitSearchEngine(const BString& search)
-{
-	BString searchQuery = search;
-
-	BString searchPrefix;
-	search.CopyCharsInto(searchPrefix, 0, 2);
-
-	// Default search URL
-	BString engine(fSearchPageURL);
-
-	// Check if the string starts with one of the search engine shortcuts
-	for (int i = 0; kSearchEngines[i].url != NULL; i++) {
-		if (kSearchEngines[i].shortcut == searchPrefix) {
-			engine = kSearchEngines[i].url;
-			searchQuery.Remove(0, 2);
-			break;
-		}
-	}
-
-	engine.ReplaceAll("%s", _EncodeURIComponent(searchQuery));
-	_VisitURL(engine);
-}
-
-
-/*! \brief "smart" parser for user-entered URLs
-
-	We try to be flexible in what we accept as a valid URL. The protocol may
-	be missing, or something we can't handle (in that case we run the matching
-	app). If all attempts to make sense of the input fail, we make a search
-	engine query for it.
- */
-void
-BrowserWindow::_SmartURLHandler(const BString& url)
-{
-	BUrl urlObject(url.String(), true);
-	if (urlObject.Protocol().Length() > 0) {
-		// This is a URL with a protocol. Let's see if we can handle it.
-		bool handled = false;
-		for (unsigned int i = 0; i < sizeof(kHandledProtocols) / sizeof(char*);
-				i++) {
-			if (urlObject.Protocol() == kHandledProtocols[i]) {
-				handled = true;
-				break;
-			}
-		}
-
-		if (handled) {
-			_VisitURL(url);
-			return;
-		} else {
-			// There is what looks like a protocol, but one we don't know.
-			// Ask the BRoster if there is a matching filetype and app which
-			// can handle it.
-			BString temp;
-			temp = "application/x-vnd.Be.URL.";
-			temp += urlObject.Protocol();
-
-			const char* argv[] = { url.String(), NULL };
-
-			if (be_roster->Launch(temp.String(), 1, argv) == B_OK)
-				return;
-		}
-	}
-
-	// If there is no protocol, check for a dot.
-	if (url.FindFirst('.') >= 0) {
-		BString urlWithHttp = BString("http://").Append(url);
-		_VisitURL(urlWithHttp);
-		return;
-	}
-
-	// If all else fails, treat it as a search query.
-	_VisitSearchEngine(url);
-}
 
 
 void
