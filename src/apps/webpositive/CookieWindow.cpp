@@ -16,6 +16,7 @@
 #include <GroupLayoutBuilder.h>
 #include <NetworkCookieJar.h>
 #include <OutlineListView.h>
+#include <Alert.h>
 #include <ScrollView.h>
 #include <StringView.h>
 
@@ -68,7 +69,7 @@ public:
 		SetField(new BStringField(cookie.Name().String()), 0);
 		SetField(new BStringField(cookie.Path().String()), 1);
 		time_t expiration = cookie.ExpirationDate();
-		if (cookie.IsSession())
+		if (expiration == 0)
 			expiration = -1;
 		SetField(new BDateField(&expiration), 2);
 		SetField(new BStringField(cookie.Value().String()), 3);

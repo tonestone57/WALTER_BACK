@@ -826,19 +826,17 @@ BrowserWindow::MessageReceived(BMessage* message)
 			break;
 
 		case EDIT_FIND_NEXT:
-		case MSG_FIND_NEXT:
 			CurrentWebView()->FindString(fFindView->Text(), true,
 				fFindView->IsCaseSensitive());
 			break;
 		case MSG_FIND_TEXT_CHANGED:
 		{
 			bool findTextAvailable = strlen(fFindView->Text()) > 0;
-	fMenuManager->FindPreviousMenuItem()->SetEnabled(false);
-	fMenuManager->FindNextMenuItem()->SetEnabled(false);
+	fMenuManager->FindPreviousMenuItem()->SetEnabled(findTextAvailable);
+	fMenuManager->FindNextMenuItem()->SetEnabled(findTextAvailable);
 			break;
 		}
 		case EDIT_FIND_PREVIOUS:
-		case MSG_FIND_PREVIOUS:
 			CurrentWebView()->FindString(fFindView->Text(), false,
 				fFindView->IsCaseSensitive());
 			break;
@@ -1441,7 +1439,7 @@ BrowserWindow::MainDocumentError(const BString& failingURL,
 		}
 
 		if (!handled) {
-			_SmartURLHandler(failingURL);
+			fURLHandler->Handle(failingURL);
 			return;
 		}
 	}

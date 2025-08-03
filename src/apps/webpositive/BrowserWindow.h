@@ -32,6 +32,7 @@
 #include "WebWindow.h"
 
 #include "PageUserData.h"
+#include "FindView.h"
 
 #include <Messenger.h>
 #include <String.h>

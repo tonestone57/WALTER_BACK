@@ -53,6 +53,7 @@
 #include "SessionManager.h"
 #include <NetworkCookieJar.h>
 #include <NetworkKit.h>
+#include <private/netservices/BNetworkCookieJar.h>
 #include "WebKitInfo.h"
 #include "WebPage.h"
 #include "WebSettings.h"

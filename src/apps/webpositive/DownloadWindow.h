@@ -21,6 +21,8 @@ class BDownload;
 class DownloadProgressView;
 class SettingsMessage;
 
+#include "DownloadProgressView.h"
+
 
 class DownloadWindow : public BWindow {
 public:

@@ -8,6 +8,7 @@
 
 #include <WebPage.h>
 #include <Alert.h>
+#include <Autolock.h>
 #include <Button.h>
 #include <Catalog.h>
 #include <ControlLook.h>
@@ -532,7 +533,7 @@ DownloadWindow::_LoadSettings()
 			continue;
 		}
 		fDownloadViewsLayout->AddView(0, view.get());
-		fDownloadViews[view->Url()] = std::move(view);
+		fDownloadViews[view->URL()] = std::move(view);
 	}
 }
 
