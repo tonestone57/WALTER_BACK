@@ -22,6 +22,7 @@ BuildPlatformMain <build>package :
 	package.cpp
 	PackageWriterListener.cpp
 	PackageWritingUtils.cpp
+	../../kits/shared/HashString.cpp
 
 	:
 	libpackage_build.so $(HOST_LIBBE) $(HOST_LIBSUPC++)
