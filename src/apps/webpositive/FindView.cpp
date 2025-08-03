@@ -14,8 +14,6 @@
 #include <TextControl.h>
 #include <Window.h>
 
-#include "BrowserWindow.h"
-
 
 static void
 _InvokeButtonVisibly(BButton* button)
