@@ -55,7 +55,7 @@
 #include <NetworkKit.h>
 // TODO: This header is not in the repository. It is expected to be
 // available in the Haiku build environment.
-// #include <private/netservices/BNetworkCookieJar.h>
+#include <private/netservices/BNetworkCookieJar.h>
 #include "WebKitInfo.h"
 #include "WebPage.h"
 #include "WebSettings.h"
@@ -274,7 +274,7 @@ BrowserApp::MessageReceived(BMessage* message)
 					archivedWindow.FindUInt32("window workspaces", 0, &workspaces);
 					BString url;
 					archivedWindow.FindString("tab", 0, &url);
-					BUrl urlParser(url.String());
+					BUrl urlParser(url);
 					if (!urlParser.IsValid())
 						url = "about:blank";
 					else if (strcmp(urlParser.Protocol(), "file") == 0) {
@@ -291,7 +291,7 @@ BrowserApp::MessageReceived(BMessage* message)
 
 						for (int j = 1; archivedWindow.FindString("tab", j, &url)
 							== B_OK; j++) {
-							BUrl urlParser(url.String());
+							BUrl urlParser(url);
 							if (!urlParser.IsValid())
 								url = "about:blank";
 							else if (strcmp(urlParser.Protocol(), "file") == 0) {

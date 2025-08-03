@@ -58,6 +58,7 @@ class BookmarkBar;
 class BrowsingHistoryItem;
 class BookmarkManager;
 class DataLoader;
+class FindView;
 class MenuManager;
 class SettingsMessage;
 class TabManager;
@@ -215,8 +216,30 @@ private:
 private:
 	static	bool				_HistoryMenuHook(BMenu* menu, void* userData);
 
+			// Members initialized in the constructor initializer list.
+			// The order of declaration MUST MATCH the order of initialization.
+			bool				fIsFullscreen;
+			bool				fInterfaceVisible;
+			bool				fMenusRunning;
+			std::unique_ptr<BMessageRunner>		fPulseRunner;
+			uint32				fVisibleInterfaceElements;
 			BObjectList<BrowsingHistoryItem>* fHistoryItems;
+			std::unique_ptr<MenuManager>		fMenuManager;
+			bigtime_t			fLastClipboardCheckTime;
+			BReference<BPrivate::Network::BUrlContext>	fContext;
+			SettingsMessage*	fAppSettings;
+			bool				fZoomTextOnly;
+			bool				fShowTabsIfSinglePageOpen;
+			bool				fAutoHideInterfaceInFullscreenMode;
+			bool				fAutoHidePointer;
+			std::unique_ptr<BookmarkBar>		fBookmarkBar;
+			std::unique_ptr<BookmarkManager>	fBookmarkManager;
+			std::unique_ptr<SettingsMessage>	fProtocolHandlers;
+			std::unique_ptr<URLHandler>			fURLHandler;
+			std::unique_ptr<DataLoader>			fDataLoader;
 
+			// Members not initialized in the constructor initializer list.
+			// Their order does not matter for correctness, but we keep it tidy.
 			BIconButton*		fBackButton;
 			BIconButton*		fForwardButton;
 			BIconButton*		fStopButton;
@@ -232,39 +255,19 @@ private:
 			BLayoutItem*		fToggleFullscreenButton;
 
 			FindView*			fFindView;
-			std::unique_ptr<MenuManager>		fMenuManager;
 			std::unique_ptr<TabManager>			fTabManager;
-			std::unique_ptr<URLHandler>			fURLHandler;
-			BObjectList<BrowsingHistoryItem>* fHistoryItems;
 
-			bool				fIsFullscreen;
-			bool				fInterfaceVisible;
-			bool				fMenusRunning;
 			BRect				fNonFullscreenWindowFrame;
-			std::unique_ptr<BMessageRunner>		fPulseRunner;
-			uint32				fVisibleInterfaceElements;
 			bigtime_t			fLastMouseMovedTime;
 			BPoint				fLastMousePos;
-			bigtime_t			fLastClipboardCheckTime;
 
-			BReference<BPrivate::Network::BUrlContext>	fContext;
-
-			// cached settings
-			SettingsMessage*	fAppSettings;
-			bool				fZoomTextOnly;
-			bool				fShowTabsIfSinglePageOpen;
-			bool				fAutoHideInterfaceInFullscreenMode;
-			bool				fAutoHidePointer;
+			// Cached settings loaded from fAppSettings.
 			uint32				fNewWindowPolicy;
 			uint32				fNewTabPolicy;
 			BString				fStartPageURL;
 			BString				fSearchPageURL;
 
-			std::unique_ptr<BookmarkBar>		fBookmarkBar;
 			std::unique_ptr<BFilePanel>			fSavePanel;
-			std::unique_ptr<BookmarkManager>	fBookmarkManager;
-			std::unique_ptr<SettingsMessage>	fProtocolHandlers;
-			std::unique_ptr<DataLoader>			fDataLoader;
 };
 
 
