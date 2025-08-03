@@ -53,7 +53,7 @@ class BStatusBar;
 class BStringView;
 class BWebView;
 
-class FindView;
+#include "FindView.h"
 
 class BookmarkBar;
 class BrowsingHistoryItem;
