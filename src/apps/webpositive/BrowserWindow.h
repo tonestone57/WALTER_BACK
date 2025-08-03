@@ -53,7 +53,6 @@ class BPath;
 class BStatusBar;
 class BStringView;
 class BWebView;
-class FindView;
 
 class BookmarkBar;
 class BrowsingHistoryItem;
@@ -236,6 +235,7 @@ private:
 			std::unique_ptr<MenuManager>		fMenuManager;
 			std::unique_ptr<TabManager>			fTabManager;
 			std::unique_ptr<URLHandler>			fURLHandler;
+			BObjectList<BrowsingHistoryItem>* fHistoryItems;
 
 			bool				fIsFullscreen;
 			bool				fInterfaceVisible;

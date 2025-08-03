@@ -14,6 +14,8 @@
 #include "BrowserApp.h"
 #include "SettingsMessage.h"
 
+#include <cctype>
+
 
 // A subset of the public suffix list.
 static const char* kValidTLDs[] = {
@@ -53,10 +55,12 @@ static const char* kHandledProtocols[] = {
 };
 
 
-URLHandler::URLHandler(BWebView* webView, SettingsMessage* protocolHandlers)
+URLHandler::URLHandler(BWebView* webView, SettingsMessage* protocolHandlers,
+	const BString& searchPageURL)
 	:
 	fWebView(webView),
-	fProtocolHandlers(protocolHandlers)
+	fProtocolHandlers(protocolHandlers),
+	fSearchPageURL(searchPageURL)
 {
 }
 
@@ -170,7 +174,7 @@ URLHandler::_VisitSearchEngine(const BString& search)
 	search.CopyCharsInto(searchPrefix, 0, 2);
 
 	// Default search URL
-	BString engine = static_cast<BrowserApp*>(be_app)->SearchPageURL();
+	BString engine(fSearchPageURL);
 
 	engine.ReplaceAll("%s", _EncodeURIComponent(searchQuery));
 	_VisitURL(engine);

@@ -2,6 +2,7 @@
 #define FIND_VIEW_H
 
 #include <GroupView.h>
+#include <Messenger.h>
 
 class BButton;
 class BCheckBox;

@@ -13,7 +13,8 @@ class SettingsMessage;
 class URLHandler {
 public:
 								URLHandler(BWebView* webView,
-									SettingsMessage* protocolHandlers);
+									SettingsMessage* protocolHandlers,
+									const BString& searchPageURL);
 	virtual						~URLHandler();
 
 			void				Handle(const BString& url);
@@ -27,6 +28,7 @@ private:
 private:
 			BWebView*			fWebView;
 			SettingsMessage*	fProtocolHandlers;
+			BString				fSearchPageURL;
 };
 
 #endif // URL_HANDLER_H

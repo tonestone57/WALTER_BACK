@@ -70,8 +70,10 @@ SettingsMessage::Save() const
 {
 	BAutolock _(const_cast<SettingsMessage*>(this));
 
-	BPath tempPath(fPath);
-	tempPath.set_path(BString(fPath.Path()).Append(".tmp").String());
+	BPath tempPath;
+	BString tempPathString(fPath.Path());
+	tempPathString << ".tmp";
+	tempPath.SetTo(tempPathString.String());
 
 	BFile file(tempPath.Path(), B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE);
 	status_t status = file.InitCheck();
