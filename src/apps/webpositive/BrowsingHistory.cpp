@@ -144,10 +144,8 @@ BrowsingHistoryItem::operator>=(const BrowsingHistoryItem& other) const
 void
 BrowsingHistoryItem::Invoked()
 {
-	// Eventually, we may overflow...
-	uint32 count = fInvokationCount + 1;
-	if (count > fInvokationCount)
-		fInvokationCount = count;
+	if (fInvokationCount < UINT32_MAX)
+		fInvokationCount++;
 	fDateTime = BDateTime::CurrentDateTime(B_LOCAL_TIME);
 }
 

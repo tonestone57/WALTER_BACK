@@ -8,8 +8,6 @@
 #include <new>
 #include <string.h>
 
-#include "blake3.h"
-
 
 uint32
 string_hash(const char *_string)
@@ -18,13 +16,12 @@ string_hash(const char *_string)
 	if (string == NULL)
 		return 0;
 
-	uint8_t output[BLAKE3_OUT_LEN];
-	blake3_hasher hasher;
-	blake3_hasher_init(&hasher);
-	blake3_hasher_update(&hasher, string, strlen((const char*)string));
-	blake3_hasher_finalize(&hasher, output, BLAKE3_OUT_LEN);
+	uint32 hash = 5381;
+	char c;
+	while ((c = *string++))
+		hash = ((hash << 5) + hash) + c;
 
-	return *(uint32*)output;
+	return hash;
 }
 
 /*!

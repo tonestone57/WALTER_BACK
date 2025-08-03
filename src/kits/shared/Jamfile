@@ -30,7 +30,6 @@ for architectureObject in [ MultiArchSubDirSetup ] {
 			AttributeUtilities.cpp
 			BarberPole.cpp
 			BitmapButton.cpp
-			blake3.c
 			CalendarView.cpp
 			ColorItem.cpp
 			ColorListView.cpp

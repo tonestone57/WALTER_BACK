@@ -2070,7 +2070,7 @@ BrowserWindow::_HandlePageSourceResult(const BMessage* message)
 	}
 
 	BString title(B_TRANSLATE("Page Source"));
-	title << " - " << CurrentWebView()->MainFrameTitle();
+	title << " - " << _SanitizeTitle(CurrentWebView()->MainFrameTitle());
 
 	SourceWindow* window = new SourceWindow(Frame().OffsetByCopy(20, 20),
 		title, source);

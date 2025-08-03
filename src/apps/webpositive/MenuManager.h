@@ -29,6 +29,9 @@ public:
 			int32				HistoryMenuFixedItemCount() const { return fHistoryMenuFixedItemCount; }
 
 private:
+								MenuManager(const MenuManager&);
+			MenuManager&		operator=(const MenuManager&);
+
 			BMenuBar*			fMenuBar;
 			BMenu*				fHistoryMenu;
 			int32				fHistoryMenuFixedItemCount;

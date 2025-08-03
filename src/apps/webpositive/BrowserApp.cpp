@@ -370,6 +370,7 @@ BrowserApp::MessageReceived(BMessage* message)
 			BRect settingsWindowFrame = fSettings->GetValue("settings window frame",
 				BRect());
 			fSettingsWindow = new SettingsWindow(settingsWindowFrame, fSettings);
+			fSettingsWindow->Show();
 		}
 		_ShowWindow(message, fSettingsWindow);
 		break;

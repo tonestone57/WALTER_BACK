@@ -180,41 +180,70 @@ public:
 DownloadProgressView::DownloadProgressView(BDownload* download)
 	:
 	BGroupView(B_HORIZONTAL, 8),
+	fIconView(NULL),
+	fStatusBar(NULL),
+	fInfoView(NULL),
+	fTopButton(NULL),
+	fPauseButton(NULL),
+	fBottomButton(NULL),
 	fDownload(download),
 	fURL(download->Url().UrlString()),
-	fPath(download->Target())
+	fPath(download->Target()),
+	fCurrentSize(0),
+	fExpectedSize(0),
+	fLastSpeedReferenceSize(0),
+	fEstimatedFinishReferenceSize(0),
+	fLastUpdateTime(0),
+	fLastSpeedReferenceTime(0),
+	fProcessStartTime(0),
+	fLastSpeedUpdateTime(0),
+	fEstimatedFinishReferenceTime(0),
+	fCurrentBytesPerSecondSlot(0),
+	fBytesPerSecond(0.0)
 {
+	for (size_t i = 0; i < kBytesPerSecondSlots; i++)
+		fBytesPerSecondSlot[i] = 0.0;
 }
 
 
 DownloadProgressView::DownloadProgressView(const BMessage* archive)
 	:
 	BGroupView(B_HORIZONTAL, 8),
+	fIconView(NULL),
+	fStatusBar(NULL),
+	fInfoView(NULL),
+	fTopButton(NULL),
+	fPauseButton(NULL),
+	fBottomButton(NULL),
 	fDownload(NULL),
 	fURL(),
-	fPath()
+	fPath(),
+	fCurrentSize(0),
+	fExpectedSize(0),
+	fLastSpeedReferenceSize(0),
+	fEstimatedFinishReferenceSize(0),
+	fLastUpdateTime(0),
+	fLastSpeedReferenceTime(0),
+	fProcessStartTime(0),
+	fLastSpeedUpdateTime(0),
+	fEstimatedFinishReferenceTime(0),
+	fCurrentBytesPerSecondSlot(0),
+	fBytesPerSecond(0.0)
 {
 	const char* string;
 	if (archive->FindString("path", &string) == B_OK)
 		fPath.SetTo(string);
 	if (archive->FindString("url", &string) == B_OK)
 		fURL = string;
+
+	for (size_t i = 0; i < kBytesPerSecondSlots; i++)
+		fBytesPerSecondSlot[i] = 0.0;
 }
 
 
 bool
 DownloadProgressView::Init(BMessage* archive)
 {
-	fCurrentSize = 0;
-	fExpectedSize = 0;
-	fLastUpdateTime = 0;
-	fBytesPerSecond = 0.0;
-	for (size_t i = 0; i < kBytesPerSecondSlots; i++)
-		fBytesPerSecondSlot[i] = 0.0;
-	fCurrentBytesPerSecondSlot = 0;
-	fLastSpeedReferenceSize = 0;
-	fEstimatedFinishReferenceSize = 0;
-
 	fProcessStartTime = fLastSpeedReferenceTime
 		= fEstimatedFinishReferenceTime	= system_time();
 

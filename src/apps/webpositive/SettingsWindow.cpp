@@ -144,7 +144,6 @@ SettingsWindow::SettingsWindow(BRect frame, SettingsMessage* settings)
 
 	// Start hidden
 	Hide();
-	Show();
 }
 
 

@@ -369,15 +369,16 @@ DownloadWindow::_DownloadStarted(BDownload* download)
 	if (!view->Init()) {
 		return;
 	}
+	DownloadProgressView* viewPointer = view.get();
 	fDownloadViews[download->Url().UrlString()] = std::move(view);
-	fDownloadViewsLayout->AddView(fDownloadViews[download->Url().UrlString()].get());
+	fDownloadViewsLayout->AddView(viewPointer);
 
 	// Scroll new download into view
 	if (BScrollBar* scrollBar = fDownloadsScrollView->ScrollBar(B_VERTICAL)) {
 		float min;
 		float max;
 		scrollBar->GetRange(&min, &max);
-		float viewHeight = view->MinSize().height + 1;
+		float viewHeight = viewPointer->MinSize().height + 1;
 		int32 index = fDownloadViewsLayout->CountItems() -1;
 		float scrollOffset = min + index * viewHeight;
 		float scrollBarHeight = scrollBar->Bounds().Height() - 1;
