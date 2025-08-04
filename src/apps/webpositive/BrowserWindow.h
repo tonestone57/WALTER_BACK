@@ -30,6 +30,7 @@
 
 
 #include "WebWindow.h"
+#include "FindView.h"
 
 #include "PageUserData.h"
 
@@ -52,8 +53,6 @@ class BPath;
 class BStatusBar;
 class BStringView;
 class BWebView;
-
-class FindView;
 
 class BookmarkBar;
 class BrowsingHistoryItem;
