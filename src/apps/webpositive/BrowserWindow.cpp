@@ -102,45 +102,6 @@
 #define B_TRANSLATION_CONTEXT "WebPositive Window"
 
 
-enum {
-	MSG_POPULATE_HISTORY_MENU					= 'phmn',
-	MSG_DATA_LOADED								= 'dtld',
-	OPEN_LOCATION								= 'open',
-	SAVE_PAGE									= 'save',
-	GO_BACK										= 'goba',
-	GO_FORWARD									= 'gofo',
-	STOP										= 'stop',
-	HOME										= 'home',
-	GOTO_URL									= 'goul',
-	RELOAD										= 'reld',
-	SHOW_HIDE_BOOKMARK_BAR						= 'shbb',
-	CLEAR_HISTORY								= 'clhs',
-
-	CREATE_BOOKMARK								= 'crbm',
-	SHOW_BOOKMARKS								= 'shbm',
-
-	ZOOM_FACTOR_INCREASE						= 'zfin',
-	ZOOM_FACTOR_DECREASE						= 'zfdc',
-	ZOOM_FACTOR_RESET							= 'zfrs',
-	ZOOM_TEXT_ONLY								= 'zfto',
-
-	TOGGLE_FULLSCREEN							= 'tgfs',
-	TOGGLE_AUTO_HIDE_INTERFACE_IN_FULLSCREEN	= 'tgah',
-	CHECK_AUTO_HIDE_INTERFACE					= 'cahi',
-
-	SHOW_PAGE_SOURCE							= 'spgs',
-	SHOW_HISTORY_WINDOW							= 'shhw',
-
-	EDIT_SHOW_FIND_GROUP						= 'sfnd',
-	EDIT_HIDE_FIND_GROUP						= 'hfnd',
-	EDIT_FIND_NEXT								= 'fndn',
-	EDIT_FIND_PREVIOUS							= 'fndp',
-
-	SELECT_TAB									= 'sltb',
-	CYCLE_TABS									= 'ctab',
-};
-
-
 static const int32 kModifiers = B_SHIFT_KEY | B_COMMAND_KEY
 	| B_CONTROL_KEY | B_OPTION_KEY | B_MENU_KEY;
 
@@ -299,26 +260,26 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 
 
 	// Back, Forward, Stop & Home buttons
-	fBackButton = new BIconButton("Back", NULL, new BMessage(GO_BACK));
+	fBackButton = new BIconButton("Back", NULL, new BMessage(MSG_GO_BACK));
 	fBackButton->SetIcon(201);
 	fBackButton->TrimIcon();
 
-	fForwardButton = new BIconButton("Forward", NULL, new BMessage(GO_FORWARD));
+	fForwardButton = new BIconButton("Forward", NULL, new BMessage(MSG_GO_FORWARD));
 	fForwardButton->SetIcon(202);
 	fForwardButton->TrimIcon();
 
-	fStopButton = new BIconButton("Stop", NULL, new BMessage(STOP));
+	fStopButton = new BIconButton("Stop", NULL, new BMessage(MSG_STOP));
 	fStopButton->SetIcon(204);
 	fStopButton->TrimIcon();
 
-	fHomeButton = new BIconButton("Home", NULL, new BMessage(HOME));
+	fHomeButton = new BIconButton("Home", NULL, new BMessage(MSG_HOME));
 	fHomeButton->SetIcon(206);
 	fHomeButton->TrimIcon();
 	if (!fAppSettings->GetValue(kSettingsKeyShowHomeButton, true))
 		fHomeButton->Hide();
 
 	// URL input group
-	fURLInputGroup = new URLInputGroup(new BMessage(GOTO_URL));
+	fURLInputGroup = new URLInputGroup(new BMessage(MSG_GOTO_URL));
 
 	// Status Bar
 	fStatusText = new BStringView("status", "");
@@ -371,7 +332,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 
 	BBitmapButton* toggleFullscreenButton = new BBitmapButton(kWindowIconBits,
 		kWindowIconWidth, kWindowIconHeight, kWindowIconFormat,
-		new BMessage(TOGGLE_FULLSCREEN));
+		new BMessage(MSG_TOGGLE_FULLSCREEN));
 	toggleFullscreenButton->SetBackgroundMode(BBitmapButton::MENUBAR_BACKGROUND);
 
 	fMenuGroup = (new BGroupView(B_HORIZONTAL, 0))->GroupLayout();
@@ -387,7 +348,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 
 	BPath bookmarkPath;
 	entry_ref bookmarkRef;
-	if (_BookmarkPath(bookmarkPath) == B_OK
+	if (BookmarkPath(bookmarkPath) == B_OK
 		&& get_ref_for_path(bookmarkPath.Path(), &bookmarkRef) == B_OK) {
 		BDirectory barDir(&bookmarkRef);
 		BEntry bookmarkBar(&barDir, kBookmarkBarSubdir);
@@ -438,13 +399,13 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 		fAutoHideInterfaceInFullscreenMode));
 
 	AddShortcut('F', B_COMMAND_KEY | B_SHIFT_KEY,
-		new BMessage(EDIT_HIDE_FIND_GROUP));
+		new BMessage(MSG_HIDE_FIND_GROUP));
 	// TODO: Should be a different shortcut, H is usually for Find selection.
-	AddShortcut('H', B_COMMAND_KEY | B_SHIFT_KEY, new BMessage(HOME));
+	AddShortcut('H', B_COMMAND_KEY | B_SHIFT_KEY, new BMessage(MSG_HOME));
 
 	// Add shortcuts to select a particular tab
 	for (int32 i = 1; i <= 9; i++) {
-		BMessage* selectTab = new BMessage(SELECT_TAB);
+		BMessage* selectTab = new BMessage(MSG_SELECT_TAB);
 		selectTab->AddInt32("tab index", i - 1);
 		char numStr[2];
 		snprintf(numStr, sizeof(numStr), "%d", (int) i);
@@ -452,7 +413,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	}
 
 	// Add shortcut to cycle through tabs like in every other web browser
-	AddShortcut(B_TAB, B_COMMAND_KEY, new BMessage(CYCLE_TABS));
+	AddShortcut(B_TAB, B_COMMAND_KEY, new BMessage(MSG_CYCLE_TABS));
 
 	BKeymap keymap;
 	keymap.SetToCurrent();
@@ -465,7 +426,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 			if (!HasShortcut(key, 0)) {
 				// Add semantic zoom in shortcut, bug #7428
 				AddShortcut(key, B_COMMAND_KEY,
-					new BMessage(ZOOM_FACTOR_INCREASE));
+					new BMessage(MSG_ZOOM_FACTOR_INCREASE));
 			}
 		}
 	}
@@ -496,11 +457,11 @@ BrowserWindow::DispatchMessage(BMessage* message, BHandler* target)
 			if (message->FindInt32("key", &key) == B_OK) {
 				switch (key) {
 					case B_F5_KEY:
-						PostMessage(RELOAD);
+						PostMessage(MSG_RELOAD);
 						break;
 
 					case B_F11_KEY:
-						PostMessage(TOGGLE_FULLSCREEN);
+						PostMessage(MSG_TOGGLE_FULLSCREEN);
 						break;
 
 					default:
@@ -525,7 +486,7 @@ BrowserWindow::DispatchMessage(BMessage* message, BHandler* target)
 				_ShowInterface(true);
 			else {
 				// Default escape key behavior:
-				PostMessage(STOP);
+				PostMessage(MSG_STOP);
 				return;
 			}
 		}
@@ -576,7 +537,7 @@ void
 BrowserWindow::MessageReceived(BMessage* message)
 {
 	switch (message->what) {
-		case OPEN_LOCATION:
+		case MSG_OPEN_LOCATION:
 			_ShowInterface(true);
 			if (fURLInputGroup->TextView()->IsFocus())
 				fURLInputGroup->TextView()->SelectAll();
@@ -584,15 +545,15 @@ BrowserWindow::MessageReceived(BMessage* message)
 				fURLInputGroup->MakeFocus(true);
 			break;
 
-		case RELOAD:
+		case MSG_RELOAD:
 			CurrentWebView()->Reload();
 			break;
 
-		case SHOW_HIDE_BOOKMARK_BAR:
+		case MSG_SHOW_HIDE_BOOKMARK_BAR:
 			_ShowBookmarkBar(fBookmarkBar->IsHidden());
 			break;
 
-		case GOTO_URL:
+		case MSG_GOTO_URL:
 		{
 			BString url;
 			if (message->FindString("url", &url) != B_OK)
@@ -604,7 +565,7 @@ BrowserWindow::MessageReceived(BMessage* message)
 			break;
 		}
 
-		case SAVE_PAGE:
+		case MSG_SAVE_PAGE:
 		{
 			fSavePanel->SetSaveText(CurrentWebView()->MainFrameTitle());
 			fSavePanel->Show();
@@ -627,23 +588,23 @@ BrowserWindow::MessageReceived(BMessage* message)
 			break;
 		}
 
-		case GO_BACK:
+		case MSG_GO_BACK:
 			CurrentWebView()->GoBack();
 			break;
 
-		case GO_FORWARD:
+		case MSG_GO_FORWARD:
 			CurrentWebView()->GoForward();
 			break;
 
-		case STOP:
+		case MSG_STOP:
 			CurrentWebView()->StopLoading();
 			break;
 
-		case HOME:
+		case MSG_HOME:
 			CurrentWebView()->LoadURL(fStartPageURL);
 			break;
 
-		case CLEAR_HISTORY: {
+		case MSG_CLEAR_HISTORY: {
 			BrowsingHistory* history = BrowsingHistory::DefaultInstance();
 			if (history->CountItems() == 0)
 				break;
@@ -658,11 +619,11 @@ BrowserWindow::MessageReceived(BMessage* message)
 			break;
 		}
 
-		case CREATE_BOOKMARK:
+		case MSG_CREATE_BOOKMARK:
 			fBookmarkManager->CreateBookmark(this);
 			break;
 
-		case SHOW_BOOKMARKS:
+		case MSG_SHOW_BOOKMARKS:
 			fBookmarkManager->ShowBookmarks();
 			break;
 
@@ -734,7 +695,7 @@ BrowserWindow::MessageReceived(BMessage* message)
 				// Something that can be made into a bookmark (e.g. the page icon)
 				// was dragged and dropped on the bookmark bar.
 				BPath path;
-				if (_BookmarkPath(path) == B_OK && path.Append(kBookmarkBarSubdir) == B_OK) {
+				if (BookmarkPath(path) == B_OK && path.Append(kBookmarkBarSubdir) == B_OK) {
 					entry_ref ref;
 					if (BEntry(path.Path()).GetRef(&ref) != B_OK) {
 						BAlert* alert = new BAlert(B_TRANSLATE("Bookmark error"),
@@ -788,43 +749,43 @@ BrowserWindow::MessageReceived(BMessage* message)
 			break;
 		}
 
-		case ZOOM_FACTOR_INCREASE:
+		case MSG_ZOOM_FACTOR_INCREASE:
 			CurrentWebView()->IncreaseZoomFactor(fZoomTextOnly);
 			break;
-		case ZOOM_FACTOR_DECREASE:
+		case MSG_ZOOM_FACTOR_DECREASE:
 			CurrentWebView()->DecreaseZoomFactor(fZoomTextOnly);
 			break;
-		case ZOOM_FACTOR_RESET:
+		case MSG_ZOOM_FACTOR_RESET:
 			CurrentWebView()->ResetZoomFactor();
 			break;
-		case ZOOM_TEXT_ONLY:
+		case MSG_ZOOM_TEXT_ONLY:
 			fZoomTextOnly = !fZoomTextOnly;
 			fMenuManager->ZoomTextOnlyMenuItem()->SetMarked(fZoomTextOnly);
 			if (CurrentWebView())
 				CurrentWebView()->Reload();
 			break;
 
-		case TOGGLE_FULLSCREEN:
+		case MSG_TOGGLE_FULLSCREEN:
 			ToggleFullscreen();
 			break;
 
-		case TOGGLE_AUTO_HIDE_INTERFACE_IN_FULLSCREEN:
+		case MSG_TOGGLE_AUTO_HIDE_INTERFACE_IN_FULLSCREEN:
 			_SetAutoHideInterfaceInFullscreen(
 				!fAutoHideInterfaceInFullscreenMode);
 			break;
 
-		case CHECK_AUTO_HIDE_INTERFACE:
+		case MSG_CHECK_AUTO_HIDE_INTERFACE:
 			_CheckAutoHideInterface();
 			break;
 
-		case SHOW_PAGE_SOURCE:
+		case MSG_SHOW_PAGE_SOURCE:
 			CurrentWebView()->WebPage()->SendPageSource();
 			break;
 		case B_PAGE_SOURCE_RESULT:
 			_HandlePageSourceResult(message);
 			break;
 
-		case EDIT_FIND_NEXT:
+		case MSG_FIND_NEXT:
 			CurrentWebView()->FindString(fFindBar->Text(), true,
 				fFindBar->IsCaseSensitive());
 			break;
@@ -835,16 +796,16 @@ BrowserWindow::MessageReceived(BMessage* message)
 	fMenuManager->FindNextMenuItem()->SetEnabled(findTextAvailable);
 			break;
 		}
-		case EDIT_FIND_PREVIOUS:
+		case MSG_FIND_PREVIOUS:
 			CurrentWebView()->FindString(fFindBar->Text(), false,
 				fFindBar->IsCaseSensitive());
 			break;
-		case EDIT_SHOW_FIND_GROUP:
+		case MSG_SHOW_FIND_GROUP:
 			if (fFindBar->IsHidden())
 				fFindBar->Show();
 			fFindBar->MakeFocus(true);
 			break;
-		case EDIT_HIDE_FIND_GROUP:
+		case MSG_HIDE_FIND_GROUP:
 		case MSG_FIND_CLOSED:
 			if (!fFindBar->IsHidden()) {
 				fFindBar->Hide();
@@ -896,7 +857,7 @@ BrowserWindow::MessageReceived(BMessage* message)
 			be_app->PostMessage(message);
 			break;
 
-		case CLOSE_TAB:
+		case MSG_CLOSE_TAB:
 			if (fTabManager->CountTabs() > 1) {
 				int32 index;
 				if (message->FindInt32("tab index", &index) != B_OK)
@@ -907,7 +868,7 @@ BrowserWindow::MessageReceived(BMessage* message)
 				PostMessage(B_QUIT_REQUESTED);
 			break;
 
-		case SELECT_TAB:
+		case MSG_SELECT_TAB:
 		{
 			int32 index;
 			if (message->FindInt32("tab index", &index) == B_OK
@@ -919,7 +880,7 @@ BrowserWindow::MessageReceived(BMessage* message)
 			break;
 		}
 
-		case CYCLE_TABS:
+		case MSG_CYCLE_TABS:
 		{
 			int32 index = fTabManager->SelectedTabIndex() + 1;
 			if (index >= fTabManager->CountTabs())
@@ -2081,7 +2042,7 @@ BrowserWindow::_ShowBookmarkBar(bool show)
 	if (show) {
 		BPath path;
 		entry_ref ref;
-		if (_BookmarkPath(path) == B_OK
+		if (BookmarkPath(path) == B_OK
 			&& path.Append(kBookmarkBarSubdir) == B_OK) {
 			if (get_ref_for_path(path.Path(), &ref) != B_OK) {
 				BAlert* alert = new BAlert(B_TRANSLATE("Bookmark bar error"),

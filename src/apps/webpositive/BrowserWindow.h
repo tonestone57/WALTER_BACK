@@ -103,6 +103,44 @@ enum {
 	START_DOWNLOAD					= 'stod'
 };
 
+enum {
+	MSG_POPULATE_HISTORY_MENU					= 'phmn',
+	MSG_DATA_LOADED								= 'dtld',
+	MSG_OPEN_LOCATION							= 'open',
+	MSG_SAVE_PAGE								= 'save',
+	MSG_GO_BACK									= 'goba',
+	MSG_GO_FORWARD								= 'gofo',
+	MSG_STOP									= 'stop',
+	MSG_HOME									= 'home',
+	MSG_GOTO_URL								= 'goul',
+	MSG_RELOAD									= 'reld',
+	MSG_SHOW_HIDE_BOOKMARK_BAR					= 'shbb',
+	MSG_CLEAR_HISTORY							= 'clhs',
+
+	MSG_CREATE_BOOKMARK							= 'crbm',
+	MSG_SHOW_BOOKMARKS							= 'shbm',
+
+	MSG_ZOOM_FACTOR_INCREASE					= 'zfin',
+	MSG_ZOOM_FACTOR_DECREASE					= 'zfdc',
+	MSG_ZOOM_FACTOR_RESET						= 'zfrs',
+	MSG_ZOOM_TEXT_ONLY							= 'zfto',
+
+	MSG_TOGGLE_FULLSCREEN						= 'tgfs',
+	MSG_TOGGLE_AUTO_HIDE_INTERFACE_IN_FULLSCREEN	= 'tgah',
+	MSG_CHECK_AUTO_HIDE_INTERFACE				= 'cahi',
+
+	MSG_SHOW_PAGE_SOURCE						= 'spgs',
+	MSG_SHOW_HISTORY_WINDOW						= 'shhw',
+
+	MSG_SHOW_FIND_GROUP							= 'sfnd',
+	MSG_HIDE_FIND_GROUP							= 'hfnd',
+	MSG_FIND_NEXT								= 'fndn',
+	MSG_FIND_PREVIOUS							= 'fndp',
+
+	MSG_SELECT_TAB								= 'sltb',
+	MSG_CYCLE_TABS								= 'ctab',
+};
+
 
 class BrowserWindow : public BWebWindow {
 public:

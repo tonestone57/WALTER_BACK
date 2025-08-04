@@ -51,9 +51,9 @@ private:
 	void _AddStaticItems()
 	{
 		AddItem(new BMenuItem(B_TRANSLATE("Manage bookmarks"),
-			new BMessage(SHOW_BOOKMARKS), 'M'), 0);
+			new BMessage(MSG_SHOW_BOOKMARKS), 'M'), 0);
 		AddItem(new BMenuItem(B_TRANSLATE("Bookmark this page"),
-			new BMessage(CREATE_BOOKMARK), 'B'), 0);
+			new BMessage(MSG_CREATE_BOOKMARK), 'B'), 0);
 	}
 };
 
@@ -79,14 +79,14 @@ MenuManager::MenuManager(BHandler* target)
 	menu->AddItem(newItem);
 	newItem->SetTarget(be_app);
 	menu->AddItem(new BMenuItem(B_TRANSLATE("Open location"),
-		new BMessage(OPEN_LOCATION), 'L'));
+		new BMessage(MSG_OPEN_LOCATION), 'L'));
 	menu->AddSeparatorItem();
 	menu->AddItem(new BMenuItem(B_TRANSLATE("Close window"),
 		new BMessage(B_QUIT_REQUESTED), 'W', B_SHIFT_KEY));
 	menu->AddItem(new BMenuItem(B_TRANSLATE("Close tab"),
-		new BMessage(CLOSE_TAB), 'W'));
+		new BMessage(MSG_CLOSE_TAB), 'W'));
 	menu->AddItem(new BMenuItem(B_TRANSLATE("Save page as" B_UTF8_ELLIPSIS),
-		new BMessage(SAVE_PAGE), 'S'));
+		new BMessage(MSG_SAVE_PAGE), 'S'));
 	menu->AddSeparatorItem();
 	menu->AddItem(new BMenuItem(B_TRANSLATE("Downloads"),
 		new BMessage(SHOW_DOWNLOAD_WINDOW), 'D'));
@@ -116,47 +116,47 @@ MenuManager::MenuManager(BHandler* target)
 		new BMessage(B_PASTE), 'V'));
 	menu->AddSeparatorItem();
 	menu->AddItem(new BMenuItem(B_TRANSLATE("Find"),
-		new BMessage(EDIT_SHOW_FIND_GROUP), 'F'));
+		new BMessage(MSG_SHOW_FIND_GROUP), 'F'));
 	menu->AddItem(fFindPreviousMenuItem
 		= new BMenuItem(B_TRANSLATE("Find previous"),
-		new BMessage(EDIT_FIND_PREVIOUS), 'G', B_SHIFT_KEY));
+		new BMessage(MSG_FIND_PREVIOUS), 'G', B_SHIFT_KEY));
 	menu->AddItem(fFindNextMenuItem = new BMenuItem(B_TRANSLATE("Find next"),
-		new BMessage(EDIT_FIND_NEXT), 'G'));
+		new BMessage(MSG_FIND_NEXT), 'G'));
 	fMenuBar->AddItem(menu);
 	fFindPreviousMenuItem->SetEnabled(false);
 	fFindNextMenuItem->SetEnabled(false);
 
 	menu = new BMenu(B_TRANSLATE("View"));
-	menu->AddItem(new BMenuItem(B_TRANSLATE("Reload"), new BMessage(RELOAD),
+	menu->AddItem(new BMenuItem(B_TRANSLATE("Reload"), new BMessage(MSG_RELOAD),
 		'R'));
 	// the label will be replaced with the appropriate text later on
 	fBookmarkBarMenuItem = new BMenuItem(B_TRANSLATE("Show bookmark bar"),
-		new BMessage(SHOW_HIDE_BOOKMARK_BAR));
+		new BMessage(MSG_SHOW_HIDE_BOOKMARK_BAR));
 	menu->AddItem(fBookmarkBarMenuItem);
 	menu->AddSeparatorItem();
 	menu->AddItem(new BMenuItem(B_TRANSLATE("Increase size"),
-		new BMessage(ZOOM_FACTOR_INCREASE), '+'));
+		new BMessage(MSG_ZOOM_FACTOR_INCREASE), '+'));
 	menu->AddItem(new BMenuItem(B_TRANSLATE("Decrease size"),
-		new BMessage(ZOOM_FACTOR_DECREASE), '-'));
+		new BMessage(MSG_ZOOM_FACTOR_DECREASE), '-'));
 	menu->AddItem(new BMenuItem(B_TRANSLATE("Reset size"),
-		new BMessage(ZOOM_FACTOR_RESET), '0'));
+		new BMessage(MSG_ZOOM_FACTOR_RESET), '0'));
 	fZoomTextOnlyMenuItem = new BMenuItem(B_TRANSLATE("Zoom text only"),
-		new BMessage(ZOOM_TEXT_ONLY));
+		new BMessage(MSG_ZOOM_TEXT_ONLY));
 	menu->AddItem(fZoomTextOnlyMenuItem);
 
 	menu->AddSeparatorItem();
 	fFullscreenItem = new BMenuItem(B_TRANSLATE("Full screen"),
-		new BMessage(TOGGLE_FULLSCREEN), B_RETURN);
+		new BMessage(MSG_TOGGLE_FULLSCREEN), B_RETURN);
 	menu->AddItem(fFullscreenItem);
 	menu->AddItem(new BMenuItem(B_TRANSLATE("Page source"),
-		new BMessage(SHOW_PAGE_SOURCE), 'U'));
+		new BMessage(MSG_SHOW_PAGE_SOURCE), 'U'));
 	fMenuBar->AddItem(menu);
 
 	fHistoryMenu = new BMenu(B_TRANSLATE("History"));
 	fHistoryMenu->AddItem(fBackMenuItem = new BMenuItem(B_TRANSLATE("Back"),
-		new BMessage(GO_BACK), B_LEFT_ARROW));
+		new BMessage(MSG_GO_BACK), B_LEFT_ARROW));
 	fHistoryMenu->AddItem(fForwardMenuItem
-		= new BMenuItem(B_TRANSLATE("Forward"), new BMessage(GO_FORWARD),
+		= new BMenuItem(B_TRANSLATE("Forward"), new BMessage(MSG_GO_FORWARD),
 		B_RIGHT_ARROW));
 	fHistoryMenu->AddSeparatorItem();
 	fHistoryMenuFixedItemCount = fHistoryMenu->CountItems();
@@ -198,9 +198,9 @@ MenuManager::HistoryMenu()
 	if (fHistoryMenu == NULL) {
 		fHistoryMenu = new BMenu(B_TRANSLATE("History"));
 		fHistoryMenu->AddItem(fBackMenuItem = new BMenuItem(B_TRANSLATE("Back"),
-			new BMessage(GO_BACK), B_LEFT_ARROW));
+			new BMessage(MSG_GO_BACK), B_LEFT_ARROW));
 		fHistoryMenu->AddItem(fForwardMenuItem
-			= new BMenuItem(B_TRANSLATE("Forward"), new BMessage(GO_FORWARD),
+			= new BMenuItem(B_TRANSLATE("Forward"), new BMessage(MSG_GO_FORWARD),
 			B_RIGHT_ARROW));
 		fHistoryMenu->AddSeparatorItem();
 		fHistoryMenuFixedItemCount = fHistoryMenu->CountItems();
