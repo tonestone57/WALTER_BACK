@@ -1522,7 +1522,7 @@ BrowserWindow::SetStatusBarVisible(bool flag, BWebView* view)
 void
 BrowserWindow::SetMenuBarVisible(bool flag, BWebView* view)
 {
-	if (CurrentWebView() == NULL || fTabManager->CountTabs() > 1)
+	if (CurrentWebView() == NULL || fTabManager->Count_tabs() > 1)
 		return;
 }
 
