@@ -134,8 +134,6 @@ enum {
 
 	MSG_SHOW_FIND_GROUP							= 'sfnd',
 	MSG_HIDE_FIND_GROUP							= 'hfnd',
-	MSG_FIND_NEXT								= 'fndn',
-	MSG_FIND_PREVIOUS							= 'fndp',
 
 	MSG_SELECT_TAB								= 'sltb',
 	MSG_CYCLE_TABS								= 'ctab',
