@@ -17,6 +17,7 @@ SessionManager::SessionManager(const char* name, uint32 priority,
 		BLooper* target)
 	:
 	BLooper(name, priority, 2),
+	BLocker("session lock"),
 	fSession(NULL),
 	fTarget(target)
 {
@@ -65,7 +66,8 @@ status_t
 SessionManager::SaveSession(BMessage* session)
 {
 	BAutolock _(this);
-	*fSession = *session;
+	fSession->MakeEmpty();
+	fSession->Append(*session);
 	return B_OK;
 }
 

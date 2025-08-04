@@ -1,18 +1,19 @@
 /*
- * Copyright (C) 2010 Stephan Aßmus <superstippi@gmx.de>
- *
- * All rights reserved. Distributed under the terms of the MIT License.
+ * Copyright 2023, Haiku, Inc. All rights reserved.
+ * Distributed under the terms of the MIT License.
  */
 #ifndef SESSION_MANAGER_H
 #define SESSION_MANAGER_H
 
+#include <Looper.h>
 #include <Locker.h>
-#include <Message.h>
-#include <String.h>
+#include <ObjectList.h>
 
 #include "SettingsMessage.h"
 
-class SessionManager : public BLooper {
+class BMessage;
+
+class SessionManager : public BLooper, public BLocker {
 public:
 								SessionManager(const char* name,
 									uint32 priority, BLooper* target);
@@ -24,8 +25,9 @@ public:
 			status_t			LoadSession(BMessage* session);
 
 private:
-			SettingsMessage*	fSession;
 			BLooper*			fTarget;
+			SettingsMessage*	fSession;
 };
+
 
 #endif // SESSION_MANAGER_H

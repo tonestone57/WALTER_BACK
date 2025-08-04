@@ -38,7 +38,7 @@ CookieEditor::CookieEditor(BRect frame,
 	fName = new BTextControl("name", B_TRANSLATE("Name:"), cookie.Name(), NULL);
 	fValue = new BTextControl("value", B_TRANSLATE("Value:"), cookie.Value(), NULL);
 	BString expiration;
-	if (cookie.IsSession())
+	if (cookie.IsSessionCookie())
 		expiration = B_TRANSLATE("Session");
 	else
 		expiration << cookie.ExpirationDate();
