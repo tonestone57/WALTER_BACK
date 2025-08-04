@@ -73,7 +73,6 @@ for architectureObject in [ MultiArchSubDirSetup ] {
 		UseLibraryHeaders icon ;
 		UsePrivateHeaders interface netservices shared tracker ;
 		SubDirHdrs $(HAIKU_TOP) src kits tracker ;
-		SubDirHdrs . ;
 
 		Application WebPositive :
 			$(sources)
