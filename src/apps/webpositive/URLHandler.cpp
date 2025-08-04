@@ -175,6 +175,8 @@ URLHandler::_VisitSearchEngine(const BString& search)
 
 	// Default search URL
 	BString engine(fSearchPageURL);
+	if (engine.Length() == 0)
+		engine = "https://duckduckgo.com/?q=%s";
 
 	engine.ReplaceAll("%s", _EncodeURIComponent(searchQuery));
 	_VisitURL(engine);
