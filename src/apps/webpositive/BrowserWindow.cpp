@@ -428,7 +428,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	fStatusGroup = statusGroup;
 	fToggleFullscreenButton = layoutItemFor(toggleFullscreenButton);
 
-	fFindBar->SetVisible(false);
+	fFindBar->Hide();
 	fToggleFullscreenButton->SetVisible(false);
 
 	CreateNewTab(url, true, webView);
