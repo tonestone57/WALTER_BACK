@@ -35,9 +35,9 @@ _InvokeButtonVisibly(BButton* button)
 }
 
 
-class FindView : public BGroupView {
+class FindBar : public BGroupView {
 public:
-	FindView(BHandler* target)
+	FindBar(BHandler* target)
 		:
 		BGroupView(B_VERTICAL, 0.0),
 		fTarget(target)
@@ -70,7 +70,7 @@ public:
 	}
 
 
-	virtual ~FindView()
+	virtual ~FindBar()
 	{
 	}
 

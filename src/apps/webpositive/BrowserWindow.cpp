@@ -341,7 +341,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	const float kInsetSpacing = 3;
 	const float kElementSpacing = 5;
 
-	fFindView = new FindView(this);
+	fFindBar = new FindBar(this);
 
 	// Navigation group
 	BGroupLayout* navigationGroup = BLayoutBuilder::Group<>(B_VERTICAL, 0.0)
@@ -418,7 +418,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	if (fBookmarkBar)
 		container->AddChild(fBookmarkBar.get());
 	topView->AddChild(fTabManager->ContainerView());
-	container->AddChild(fFindView);
+	container->AddChild(fFindBar);
 	container->AddChild(statusGroup);
 
 	fURLInputGroup->MakeFocus(true);
@@ -428,7 +428,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	fStatusGroup = statusGroup;
 	fToggleFullscreenButton = layoutItemFor(toggleFullscreenButton);
 
-	fFindView->SetVisible(false);
+	fFindBar->SetVisible(false);
 	fToggleFullscreenButton->SetVisible(false);
 
 	CreateNewTab(url, true, webView);
@@ -825,29 +825,29 @@ BrowserWindow::MessageReceived(BMessage* message)
 			break;
 
 		case EDIT_FIND_NEXT:
-			CurrentWebView()->FindString(fFindView->Text(), true,
-				fFindView->IsCaseSensitive());
+			CurrentWebView()->FindString(fFindBar->Text(), true,
+				fFindBar->IsCaseSensitive());
 			break;
 		case MSG_FIND_TEXT_CHANGED:
 		{
-			bool findTextAvailable = strlen(fFindView->Text()) > 0;
+			bool findTextAvailable = strlen(fFindBar->Text()) > 0;
 	fMenuManager->FindPreviousMenuItem()->SetEnabled(findTextAvailable);
 	fMenuManager->FindNextMenuItem()->SetEnabled(findTextAvailable);
 			break;
 		}
 		case EDIT_FIND_PREVIOUS:
-			CurrentWebView()->FindString(fFindView->Text(), false,
-				fFindView->IsCaseSensitive());
+			CurrentWebView()->FindString(fFindBar->Text(), false,
+				fFindBar->IsCaseSensitive());
 			break;
 		case EDIT_SHOW_FIND_GROUP:
-			if (fFindView->IsHidden())
-				fFindView->Show();
-			fFindView->MakeFocus(true);
+			if (fFindBar->IsHidden())
+				fFindBar->Show();
+			fFindBar->MakeFocus(true);
 			break;
 		case EDIT_HIDE_FIND_GROUP:
 		case MSG_FIND_CLOSED:
-			if (!fFindView->IsHidden()) {
-				fFindView->Hide();
+			if (!fFindBar->IsHidden()) {
+				fFindBar->Hide();
 				if (CurrentWebView() != NULL)
 					CurrentWebView()->MakeFocus(true);
 			}

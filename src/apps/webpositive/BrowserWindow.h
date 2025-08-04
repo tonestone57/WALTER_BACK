@@ -30,7 +30,7 @@
 
 
 #include "WebWindow.h"
-#include "FindView.h"
+#include "FindBar.h"
 
 #include "PageUserData.h"
 
@@ -253,7 +253,7 @@ private:
 			BLayoutItem*		fStatusGroup;
 			BLayoutItem*		fToggleFullscreenButton;
 
-			FindView*			fFindView;
+			FindBar*			fFindBar;
 			std::unique_ptr<TabManager>			fTabManager;
 
 			BRect				fNonFullscreenWindowFrame;
