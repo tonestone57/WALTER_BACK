@@ -1273,7 +1273,7 @@ BrowserWindow::CloseWindowRequested(BWebView* view)
 		// Tab is already gone.
 		return;
 	}
-	BMessage message(CLOSE_TAB);
+	BMessage message(MSG_CLOSE_TAB);
 	message.AddInt32("tab index", index);
 	PostMessage(&message, this);
 }
@@ -1522,7 +1522,7 @@ BrowserWindow::SetStatusBarVisible(bool flag, BWebView* view)
 void
 BrowserWindow::SetMenuBarVisible(bool flag, BWebView* view)
 {
-	if (CurrentWebView() == NULL || fTabManager->Count_tabs() > 1)
+	if (CurrentWebView() == NULL || fTabManager->CountTabs() > 1)
 		return;
 }
 
@@ -1770,7 +1770,7 @@ BrowserWindow::_PopulateHistoryMenu()
 
 	int32 count = fHistoryItems->CountItems();
 	BMenuItem* clearHistoryItem = new BMenuItem(B_TRANSLATE("Clear history"),
-		new BMessage(CLEAR_HISTORY));
+		new BMessage(MSG_CLEAR_HISTORY));
 	clearHistoryItem->SetEnabled(count > 0);
 	fMenuManager->HistoryMenu()->AddItem(clearHistoryItem);
 	if (count == 0)
@@ -1781,7 +1781,7 @@ BrowserWindow::_PopulateHistoryMenu()
 	int32 maxCount = min_c(count, 20);
 	for (int32 i = 0; i < maxCount; i++) {
 		BrowsingHistoryItem* historyItem = fHistoryItems->ItemAt(i);
-		BMessage* message = new BMessage(GOTO_URL);
+		BMessage* message = new BMessage(MSG_GOTO_URL);
 		message->AddString("url", historyItem->URL());
 
 		BString truncatedUrl(historyItem->URL());
@@ -1793,7 +1793,7 @@ BrowserWindow::_PopulateHistoryMenu()
 
 	fMenuManager->HistoryMenu()->AddSeparatorItem();
 	fMenuManager->HistoryMenu()->AddItem(new BMenuItem(B_TRANSLATE("Show all history"),
-		new BMessage(SHOW_HISTORY_WINDOW)));
+		new BMessage(MSG_SHOW_HISTORY_WINDOW)));
 }
 
 
@@ -1889,7 +1889,7 @@ BrowserWindow::_SetAutoHideInterfaceInFullscreen(bool doIt)
 
 	if (fAutoHideInterfaceInFullscreenMode)
 		fPulseRunner = std::make_unique<BMessageRunner>(BMessenger(this),
-			new BMessage(CHECK_AUTO_HIDE_INTERFACE), 100000);
+			new BMessage(MSG_CHECK_AUTO_HIDE_INTERFACE), 100000);
 	else {
 		fPulseRunner.reset();
 		_ShowInterface(true);
