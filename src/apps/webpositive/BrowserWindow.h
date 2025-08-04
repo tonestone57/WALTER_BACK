@@ -137,6 +137,7 @@ enum {
 
 	MSG_SELECT_TAB								= 'sltb',
 	MSG_CYCLE_TABS								= 'ctab',
+	MSG_CLOSE_TAB								= 'cltb',
 };
 
 
