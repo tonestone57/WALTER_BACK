@@ -25,8 +25,8 @@ public:
 			status_t			LoadSession(BMessage* session);
 
 private:
-			BLooper*			fTarget;
 			SettingsMessage*	fSession;
+			BLooper*			fTarget;
 };
 
 

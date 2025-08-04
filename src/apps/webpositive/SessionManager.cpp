@@ -65,7 +65,7 @@ SessionManager::MessageReceived(BMessage* message)
 status_t
 SessionManager::SaveSession(BMessage* session)
 {
-	BAutolock _(this);
+	BAutolock _((BLocker*)this);
 	fSession->MakeEmpty();
 	fSession->Append(*session);
 	return B_OK;
@@ -75,7 +75,7 @@ SessionManager::SaveSession(BMessage* session)
 status_t
 SessionManager::LoadSession(BMessage* session)
 {
-	BAutolock _(this);
+	BAutolock _((BLocker*)this);
 	*session = *fSession;
 	return B_OK;
 }
