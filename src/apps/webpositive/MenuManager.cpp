@@ -4,6 +4,7 @@
  */
 
 #include "MenuManager.h"
+#include "BrowserWindow.h"
 
 #include <Application.h>
 #include <Catalog.h>
@@ -163,7 +164,7 @@ MenuManager::MenuManager(BHandler* target)
 
 	BPath bookmarkPath;
 	entry_ref bookmarkRef;
-	if (static_cast<BrowserWindow*>(target)->_BookmarkPath(bookmarkPath) == B_OK
+	if (static_cast<BrowserWindow*>(target)->BookmarkPath(bookmarkPath) == B_OK
 		&& get_ref_for_path(bookmarkPath.Path(), &bookmarkRef) == B_OK) {
 		BMenu* bookmarkMenu
 			= new BookmarkMenu(B_TRANSLATE("Bookmarks"), target, &bookmarkRef);

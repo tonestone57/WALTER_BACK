@@ -137,6 +137,7 @@ public:
 			BRect				WindowFrame() const;
 
 			void				ToggleFullscreen();
+			status_t			BookmarkPath(BPath& path) const;
 
 private:
 	// WebPage notification API implementations
@@ -186,7 +187,6 @@ private:
 			void				_ShutdownTab(int32 index);
 			void				_TabChanged(int32 index);
 
-			status_t			_BookmarkPath(BPath& path) const;
 			void				_CreateBookmark();
 			void				_SetPageIcon(BWebView* view,
 									const BBitmap* icon);

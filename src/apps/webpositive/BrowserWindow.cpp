@@ -1762,7 +1762,7 @@ BrowserWindow::_TabChanged(int32 index)
 
 
 status_t
-BrowserWindow::_BookmarkPath(BPath& path) const
+BrowserWindow::BookmarkPath(BPath& path) const
 {
 	if (find_directory(B_USER_SETTINGS_DIRECTORY, &path) != B_OK)
 		return B_ERROR;
