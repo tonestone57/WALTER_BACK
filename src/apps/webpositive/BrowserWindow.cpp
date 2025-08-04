@@ -83,7 +83,6 @@
 #include "BrowserApp.h"
 #include "BrowsingHistory.h"
 #include "CredentialsStorage.h"
-#include "FindView.h"
 #include "IconButton.h"
 #include "MenuManager.h"
 #include "NavMenu.h"
