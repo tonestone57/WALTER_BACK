@@ -12,7 +12,6 @@ class SettingsMessage;
 
 class URLHandler {
 public:
-								URLHandler(BWebView* webView,
 	URLHandler(SettingsMessage* protocolHandlers, const BString& searchPageURL);
 	virtual						~URLHandler();
 
