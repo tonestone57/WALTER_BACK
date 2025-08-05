@@ -143,6 +143,7 @@ BrowserApp::~BrowserApp()
 			status_t status;
 			wait_for_thread(thread, &status);
 		}
+		delete fSessionManager;
 	}
 }
 
