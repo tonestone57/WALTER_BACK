@@ -18,14 +18,21 @@ class BListView;
 class BButton;
 
 
+enum {
+	ADD_CONSOLE_MESSAGE = 'acme',
+	CLEAR_CONSOLE_MESSAGES = 'ccms',
+	COPY_CONSOLE_MESSAGES = 'cpms'
+};
+
+
 class ConsoleWindow : public BWindow {
 public:
 								ConsoleWindow(BRect frame);
+	virtual						~ConsoleWindow();
 	virtual	void				MessageReceived(BMessage* message);
 	virtual	bool				QuitRequested();
 
-private:
-			void				_CopyToClipboard();
+			void				Show();
 
 private:
 			BListView*			fMessagesListView;

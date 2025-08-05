@@ -18,11 +18,6 @@
 #undef B_TRANSLATION_CONTEXT
 #define B_TRANSLATION_CONTEXT "ConsoleWindow"
 
-enum {
-	CLEAR_CONSOLE_MESSAGES = 'ccms',
-	COPY_CONSOLE_MESSAGES = 'cpms'
-};
-
 
 ConsoleWindow::ConsoleWindow(BRect frame)
 	:
@@ -46,7 +41,8 @@ ConsoleWindow::ConsoleWindow(BRect frame)
 			.Add(fCopyMessagesButton)
 			.AddGlue()
 		)
-		.SetInsets(B_USE_DEFAULT_SPACING)
+		.SetInsets(B_USE_DEFAULT_SPACING, B_USE_DEFAULT_SPACING,
+			B_USE_DEFAULT_SPACING, B_USE_DEFAULT_SPACING)
 	);
 
 	fClearMessagesButton->SetTarget(this);
