@@ -246,11 +246,6 @@ BrowserApp::ReadyToRun()
 		fLaunchRefsMessage.reset();
 	}
 
-	// If previous session did not contain any window on this workspace, create a new empty one.
-	BrowserWindow* window = _FindWindowOnCurrentWorkspace();
-	if (pagesCreated == 0 || window == NULL)
-		_CreateNewWindow("", fullscreen);
-
 	PostMessage(PRELOAD_BROWSING_HISTORY);
 }
 
@@ -322,6 +317,9 @@ BrowserApp::MessageReceived(BMessage* message)
 				}
 			}
 		}
+
+		if (fWindowCount == 0)
+			_CreateNewWindow("", false);
 		break;
 	}
 	case B_SILENT_RELAUNCH:
