@@ -78,6 +78,7 @@ BrowserApp::BrowserApp()
 	fWindowCount(0),
 	fLastWindowFrame(50, 50, 950, 750),
 	fLaunchRefsMessage(nullptr),
+	fLaunchedWithRefs(false),
 	fInitialized(false),
 	fSettings(),
 	fSessionManager(nullptr),
@@ -235,8 +236,21 @@ BrowserApp::ReadyToRun()
 
 	fInitialized = true;
 
+	int32 pagesCreated = 0;
+	bool fullscreen = false;
+
 	// Handle startup session / page
 	fSessionManager->PostMessage('load');
+	// If there is fLauchRefs message,
+	if (fLaunchRefsMessage) {
+		_RefsReceived(fLaunchRefsMessage.get(), &pagesCreated, &fullscreen);
+		fLaunchRefsMessage.reset();
+	}
+
+	// If previous session did not contain any window on this workspace, create a new empty one.
+	BrowserWindow* window = _FindWindowOnCurrentWorkspace();
+	if (pagesCreated == 0 || window == NULL)
+		_CreateNewWindow("", fullscreen);
 
 	PostMessage(PRELOAD_BROWSING_HISTORY);
 }
@@ -252,34 +266,23 @@ BrowserApp::MessageReceived(BMessage* message)
 		break;
 	case 'load':
 	{
-		// This is the central place for creating the initial window(s).
-		// It is called after the session has been loaded from disk.
-		bool fullscreen = false;
-		int32 pagesCreated = 0;
-
-		if (fLaunchRefsMessage) {
-			_RefsReceived(fLaunchRefsMessage.get(), &pagesCreated, &fullscreen);
-			fLaunchRefsMessage.reset();
-		}
-
-		if (pagesCreated > 0) {
-			// Windows were created for the launch refs, we're done.
-			break;
-		}
-
-		const char* kSettingsKeyStartUpPolicy = "start up policy";
-		uint32 startUpPolicy = fSettings->GetValue(kSettingsKeyStartUpPolicy,
-			(uint32)ResumePriorSession);
-
-		if (startUpPolicy == StartNewSession) {
-			// User wants a new session, so create a new blank window.
-			_CreateNewWindow("", fullscreen);
-		} else { // ResumePriorSession
-			BMessage session;
-			if (message->FindMessage("session", &session) == B_OK) {
+		BMessage session;
+		if (message->FindMessage("session", &session) == B_OK) {
+			const char* kSettingsKeyStartUpPolicy = "start up policy";
+			uint32 fStartUpPolicy = fSettings->GetValue(kSettingsKeyStartUpPolicy,
+				(uint32)ResumePriorSession);
+			// If requested not to load previous session
+			if (fStartUpPolicy == StartNewSession) {
+				// Check if lauchrefs will open a page
+				if (!fLaunchedWithRefs) {
+					// else open new window
+					PostMessage(NEW_WINDOW);
+				}
+			} else {
+				// otherwise, restore previous session
 				BMessage archivedWindow;
-				int32 i = 0;
-				while(session.FindMessage("window", i++, &archivedWindow) == B_OK) {
+				for (int i = 0; session.FindMessage("window", i, &archivedWindow)
+					== B_OK; i++) {
 					BRect frame = archivedWindow.FindRect("window frame");
 					BScreen screen;
 					if (!screen.Frame().Intersects(frame))
@@ -296,12 +299,13 @@ BrowserApp::MessageReceived(BMessage* message)
 						if (!entry.Exists())
 							url = "about:blank";
 					}
-					BrowserWindow* window = new(std::nothrow) BrowserWindow(
-						frame, fSettings.get(), url, fContext,
-						INTERFACE_ELEMENT_ALL, NULL, workspaces);
+					BrowserWindow* window = new(std::nothrow) BrowserWindow(frame, fSettings.get(), url,
+						fContext, INTERFACE_ELEMENT_ALL, NULL, workspaces);
 
 					if (window != NULL) {
 						window->Show();
+						int32 pagesCreated = 1;
+
 						for (int j = 1; archivedWindow.FindString("tab", j, &url)
 							== B_OK; j++) {
 							BUrl urlParser(url.String(), true);
@@ -313,14 +317,11 @@ BrowserApp::MessageReceived(BMessage* message)
 									url = "about:blank";
 							}
 							_CreateNewTab(window, url, false);
+							pagesCreated++;
 						}
 					}
 				}
 			}
-			// If, after all of the above, no windows were created, create a new
-			// empty one. This covers the case of resuming an empty session.
-			if (fWindowCount == 0)
-				_CreateNewWindow("", fullscreen);
 		}
 		break;
 	}
@@ -329,8 +330,7 @@ BrowserApp::MessageReceived(BMessage* message)
 		break;
 	case NEW_WINDOW: {
 		BString url;
-		if (message->FindString("url", &url) != B_OK)
-			break;
+		message->FindString("url", &url);
 		_CreateNewWindow(url);
 		break;
 	}
@@ -424,6 +424,7 @@ BrowserApp::RefsReceived(BMessage* message)
 {
 	if (!fInitialized) {
 		fLaunchRefsMessage.reset(new BMessage(*message));
+		fLaunchedWithRefs = true;
 		return;
 	}
 

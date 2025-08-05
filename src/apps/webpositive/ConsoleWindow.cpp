@@ -112,6 +112,14 @@ ConsoleWindow::MessageReceived(BMessage* message)
 }
 
 
+bool
+ConsoleWindow::QuitRequested()
+{
+	Hide();
+	return false;
+}
+
+
 void
 ConsoleWindow::Show()
 {
@@ -125,12 +133,4 @@ ConsoleWindow::Show()
 
 	if (!IsActive())
 		Activate();
-}
-
-
-bool
-ConsoleWindow::QuitRequested()
-{
-	Hide();
-	return false;
 }
