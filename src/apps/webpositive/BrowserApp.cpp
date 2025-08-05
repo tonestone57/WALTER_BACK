@@ -254,75 +254,74 @@ BrowserApp::MessageReceived(BMessage* message)
 	{
 		// This is the central place for creating the initial window(s).
 		// It is called after the session has been loaded from disk.
-
-		// First, see if the application was launched with any URLs.
-		int32 pagesCreated = 0;
 		bool fullscreen = false;
+		int32 pagesCreated = 0;
+
 		if (fLaunchRefsMessage) {
 			_RefsReceived(fLaunchRefsMessage.get(), &pagesCreated, &fullscreen);
 			fLaunchRefsMessage.reset();
 		}
 
-		// If no windows were created from launch refs, proceed with session logic.
-		if (pagesCreated == 0) {
-			const char* kSettingsKeyStartUpPolicy = "start up policy";
-			uint32 fStartUpPolicy = fSettings->GetValue(kSettingsKeyStartUpPolicy,
-				(uint32)ResumePriorSession);
+		if (pagesCreated > 0) {
+			// Windows were created for the launch refs, we're done.
+			break;
+		}
 
-			if (fStartUpPolicy == StartNewSession) {
-				// User wants a new session, so create a new blank window.
-				_CreateNewWindow("", fullscreen);
-			} else { // ResumePriorSession
-				BMessage session;
-				if (message->FindMessage("session", &session) == B_OK) {
-					// Restore previous session
-					BMessage archivedWindow;
-					for (int i = 0; session.FindMessage("window", i, &archivedWindow)
-						== B_OK; i++) {
-						BRect frame = archivedWindow.FindRect("window frame");
-						BScreen screen;
-						if (!screen.Frame().Intersects(frame))
-							frame.OffsetTo(50, 50);
-						uint32 workspaces = B_CURRENT_WORKSPACE;
-						archivedWindow.FindUInt32("window workspaces", 0, &workspaces);
-						BString url;
-						archivedWindow.FindString("tab", 0, &url);
-						BUrl urlParser(url.String(), true);
-						if (!urlParser.IsValid())
+		const char* kSettingsKeyStartUpPolicy = "start up policy";
+		uint32 startUpPolicy = fSettings->GetValue(kSettingsKeyStartUpPolicy,
+			(uint32)ResumePriorSession);
+
+		if (startUpPolicy == StartNewSession) {
+			// User wants a new session, so create a new blank window.
+			_CreateNewWindow("", fullscreen);
+		} else { // ResumePriorSession
+			BMessage session;
+			if (message->FindMessage("session", &session) == B_OK) {
+				BMessage archivedWindow;
+				int32 i = 0;
+				while(session.FindMessage("window", i++, &archivedWindow) == B_OK) {
+					BRect frame = archivedWindow.FindRect("window frame");
+					BScreen screen;
+					if (!screen.Frame().Intersects(frame))
+						frame.OffsetTo(50, 50);
+					uint32 workspaces = B_CURRENT_WORKSPACE;
+					archivedWindow.FindUInt32("window workspaces", 0, &workspaces);
+					BString url;
+					archivedWindow.FindString("tab", 0, &url);
+					BUrl urlParser(url.String(), true);
+					if (!urlParser.IsValid())
+						url = "about:blank";
+					else if (strcmp(urlParser.Protocol(), "file") == 0) {
+						BEntry entry(urlParser.Path());
+						if (!entry.Exists())
 							url = "about:blank";
-						else if (strcmp(urlParser.Protocol(), "file") == 0) {
-							BEntry entry(urlParser.Path());
-							if (!entry.Exists())
-								url = "about:blank";
-						}
-						BrowserWindow* window = new(std::nothrow) BrowserWindow(frame, fSettings.get(), url,
-							fContext, INTERFACE_ELEMENT_ALL, NULL, workspaces);
+					}
+					BrowserWindow* window = new(std::nothrow) BrowserWindow(
+						frame, fSettings.get(), url, fContext,
+						INTERFACE_ELEMENT_ALL, NULL, workspaces);
 
-						if (window != NULL) {
-							window->Show();
-							for (int j = 1; archivedWindow.FindString("tab", j, &url)
-								== B_OK; j++) {
-								BUrl urlParser(url.String(), true);
-								if (!urlParser.IsValid())
+					if (window != NULL) {
+						window->Show();
+						for (int j = 1; archivedWindow.FindString("tab", j, &url)
+							== B_OK; j++) {
+							BUrl urlParser(url.String(), true);
+							if (!urlParser.IsValid())
+								url = "about:blank";
+							else if (strcmp(urlParser.Protocol(), "file") == 0) {
+								BEntry entry(urlParser.Path());
+								if (!entry.Exists())
 									url = "about:blank";
-								else if (strcmp(urlParser.Protocol(), "file") == 0) {
-									BEntry entry(urlParser.Path());
-									if (!entry.Exists())
-										url = "about:blank";
-								}
-								_CreateNewTab(window, url, false);
 							}
+							_CreateNewTab(window, url, false);
 						}
 					}
 				}
 			}
+			// If, after all of the above, no windows were created, create a new
+			// empty one. This covers the case of resuming an empty session.
+			if (fWindowCount == 0)
+				_CreateNewWindow("", fullscreen);
 		}
-
-		// If, after all of the above, no windows were created, create a new
-		// empty one. This covers the case of resuming an empty session.
-		if (fWindowCount == 0)
-			_CreateNewWindow("", fullscreen);
-
 		break;
 	}
 	case B_SILENT_RELAUNCH:
