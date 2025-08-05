@@ -83,7 +83,7 @@ private:
 			bool				fInitialized;
 
 			std::unique_ptr<SettingsMessage>	fSettings;
-			std::unique_ptr<SessionManager>		fSessionManager;
+			SessionManager*		fSessionManager;
 			BReference<BPrivate::Network::BUrlContext>	fContext;
 
 			DownloadWindow*		fDownloadWindow;

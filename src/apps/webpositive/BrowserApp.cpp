@@ -127,7 +127,7 @@ BrowserApp::BrowserApp()
 		setenv("CURL_COOKIE_JAR_PATH", curlCookies.Path(), 0);
 	}
 
-	fSessionManager = std::make_unique<SessionManager>("session manager", B_NORMAL_PRIORITY,
+	fSessionManager = new SessionManager("session manager", B_NORMAL_PRIORITY,
 		this);
 	fSessionManager->Run();
 }
@@ -135,6 +135,15 @@ BrowserApp::BrowserApp()
 
 BrowserApp::~BrowserApp()
 {
+	if (fSessionManager) {
+		thread_id thread = fSessionManager->Thread();
+		if (thread != B_BAD_THREAD_ID) {
+			fSessionManager->PostMessage(B_QUIT_REQUESTED);
+			status_t status;
+			wait_for_thread(thread, &status);
+		}
+		delete fSessionManager;
+	}
 }
 
 
