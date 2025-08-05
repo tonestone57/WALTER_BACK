@@ -73,6 +73,9 @@ URLHandler::~URLHandler()
 void
 URLHandler::Handle(const BString& url)
 {
+	if (url.Length() == 0)
+		return;
+
 	BUrl urlObject(url.String(), true);
 	if (urlObject.Protocol().Length() > 0) {
 		// This is a URL with a protocol. Let's see if we can handle it.
