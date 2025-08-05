@@ -62,11 +62,11 @@ DataLoader::_LoadData()
 	}
 
 	// Create a message with the loaded data.
-	BMessage* message = new BMessage(MSG_DATA_LOADED);
-	message->AddPointer("history", historyItems);
+	BMessage message(MSG_DATA_LOADED);
+	message.AddPointer("history", historyItems);
 
 	// Send the message to the target.
-	fTarget.SendMessage(message);
+	fTarget.SendMessage(&message);
 
 	return 0;
 }

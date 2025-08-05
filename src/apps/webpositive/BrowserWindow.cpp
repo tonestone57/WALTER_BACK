@@ -539,6 +539,14 @@ void
 BrowserWindow::MessageReceived(BMessage* message)
 {
 	switch (message->what) {
+		case MSG_DATA_LOADED:
+		{
+			void* history;
+			if (message->FindPointer("history", &history) == B_OK)
+				fHistoryItems = reinterpret_cast<BObjectList<BrowsingHistoryItem>*>(history);
+			break;
+		}
+
 		case MSG_OPEN_LOCATION:
 			_ShowInterface(true);
 			if (fURLInputGroup->TextView()->IsFocus())
