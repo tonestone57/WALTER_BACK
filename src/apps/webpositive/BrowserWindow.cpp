@@ -438,6 +438,8 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 
 BrowserWindow::~BrowserWindow()
 {
+	if (fMenuManager->MenuBar() && fMenuManager->MenuBar()->Window())
+		fMenuManager->MenuBar()->RemoveSelf();
 	fAppSettings->RemoveListener(BMessenger(this));
 	delete fHistoryItems;
 }
