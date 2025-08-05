@@ -229,7 +229,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	fBookmarkManager(std::make_unique<BookmarkManager>()),
 	fProtocolHandlers(std::make_unique<SettingsMessage>(B_USER_SETTINGS_DIRECTORY,
 		"WebPositive/ProtocolHandlers")),
-	fURLHandler(std::make_unique<URLHandler>(CurrentWebView(), fProtocolHandlers.get(), fSearchPageURL)),
+	fURLHandler(std::make_unique<URLHandler>(fProtocolHandlers.get(), fSearchPageURL)),
 	fDataLoader(std::make_unique<DataLoader>(BMessenger(this)))
 {
 	// Begin listening to settings changes and read some current values.
@@ -1094,6 +1094,8 @@ BrowserWindow::SetCurrentWebView(BWebView* webView)
 	}
 
 	BWebWindow::SetCurrentWebView(webView);
+
+	fURLHandler->SetWebView(webView);
 
 	if (webView != NULL) {
 		webView->SetAutoHidePointer(fAutoHidePointer);

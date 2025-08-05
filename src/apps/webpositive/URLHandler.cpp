@@ -55,10 +55,10 @@ static const char* kHandledProtocols[] = {
 };
 
 
-URLHandler::URLHandler(BWebView* webView, SettingsMessage* protocolHandlers,
+URLHandler::URLHandler(SettingsMessage* protocolHandlers,
 	const BString& searchPageURL)
 	:
-	fWebView(webView),
+	fWebView(NULL),
 	fProtocolHandlers(protocolHandlers),
 	fSearchPageURL(searchPageURL)
 {
@@ -67,6 +67,13 @@ URLHandler::URLHandler(BWebView* webView, SettingsMessage* protocolHandlers,
 
 URLHandler::~URLHandler()
 {
+}
+
+
+void
+URLHandler::SetWebView(BWebView* view)
+{
+	fWebView = view;
 }
 
 

@@ -13,11 +13,11 @@ class SettingsMessage;
 class URLHandler {
 public:
 								URLHandler(BWebView* webView,
-									SettingsMessage* protocolHandlers,
-									const BString& searchPageURL);
+	URLHandler(SettingsMessage* protocolHandlers, const BString& searchPageURL);
 	virtual						~URLHandler();
 
 			void				Handle(const BString& url);
+	void SetWebView(BWebView* view);
 
 private:
 			BString				_EncodeURIComponent(const BString& string);
