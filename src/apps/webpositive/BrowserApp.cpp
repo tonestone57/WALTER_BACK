@@ -235,9 +235,6 @@ BrowserApp::ReadyToRun()
 
 	fInitialized = true;
 
-	int32 pagesCreated = 0;
-	bool fullscreen = false;
-
 	// Handle startup session / page
 	fSessionManager->PostMessage('load');
 
