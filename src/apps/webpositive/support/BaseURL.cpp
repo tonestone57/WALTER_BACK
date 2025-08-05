@@ -21,8 +21,11 @@ baseURL(const BString string)
 		return BString();
 
 	int32 baseURLEnd = string.FindFirst("/", baseURLStart);
-	if (baseURLEnd < 0)
-		return string.SubString(baseURLStart, string.Length());
+	if (baseURLEnd < 0) {
+		BString result(string);
+		result.Remove(0, baseURLStart);
+		return result;
+	}
 
 	BString result;
 	result.SetTo(string, baseURLEnd - baseURLStart);
