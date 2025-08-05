@@ -126,3 +126,11 @@ ConsoleWindow::Show()
 	if (!IsActive())
 		Activate();
 }
+
+
+bool
+ConsoleWindow::QuitRequested()
+{
+	Hide();
+	return false;
+}
