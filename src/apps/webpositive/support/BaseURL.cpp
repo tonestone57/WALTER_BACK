@@ -1,18 +1,31 @@
 /*
  * Copyright 2010 Stephan Aßmus <superstippi@gmx.de>
+ * Copyright 2023, Haiku, Inc. All rights reserved.
  * All rights reserved. Distributed under the terms of the MIT License.
  */
-
 #include "BaseURL.h"
 
 
 BString
 baseURL(const BString string)
 {
-	int32 baseURLStart = string.FindFirst("://") + 3;
-	int32 baseURLEnd = string.FindFirst("/", baseURLStart + 1);
+	if (string.IsEmpty())
+		return BString();
+
+	int32 protocolEnd = string.FindFirst("://");
+	if (protocolEnd < 0)
+		return BString();
+
+	int32 baseURLStart = protocolEnd + 3;
+	if (baseURLStart >= string.Length())
+		return BString();
+
+	int32 baseURLEnd = string.FindFirst("/", baseURLStart);
+	if (baseURLEnd < 0)
+		return string.SubString(baseURLStart, string.Length());
+
 	BString result;
-	result.SetTo(string.String() + baseURLStart, baseURLEnd - baseURLStart);
+	result.SetTo(string, baseURLEnd - baseURLStart);
+	result.Remove(0, baseURLStart);
 	return result;
 }
-
