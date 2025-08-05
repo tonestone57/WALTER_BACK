@@ -1,59 +1,42 @@
 /*
- * Copyright 2014-2023 Haiku, Inc. All rights reserved.
+ * Copyright 2014, Haiku, Inc. All rights reserved.
  * Distributed under the terms of the MIT License.
- *
- * Authors:
- *		Zhuowei Zhang
- *		Humdinger
  */
+
 #include "ConsoleWindow.h"
 
+#include <Application.h>
+#include <Button.h>
 #include <Catalog.h>
 #include <Clipboard.h>
-#include <Message.h>
-#include <Button.h>
-#include <GroupLayout.h>
 #include <GroupLayoutBuilder.h>
-#include <LayoutBuilder.h>
-#include <SeparatorView.h>
-#include <StringFormat.h>
-#include <TextControl.h>
 #include <ListView.h>
 #include <ScrollView.h>
-
-#include "BrowserWindow.h"
-#include "BrowserApp.h"
-#include "WebViewConstants.h"
+#include <StringItem.h>
 
 
 #undef B_TRANSLATION_CONTEXT
-#define B_TRANSLATION_CONTEXT "Console Window"
-
+#define B_TRANSLATION_CONTEXT "ConsoleWindow"
 
 enum {
-	EVAL_CONSOLE_WINDOW_COMMAND = 'ecwc',
-	CLEAR_CONSOLE_MESSAGES = 'ccms'
+	CLEAR_CONSOLE_MESSAGES = 'ccms',
+	COPY_CONSOLE_MESSAGES = 'cpms'
 };
 
 
 ConsoleWindow::ConsoleWindow(BRect frame)
 	:
 	BWindow(frame, B_TRANSLATE("Script console"), B_TITLED_WINDOW,
-		B_NORMAL_WINDOW_FEEL, B_AUTO_UPDATE_SIZE_LIMITS
-			| B_ASYNCHRONOUS_CONTROLS | B_NOT_ZOOMABLE),
-	fPreviousText(""),
-	fRepeatCounter(0)
+		B_ASYNCHRONOUS_CONTROLS | B_AUTO_UPDATE_SIZE_LIMITS)
 {
-	SetLayout(new BGroupLayout(B_VERTICAL, 0.0));
-
-	fMessagesListView = new BListView("Console messages",
-		B_MULTIPLE_SELECTION_LIST);
+	fMessagesListView = new BListView("Console messages", B_MULTIPLE_SELECTION_LIST);
 
 	fClearMessagesButton = new BButton(B_TRANSLATE("Clear"),
 		new BMessage(CLEAR_CONSOLE_MESSAGES));
 	fCopyMessagesButton = new BButton(B_TRANSLATE("Copy"),
-		new BMessage(B_COPY));
+		new BMessage(COPY_CONSOLE_MESSAGES));
 
+	SetLayout(new BGroupLayout(B_VERTICAL, 0));
 	AddChild(BGroupLayoutBuilder(B_VERTICAL, 0.0)
 		.Add(new BScrollView("Console messages scroll",
 			fMessagesListView, 0, true, true))
@@ -62,12 +45,17 @@ ConsoleWindow::ConsoleWindow(BRect frame)
 			.Add(fClearMessagesButton)
 			.Add(fCopyMessagesButton)
 			.AddGlue()
-			.SetInsets(0, B_USE_SMALL_SPACING, 0, 0))
-		.SetInsets(B_USE_SMALL_SPACING, B_USE_SMALL_SPACING,
-			B_USE_SMALL_SPACING, B_USE_SMALL_SPACING)
+		)
+		.SetInsets(B_USE_DEFAULT_SPACING)
 	);
-	if (!frame.IsValid())
-		CenterOnScreen();
+
+	fClearMessagesButton->SetTarget(this);
+	fCopyMessagesButton->SetTarget(this);
+}
+
+
+ConsoleWindow::~ConsoleWindow()
+{
 }
 
 
@@ -77,47 +65,48 @@ ConsoleWindow::MessageReceived(BMessage* message)
 	switch (message->what) {
 		case ADD_CONSOLE_MESSAGE:
 		{
-			BString source = message->FindString("source");
-			int32 lineNumber = message->FindInt32("line");
-			int32 columnNumber = message->FindInt32("column");
-			BString text = message->FindString("string");
-			BString finalText;
-			finalText.SetToFormat("%s:%" B_PRIi32 ":%" B_PRIi32 ": %s\n",
-				source.String(), lineNumber, columnNumber, text.String());
+			BString source;
+			int32 line;
+			int32 column;
+			BString text;
 
-			if (finalText == fPreviousText) {
-				finalText = "";
-				static BStringFormat format(B_TRANSLATE("{0, plural,"
-					"one{Last line repeated # time.}"
-					"other{Last line repeated # times.}}"));
-				format.Format(finalText, ++fRepeatCounter);
-				// preserve the repeated line
-				if (fRepeatCounter > 1) {
-					int32 index = fMessagesListView->CountItems() - 1;
-					BStringItem* item = (BStringItem*)fMessagesListView->ItemAt(index);
-					item->SetText(finalText.String());
-					fMessagesListView->InvalidateItem(index);
-					break;
-				}
-			} else {
-				fPreviousText = finalText;
-				fRepeatCounter = 0;
+			if (message->FindString("source", &source) == B_OK
+				&& message->FindInt32("line", &line) == B_OK
+				&& message->FindInt32("column", &column) == B_OK
+				&& message->FindString("text", &text) == B_OK) {
+
+				text.ReplaceAll("%", "%%");
+				BString finalText;
+				finalText.SetToFormat("%s:%" B_PRId32 ":%" B_PRId32 ": %s",
+					source.String(), line, column, text.String());
+				fMessagesListView->AddItem(new BStringItem(finalText.String()));
 			}
-			fMessagesListView->AddItem(new BStringItem(finalText.String()));
-			fMessagesListView->ScrollToSelection();
 			break;
 		}
 		case CLEAR_CONSOLE_MESSAGES:
-		{
-			fPreviousText = "";
-			int count = fMessagesListView->CountItems();
-			for (int i = count - 1; i >= 0; i--)
+			for (int32 i = fMessagesListView->CountItems() - 1; i >= 0; i--)
 				delete fMessagesListView->RemoveItem(i);
 			break;
-		}
-		case B_COPY:
+		case COPY_CONSOLE_MESSAGES:
 		{
-			_CopyToClipboard();
+			BString text;
+			for (int32 i = 0; i < fMessagesListView->CountItems(); i++) {
+				BStringItem* item = static_cast<BStringItem*>(
+					fMessagesListView->ItemAt(i));
+				text << item->Text() << "\n";
+			}
+
+			if (be_clipboard->Lock()) {
+				be_clipboard->Clear();
+				BMessage* clip = be_clipboard->Data();
+				if (clip) {
+					const char* textPtr = text.String();
+					ssize_t textLen = text.Length();
+					clip->AddData("text/plain", B_MIME_TYPE, textPtr, textLen);
+					be_clipboard->Commit();
+				}
+				be_clipboard->Unlock();
+			}
 			break;
 		}
 		default:
@@ -127,40 +116,17 @@ ConsoleWindow::MessageReceived(BMessage* message)
 }
 
 
-bool
-ConsoleWindow::QuitRequested()
-{
-	if (!IsHidden())
-		Hide();
-	return false;
-}
-
-
 void
-ConsoleWindow::_CopyToClipboard()
+ConsoleWindow::Show()
 {
-	BString text;
-	int32 index;
-	if (fMessagesListView->CurrentSelection() == -1) {
-		for (int32 i = 0; i < fMessagesListView->CountItems(); i++) {
-			BStringItem* item = (BStringItem*)fMessagesListView->ItemAt(i);
-			text << item->Text();
-		}
-	} else {
-		for (int32 i = 0; (index = fMessagesListView->CurrentSelection(i)) >= 0; i++) {
-			BStringItem* item = (BStringItem*)fMessagesListView->ItemAt(index);
-			text << item->Text();
-		}
+	if (IsHidden()) {
+		BWindow::Show();
+		return;
 	}
 
-	ssize_t textLen = text.Length();
-	if (be_clipboard->Lock()) {
-		be_clipboard->Clear();
-		BMessage* clip = be_clipboard->Data();
-		if (clip != NULL) {
-			clip->AddData("text/plain", B_MIME_TYPE, text.String(), textLen);
-			be_clipboard->Commit();
-		}
-		be_clipboard->Unlock();
-	}
+	if (IsMinimized())
+		SetFlags(Flags() & ~B_MINIMIZE);
+
+	if (!IsActive())
+		Activate();
 }
