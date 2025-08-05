@@ -458,18 +458,35 @@ BookmarkBar::_AddItem(ino_t inode, BEntry* entry)
 	IconMenuItem* item = NULL;
 
 	if (followedLink.IsDirectory()) {
-		BNavMenu* menu = new BNavMenu(name, B_REFS_RECEIVED, Window());
+		BNavMenu* menu = new (std::nothrow) BNavMenu(name, B_REFS_RECEIVED,
+			Window());
+		if (menu == NULL)
+			return;
 		menu->SetNavDir(&ref);
-		BMessage* message = new BMessage(kFolderMsg);
+		BMessage* message = new (std::nothrow) BMessage(kFolderMsg);
+		if (message == NULL) {
+			delete menu;
+			return;
+		}
 		message->AddRef("refs", &ref);
-		item = new IconMenuItem(menu, message, "application/x-vnd.Be-directory", B_MINI_ICON);
+		item = new (std::nothrow) IconMenuItem(menu, message,
+			"application/x-vnd.Be-directory", B_MINI_ICON);
 
 	} else {
 		BNode node(&followedLink);
 		BNodeInfo info(&node);
-		BMessage* message = new BMessage(B_REFS_RECEIVED);
+		BMessage* message = new (std::nothrow) BMessage(B_REFS_RECEIVED);
+		if (message == NULL)
+			return;
 		message->AddRef("refs", &ref);
-		item = new IconMenuItem(name, message, &info, B_MINI_ICON);
+		item = new (std::nothrow) IconMenuItem(name, message, &info,
+			B_MINI_ICON);
+	}
+
+	if (item == NULL) {
+		// The message is owned by the item, so we don't have to delete it.
+		// The menu is also owned by the item.
+		return;
 	}
 
 	int32 count = CountItems();

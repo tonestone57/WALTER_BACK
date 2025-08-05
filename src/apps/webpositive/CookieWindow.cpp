@@ -207,9 +207,10 @@ CookieWindow::MessageReceived(BMessage* message)
 			if (row == NULL)
 				return;
 			CookieRow* cookieRow = static_cast<CookieRow*>(row);
-			CookieEditor* editor = new CookieEditor(Frame().OffsetByCopy(20, 20),
-				cookieRow->Cookie(), this);
-			editor->Show();
+			CookieEditor* editor = new(std::nothrow) CookieEditor(
+				Frame().OffsetByCopy(20, 20), cookieRow->Cookie(), this);
+			if (editor)
+				editor->Show();
 			return;
 		}
 	}
@@ -250,7 +251,9 @@ CookieWindow::_BuildDomainList()
 
 	// BOutlineListView does not handle parent = NULL in many methods, so let's
 	// make sure everything always has a parent.
-	DomainItem* rootItem = new DomainItem("", true);
+	DomainItem* rootItem = new(std::nothrow) DomainItem("", true);
+	if (rootItem == NULL)
+		return;
 	fDomains->AddItem(rootItem);
 
 	// Populate the domain list

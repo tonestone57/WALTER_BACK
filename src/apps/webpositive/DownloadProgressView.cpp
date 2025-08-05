@@ -251,12 +251,15 @@ DownloadProgressView::Init(BMessage* archive)
 	SetFlags(Flags() | B_FULL_UPDATE_ON_RESIZE | B_WILL_DRAW);
 
 	if (archive) {
-		fStatusBar = new BStatusBar("download progress", fPath.Leaf());
+		fStatusBar = new (std::nothrow) BStatusBar("download progress",
+			fPath.Leaf());
 		float value;
 		if (archive->FindFloat("value", &value) == B_OK)
 			fStatusBar->SetTo(value);
-	} else
-		fStatusBar = new BStatusBar("download progress", "Download");
+	} else {
+		fStatusBar = new (std::nothrow) BStatusBar("download progress",
+			"Download");
+	}
 	fStatusBar->SetMaxValue(100);
 	fStatusBar->SetBarHeight(12);
 
@@ -265,32 +268,37 @@ DownloadProgressView::Init(BMessage* archive)
 
 	if (archive) {
 		if (!entry.Exists())
-			fIconView = new IconView(archive);
+			fIconView = new (std::nothrow) IconView(archive);
 		else
-			fIconView = new IconView(entry);
+			fIconView = new (std::nothrow) IconView(entry);
 	} else
-		fIconView = new IconView();
+		fIconView = new (std::nothrow) IconView();
+
+	if (fIconView == NULL)
+		return false;
 
 	if (!fDownload && (fStatusBar->CurrentValue() < 100 || !entry.Exists())) {
-		fTopButton = new SmallButton(B_TRANSLATE("Restart"),
+		fTopButton = new (std::nothrow) SmallButton(B_TRANSLATE("Restart"),
 			new BMessage(RESTART_DOWNLOAD));
 	} else {
-		fTopButton = new SmallButton(B_TRANSLATE("Open"),
+		fTopButton = new (std::nothrow) SmallButton(B_TRANSLATE("Open"),
 			new BMessage(OPEN_DOWNLOAD));
-		fTopButton->SetEnabled(fDownload == NULL);
+		if (fTopButton != NULL)
+			fTopButton->SetEnabled(fDownload == NULL);
 	}
 	if (fDownload) {
-		fPauseButton = new SmallButton(B_TRANSLATE("Pause"),
+		fPauseButton = new (std::nothrow) SmallButton(B_TRANSLATE("Pause"),
 			new BMessage(PAUSE_RESUME_DOWNLOAD));
-		fBottomButton = new SmallButton(B_TRANSLATE("Cancel"),
+		fBottomButton = new (std::nothrow) SmallButton(B_TRANSLATE("Cancel"),
 			new BMessage(CANCEL_DOWNLOAD));
 	} else {
-		fBottomButton = new SmallButton(B_TRANSLATE("Remove"),
+		fBottomButton = new (std::nothrow) SmallButton(B_TRANSLATE("Remove"),
 			new BMessage(REMOVE_DOWNLOAD));
-		fBottomButton->SetEnabled(fDownload == NULL);
+		if (fBottomButton != NULL)
+			fBottomButton->SetEnabled(fDownload == NULL);
 	}
 
-	fInfoView = new BStringView("info view", "");
+	fInfoView = new (std::nothrow) BStringView("info view", "");
 	fInfoView->SetViewColor(ViewColor());
 
 	BSize topButtonSize = fTopButton->PreferredSize();
@@ -622,7 +630,9 @@ DownloadProgressView::ShowContextMenu(BPoint screenWhere)
 {
 	screenWhere += BPoint(2, 2);
 
-	BPopUpMenu* contextMenu = new BPopUpMenu("download context");
+	BPopUpMenu* contextMenu = new (std::nothrow) BPopUpMenu("download context");
+	if (contextMenu == NULL)
+		return;
 	BMenuItem* copyURL = new BMenuItem(B_TRANSLATE("Copy URL to clipboard"),
 		new BMessage(COPY_URL_TO_CLIPBOARD));
 	copyURL->SetEnabled(fURL.Length() > 0);

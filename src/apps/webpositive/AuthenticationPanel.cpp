@@ -105,9 +105,15 @@ bool AuthenticationPanel::getAuthentication(const BString& text,
 	// Configure panel and layout controls.
 	rgb_color infoColor = ui_color(B_PANEL_TEXT_COLOR);
 	BRect textBounds(0, 0, 250, 200);
-	BTextView* textView = new BTextView(textBounds, "text", textBounds,
-		be_plain_font, &infoColor, B_FOLLOW_NONE, B_WILL_DRAW
-			| B_SUPPORTS_LAYOUT);
+	BTextView* textView = new (std::nothrow) BTextView(textBounds, "text",
+		textBounds, be_plain_font, &infoColor, B_FOLLOW_NONE,
+		B_WILL_DRAW | B_SUPPORTS_LAYOUT);
+	if (textView == NULL) {
+		// We can't show the panel, so we have to cancel.
+		m_cancelled = true;
+		release_sem(m_exitSemaphore);
+		return false;
+	}
 	textView->SetViewUIColor(B_PANEL_BACKGROUND_COLOR);
 	textView->SetText(text.String());
 	textView->MakeEditable(false);

@@ -139,29 +139,69 @@ DownloadWindow::DownloadWindow(BRect frame, bool visible,
 	DownloadsContainerView* downloadsGroupView = new DownloadsContainerView();
 	fDownloadViewsLayout = downloadsGroupView->GroupLayout();
 
-	BMenuBar* menuBar = new BMenuBar("Menu bar");
-	BMenu* menu = new BMenu(B_TRANSLATE("Downloads"));
-	menu->AddItem(new BMenuItem(B_TRANSLATE("Open downloads folder"),
-		new BMessage(OPEN_DOWNLOADS_FOLDER)));
-	BMessage* newWindowMessage = new BMessage(NEW_WINDOW);
+	BMenuBar* menuBar = new (std::nothrow) BMenuBar("Menu bar");
+	if (menuBar == NULL)
+		return;
+	BMenu* menu = new (std::nothrow) BMenu(B_TRANSLATE("Downloads"));
+	if (menu == NULL) {
+		delete menuBar;
+		return;
+	}
+	BMenuItem* openDownloadsFolderItem = new (std::nothrow) BMenuItem(
+		B_TRANSLATE("Open downloads folder"),
+		new BMessage(OPEN_DOWNLOADS_FOLDER));
+	if (openDownloadsFolderItem == NULL) {
+		delete menu;
+		delete menuBar;
+		return;
+	}
+	menu->AddItem(openDownloadsFolderItem);
+	BMessage* newWindowMessage = new (std::nothrow) BMessage(NEW_WINDOW);
+	if (newWindowMessage == NULL) {
+		delete menu;
+		delete menuBar;
+		return;
+	}
 	newWindowMessage->AddString("url", "");
-	BMenuItem* newWindowItem = new BMenuItem(B_TRANSLATE("New browser window"),
-		newWindowMessage, 'N');
+	BMenuItem* newWindowItem = new (std::nothrow) BMenuItem(
+		B_TRANSLATE("New browser window"), newWindowMessage, 'N');
+	if (newWindowItem == NULL) {
+		delete newWindowMessage;
+		delete menu;
+		delete menuBar;
+		return;
+	}
 	menu->AddItem(newWindowItem);
 	newWindowItem->SetTarget(be_app);
 	menu->AddSeparatorItem();
-	menu->AddItem(new BMenuItem(B_TRANSLATE("Close"),
-		new BMessage(B_QUIT_REQUESTED), 'D'));
+	BMenuItem* closeItem = new (std::nothrow) BMenuItem(B_TRANSLATE("Close"),
+		new BMessage(B_QUIT_REQUESTED), 'D');
+	if (closeItem == NULL) {
+		delete menu;
+		delete menuBar;
+		return;
+	}
+	menu->AddItem(closeItem);
 	menuBar->AddItem(menu);
 
-	fDownloadsScrollView = new DownloadContainerScrollView(downloadsGroupView);
+	fDownloadsScrollView = new (std::nothrow) DownloadContainerScrollView(
+		downloadsGroupView);
+	if (fDownloadsScrollView == NULL) {
+		delete menuBar;
+		return;
+	}
 
-	fRemoveFinishedButton = new BButton(B_TRANSLATE("Remove finished"),
-		new BMessage(REMOVE_FINISHED_DOWNLOADS));
+	fRemoveFinishedButton = new (std::nothrow) BButton(
+		B_TRANSLATE("Remove finished"), new BMessage(REMOVE_FINISHED_DOWNLOADS));
+	if (fRemoveFinishedButton == NULL) {
+		delete fDownloadsScrollView;
+		delete menuBar;
+		return;
+	}
 	fRemoveFinishedButton->SetEnabled(false);
 
-	fRemoveMissingButton = new BButton(B_TRANSLATE("Remove missing"),
-		new BMessage(REMOVE_MISSING_DOWNLOADS));
+	fRemoveMissingButton = new (std::nothrow) BButton(
+		B_TRANSLATE("Remove missing"), new BMessage(REMOVE_MISSING_DOWNLOADS));
 	fRemoveMissingButton->SetEnabled(false);
 
 	const float spacing = be_control_look->DefaultItemSpacing();
