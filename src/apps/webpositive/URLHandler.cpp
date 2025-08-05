@@ -164,7 +164,8 @@ URLHandler::_EncodeURIComponent(const BString& search)
 void
 URLHandler::_VisitURL(const BString& url)
 {
-	fWebView->LoadURL(url.String());
+	if (url.Length() > 0)
+		fWebView->LoadURL(url.String());
 }
 
 
