@@ -27,9 +27,9 @@ ConsoleWindow::ConsoleWindow(BRect frame)
 	fMessagesListView = new BListView("Console messages", B_MULTIPLE_SELECTION_LIST);
 
 	fClearMessagesButton = new BButton(B_TRANSLATE("Clear"),
-		new BMessage(CLEAR_CONSOLE_MESSAGES));
+		new BMessage(MSG_CLEAR_MESSAGES));
 	fCopyMessagesButton = new BButton(B_TRANSLATE("Copy"),
-		new BMessage(COPY_CONSOLE_MESSAGES));
+		new BMessage(MSG_COPY_MESSAGES));
 
 	SetLayout(new BGroupLayout(B_VERTICAL, 0));
 	AddChild(BGroupLayoutBuilder(B_VERTICAL, 0.0)
@@ -59,7 +59,7 @@ void
 ConsoleWindow::MessageReceived(BMessage* message)
 {
 	switch (message->what) {
-		case ADD_CONSOLE_MESSAGE:
+		case MSG_ADD_MESSAGE:
 		{
 			BString source;
 			int32 line;
@@ -79,11 +79,11 @@ ConsoleWindow::MessageReceived(BMessage* message)
 			}
 			break;
 		}
-		case CLEAR_CONSOLE_MESSAGES:
+		case MSG_CLEAR_MESSAGES:
 			for (int32 i = fMessagesListView->CountItems() - 1; i >= 0; i--)
 				delete fMessagesListView->RemoveItem(i);
 			break;
-		case COPY_CONSOLE_MESSAGES:
+		case MSG_COPY_MESSAGES:
 		{
 			BString text;
 			for (int32 i = 0; i < fMessagesListView->CountItems(); i++) {

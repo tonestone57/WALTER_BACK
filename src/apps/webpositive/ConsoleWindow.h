@@ -18,14 +18,14 @@ class BListView;
 class BButton;
 
 
-enum {
-	ADD_CONSOLE_MESSAGE = 'acme',
-	CLEAR_CONSOLE_MESSAGES = 'ccms',
-	COPY_CONSOLE_MESSAGES = 'cpms'
-};
-
-
 class ConsoleWindow : public BWindow {
+public:
+	enum {
+		MSG_ADD_MESSAGE = 'acme',
+		MSG_CLEAR_MESSAGES = 'ccms',
+		MSG_COPY_MESSAGES = 'cpms'
+	};
+
 public:
 								ConsoleWindow(BRect frame);
 	virtual						~ConsoleWindow();
