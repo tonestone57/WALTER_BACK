@@ -255,7 +255,7 @@ BrowserApp::MessageReceived(BMessage* message)
 		// This is the central place for creating the initial window(s).
 		// It is called after the session has been loaded from disk.
 
-		// First, see if the application was launched with any URLs
+		// First, see if the application was launched with any URLs.
 		int32 pagesCreated = 0;
 		bool fullscreen = false;
 		if (fLaunchRefsMessage) {
@@ -265,13 +265,16 @@ BrowserApp::MessageReceived(BMessage* message)
 
 		// If no windows were created from launch refs, proceed with session logic.
 		if (pagesCreated == 0) {
-			BMessage session;
-			if (message->FindMessage("session", &session) == B_OK) {
-				const char* kSettingsKeyStartUpPolicy = "start up policy";
-				uint32 fStartUpPolicy = fSettings->GetValue(kSettingsKeyStartUpPolicy,
-					(uint32)ResumePriorSession);
+			const char* kSettingsKeyStartUpPolicy = "start up policy";
+			uint32 fStartUpPolicy = fSettings->GetValue(kSettingsKeyStartUpPolicy,
+				(uint32)ResumePriorSession);
 
-				if (fStartUpPolicy == ResumePriorSession) {
+			if (fStartUpPolicy == StartNewSession) {
+				// User wants a new session, so create a new blank window.
+				_CreateNewWindow("", fullscreen);
+			} else { // ResumePriorSession
+				BMessage session;
+				if (message->FindMessage("session", &session) == B_OK) {
 					// Restore previous session
 					BMessage archivedWindow;
 					for (int i = 0; session.FindMessage("window", i, &archivedWindow)
@@ -316,7 +319,7 @@ BrowserApp::MessageReceived(BMessage* message)
 		}
 
 		// If, after all of the above, no windows were created, create a new
-		// empty one.
+		// empty one. This covers the case of resuming an empty session.
 		if (fWindowCount == 0)
 			_CreateNewWindow("", fullscreen);
 
