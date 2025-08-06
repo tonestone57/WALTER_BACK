@@ -4,7 +4,7 @@
 
 To significantly improve the performance, responsiveness, and memory efficiency of WebPositive, this document proposes a transition from the current direct rendering model to a modern, **multi-threaded, tile-based rendering system**. This change would be implemented within the Haiku WebKit port.
 
-The core idea is to break the webpage view into a grid of smaller tiles. These tiles can then be rendered independently and in parallel by a pool of worker threads. To manage memory, rendered tiles that are off-screen will be compressed using a fast, modern algorithm. A Least Recently Used (LRU) caching system will manage the lifecycle of these tiles, ensuring that the most relevant content is kept in memory while staying within a defined memory budget.
+The core idea is to break the webpage view into a grid of smaller tiles. These tiles can then be rendered independently and in parallel by a pool of worker threads. To manage memory, rendered tiles that are off-screen will be compressed using a fast, modern algorithm. A sophisticated **SIEVE1+LRU hybrid caching system** will manage the lifecycle of these tiles, ensuring that only high-value, reusable content is cached, thus maximizing performance and memory efficiency.
 
 This architecture is highly extensible and allows for numerous advanced optimizations, which are also detailed in this proposal.
 
@@ -38,12 +38,18 @@ To manage the memory footprint of the rendered tiles, especially on large pages,
 *   **Algorithm:** **Zstandard (zstd)** is recommended. Its exceptional decompression speed is critical for ensuring that scrolling remains smooth when compressed tiles need to be displayed. It offers a better performance profile for this use case than older algorithms like zlib.
 *   **Workflow:** Once a tile is rendered and is not visible in the viewport, a worker thread can compress its bitmap data. The original bitmap is then deleted, and the compressed data is stored in the tile object.
 
-### 2.4. Caching
+### 2.4. Caching (SIEVE1+LRU Hybrid Model)
 
-A caching system is essential for managing the lifecycle of tiles and enforcing a memory budget.
+A sophisticated hybrid caching system is essential for intelligently managing the lifecycle of tiles and enforcing a memory budget. This approach avoids cache pollution from one-time-use tiles and improves the hit rate.
 
-*   **Cache Size:** A **dynamic cache size based on a memory limit** (e.g., 128 MB, user-configurable) is recommended over a fixed number of tiles.
-*   **Eviction Policy:** A **Least Recently Used (LRU)** policy will be used to decide which tiles to discard when the cache is full. This is effective for web browsing, as it tends to keep the user's current area of focus in memory.
+*   **Algorithm:** A **SIEVE1+LRU** policy.
+    *   **SIEVE1 Filtering (Admission Control):** A tile is only admitted into the main cache if it has been accessed more than once. This "sieves" out tiles that are only seen briefly (e.g., during a fast scroll) and are unlikely to be needed again, preventing them from displacing more valuable tiles.
+    *   **LRU Eviction:** Once a tile passes the sieve and is admitted to the cache, it is managed by a standard **Least Recently Used (LRU)** policy. When the cache is full, the least recently used tile is evicted.
+*   **Cache Size:** A **dynamic cache size based on a memory limit** (e.g., 128 MB, user-configurable) is recommended.
+*   **Workflow:**
+    1.  When a tile is accessed for the first time, its access count is incremented, and it's added to a temporary "sieve candidates" list. It is **not** cached yet.
+    2.  If the tile is accessed again, it passes the sieve and is admitted to the main LRU cache.
+    3.  If the cache's memory limit is exceeded, tiles are evicted from the back of the LRU list.
 
 ---
 
@@ -75,6 +81,9 @@ This section details the many excellent ideas proposed for further enhancing the
 
 ### 3.4. Compression and Caching Optimizations
 
+*   **SIEVE1 Cache Filtering:** Use a SIEVE1-based filter as an admission controller to the main LRU cache, preventing cache pollution from one-time-use tiles.
+*   **Decaying Access Count:** Gradually decay the access count of tiles over time to avoid stale tiles remaining in the cache indefinitely.
+*   **Pinning Visible Tiles:** Explicitly "pin" tiles that are currently in the viewport to prevent them from being evicted.
 *   **Compression Tiering:** Apply stronger, slower compression to tiles that haven't been accessed in a long time, and lighter, faster compression to more recent tiles.
 *   **Compression-aware Eviction:** Make the eviction policy smarter by considering not just when a tile was last used, but also how expensive it would be to re-render or decompress it.
 *   **Segmented LRU Cache:** Maintain separate LRU queues for compressed and uncompressed tiles to be more strategic about eviction.
@@ -104,13 +113,13 @@ This is a high-level, phased task list for implementing the proposed system.
 2.  **[Compression]** Integrate the `zstd` library and implement the tile compression/decompression workflow.
 
 ### **Phase 3: Caching and Memory Management**
-1.  **[Cache Logic]** Implement the LRU cache mechanism.
+1.  **[Cache Logic]** Implement the **SIEVE1+LRU** cache mechanism.
 2.  **[Memory Limits]** Implement cache size tracking and the eviction logic.
 3.  **[Resource Pooling]** Implement a `BBitmap` pool.
 
 ### **Phase 4: Advanced Optimizations**
 1.  **[Predictive Prefetching]** Implement scroll-aware pre-rendering.
-2.  **[Advanced Caching]** Implement features like soft/hard limits and eviction hints.
+2.  **[Advanced Caching]** Implement features like soft/hard limits, eviction hints, and segmented queues.
 3.  **[Advanced Rendering]** Implement features like partial invalidation and High-DPI support.
 4.  **[Advanced Threading]** Implement features like task coalescing and render budgeting.
 
