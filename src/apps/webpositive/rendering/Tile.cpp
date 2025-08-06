@@ -4,6 +4,7 @@
  */
 
 #include "rendering/Tile.h"
+#include "rendering/TileGrid.h"
 #include <Bitmap.h>
 #include <memory>
 #include <zstd.h>
@@ -42,7 +43,7 @@ Tile::SetCompressedData(std::vector<uint8_t>&& data)
 }
 
 bool
-Tile::Compress()
+Tile::Compress(TileGrid* grid)
 {
     if (!fBitmap)
         return false;
@@ -61,6 +62,9 @@ Tile::Compress()
     }
 
     compressedData.resize(compressedSize);
+
+    grid->UpdateMemoryUsage(compressedSize - uncompressedSize);
+
     SetCompressedData(std::move(compressedData));
     fBitmap.reset();
     SetState(COMPRESSED);
@@ -68,12 +72,13 @@ Tile::Compress()
 }
 
 bool
-Tile::Decompress()
+Tile::Decompress(TileGrid* grid)
 {
     if (fCompressedData.empty())
         return false;
 
-    size_t decompressedSize = ZSTD_getFrameContentSize(fCompressedData.data(), fCompressedData.size());
+    size_t compressedSize = fCompressedData.size();
+    size_t decompressedSize = ZSTD_getFrameContentSize(fCompressedData.data(), compressedSize);
     if (decompressedSize == ZSTD_CONTENTSIZE_ERROR || decompressedSize == ZSTD_CONTENTSIZE_UNKNOWN)
         return false;
 
@@ -82,13 +87,15 @@ Tile::Decompress()
         return false;
 
     size_t result = ZSTD_decompress(bitmap->Bits(), decompressedSize,
-        fCompressedData.data(), fCompressedData.size());
+        fCompressedData.data(), compressedSize);
 
     if (ZSTD_isError(result))
         return false;
 
     fCompressedData.clear();
     fCompressedData.shrink_to_fit();
+
+    grid->UpdateMemoryUsage(decompressedSize - compressedSize);
 
     SetBitmap(std::move(bitmap));
     SetState(RENDERED);

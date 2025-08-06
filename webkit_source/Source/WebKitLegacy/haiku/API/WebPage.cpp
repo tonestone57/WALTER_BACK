@@ -845,6 +845,8 @@ void BWebPage::paint(BRect rect, bool immediate)
                             fWebView->UnlockLooper();
                         }
 
+                        fTileGrid->EvictTiles(false);
+
                         // Compress off-screen tiles
                         BRect visibleRect;
                         if (fWebView->LockLooper()) {
@@ -853,11 +855,11 @@ void BWebPage::paint(BRect rect, bool immediate)
                         }
 
                         if (!visibleRect.Intersects(tileRect)) {
-                            fThreadPool->Enqueue([tile]() {
+                            fThreadPool->Enqueue([this, tile]() {
                                 BAutolock locker(tile->Locker());
                                 if (tile->GetState() == RENDERED) {
                                     tile->SetState(COMPRESSING);
-                                    tile->Compress();
+                                    tile->Compress(fTileGrid);
                                 }
                             });
                         }

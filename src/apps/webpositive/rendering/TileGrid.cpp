@@ -73,6 +73,13 @@ TileGrid::RemoveTile(const TileIndex& index)
 }
 
 void
+TileGrid::UpdateMemoryUsage(int64_t delta)
+{
+    BAutolock locker(fGridLock);
+    fCurrentMemoryUsage += delta;
+}
+
+void
 TileGrid::SetMemoryLimits(size_t softLimit, size_t hardLimit)
 {
     BAutolock locker(fGridLock);
@@ -93,11 +100,16 @@ TileGrid::EvictTiles(bool aggressive)
 
         auto it = fGrid.find(toEvict);
         if (it != fGrid.end()) {
-            // Release the bitmap back to the pool.
-            BitmapPool::GetInstance().Release(
-                std::unique_ptr<BBitmap>(it->second->GetBitmap()));
-            fCurrentMemoryUsage -= it->second->GetBitmap()->Size();
-            it->second->SetState(TileState::NEEDS_RENDER);
+            Tile* tile = it->second.get();
+            if (tile->GetState() == RENDERED && tile->GetBitmap()) {
+                fCurrentMemoryUsage -= tile->GetBitmap()->Size();
+                BitmapPool::GetInstance().Release(tile->TakeBitmap());
+                tile->SetState(NEEDS_RENDER);
+            } else if (tile->GetState() == COMPRESSED) {
+                fCurrentMemoryUsage -= tile->GetCompressedData().size();
+                tile->SetCompressedData({});
+                tile->SetState(NEEDS_RENDER);
+            }
         }
         fLruMap.erase(toEvict);
     }

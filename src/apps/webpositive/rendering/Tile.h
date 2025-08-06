@@ -12,6 +12,7 @@
 
 // Forward declaration to avoid including the full BBitmap header here.
 class BBitmap;
+class TileGrid;
 
 enum TileState {
     // The tile has not been rendered yet.
@@ -46,8 +47,8 @@ public:
     const std::vector<uint8_t>& GetCompressedData() const { return fCompressedData; }
     void SetCompressedData(std::vector<uint8_t>&& data);
 
-    bool Compress();
-    bool Decompress();
+    bool Compress(TileGrid* grid);
+    bool Decompress(TileGrid* grid);
 
     int32 GetX() const { return fX; }
     int32 GetY() const { return fY; }

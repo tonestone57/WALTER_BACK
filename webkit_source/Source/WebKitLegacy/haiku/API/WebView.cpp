@@ -255,7 +255,8 @@ void BWebView::Draw(BRect rect)
         const Tile* tile = it.second.get();
         if (tile->GetState() == COMPRESSED) {
             // Decompress synchronously for now.
-            const_cast<Tile*>(tile)->Decompress();
+            if (const_cast<Tile*>(tile)->Decompress(tileGrid))
+                tileGrid->EvictTiles(false);
         }
 
         if (tile->GetBitmap() && tile->GetState() == RENDERED) {
