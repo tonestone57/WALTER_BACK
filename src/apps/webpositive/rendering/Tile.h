@@ -37,6 +37,7 @@ public:
 
     BBitmap* GetBitmap() const { return fBitmap.get(); }
     void SetBitmap(std::unique_ptr<BBitmap> bitmap);
+    std::unique_ptr<BBitmap> TakeBitmap();
 
     // In a real implementation, this would hold compressed data.
     // For now, it's a placeholder.

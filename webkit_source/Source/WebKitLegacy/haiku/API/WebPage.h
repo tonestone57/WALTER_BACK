@@ -45,6 +45,7 @@ class BWebFrame;
 class BWebSettings;
 class TileGrid;
 class BWebView;
+class ThreadPool;
 
 namespace WTF {
 	// In this header we do not want to include any of webkit headers (to not needs them as part of
@@ -247,6 +248,7 @@ private:
 			BWebSettings*					fSettings;
             BPrivate::Network::BUrlContext*	fContext;
 			TileGrid*						fTileGrid;
+			ThreadPool*						fThreadPool;
 			std::unique_ptr<WTF::Ref<WebCore::Page, WTF::RawPtrTraits<WebCore::Page>, WTF::DefaultRefDerefTraits<WebCore::Page>>>	fPage;
             WebCore::DumpRenderTreeClient*	fDumpRenderTree;
 

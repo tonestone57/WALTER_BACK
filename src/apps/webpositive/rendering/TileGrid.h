@@ -25,6 +25,7 @@ public:
 
     void SetMemoryLimits(size_t softLimit, size_t hardLimit);
     void EvictTiles(bool aggressive);
+    void AddMemoryUsage(size_t size);
 
     BLocker* Locker() { return &fGridLock; }
     const std::unordered_map<TileIndex, std::unique_ptr<Tile>>& Map() const { return fGrid; }
