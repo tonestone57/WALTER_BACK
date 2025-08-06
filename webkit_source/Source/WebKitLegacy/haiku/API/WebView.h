@@ -137,10 +137,12 @@ private:
 			void				_DispatchMouseEvent(const BPoint& where,
 									uint32 sanityWhat);
 			void				_DispatchKeyEvent(uint32 sanityWhat);
+			void				_PrefetchTiles(BPoint scrollOffset);
 private:
 			uint32				fLastMouseButtons;
-			bigtime_t			fLastMouseMovedTime;
+			bigtime_t			fLastInputTime;
 			BPoint				fLastMousePos;
+			BPoint				fLastScrollOffset;
 			bool				fAutoHidePointer;
 
 			BWebPage*			fWebPage;

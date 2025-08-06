@@ -25,6 +25,8 @@ enum TileState {
     COMPRESSING,
     // The tile's bitmap has been compressed to save memory.
     COMPRESSED,
+    // The tile is being decompressed.
+    DECOMPRESSING,
     // The tile is queued for eviction.
     EVICTING
 };
@@ -53,11 +55,16 @@ public:
     int32 GetX() const { return fX; }
     int32 GetY() const { return fY; }
 
+    void Pin() { fPinned = true; }
+    void Unpin() { fPinned = false; }
+    bool IsPinned() const { return fPinned; }
+
 private:
     BLocker fLock;
     TileState fState;
     int32 fX;
     int32 fY;
+    bool fPinned;
 
     std::unique_ptr<BBitmap> fBitmap;
     std::vector<uint8_t> fCompressedData;

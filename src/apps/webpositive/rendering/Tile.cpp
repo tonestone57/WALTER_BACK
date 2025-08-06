@@ -16,6 +16,7 @@ Tile::Tile(int32 x, int32 y)
     fState(NEEDS_RENDER),
     fX(x),
     fY(y),
+    fPinned(false),
     fBitmap(nullptr)
 {
 }

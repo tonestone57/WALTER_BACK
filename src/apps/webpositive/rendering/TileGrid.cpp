@@ -101,6 +101,13 @@ TileGrid::EvictTiles(bool aggressive)
         auto it = fGrid.find(toEvict);
         if (it != fGrid.end()) {
             Tile* tile = it->second.get();
+            if (tile->IsPinned()) {
+                // Move to front of LRU so we don't try to evict it again soon.
+                fLruQueue.push_front(toEvict);
+                fLruMap[toEvict] = fLruQueue.begin();
+                continue;
+            }
+
             if (tile->GetState() == RENDERED && tile->GetBitmap()) {
                 fCurrentMemoryUsage -= tile->GetBitmap()->Size();
                 BitmapPool::GetInstance().Release(tile->TakeBitmap());

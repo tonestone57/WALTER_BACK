@@ -66,8 +66,9 @@ BWebView::BWebView(const char* name, BPrivate::Network::BUrlContext* urlContext)
     : BView(name, B_WILL_DRAW | B_FRAME_EVENTS | B_FULL_UPDATE_ON_RESIZE
     	| B_NAVIGABLE | B_PULSE_NEEDED)
     , fLastMouseButtons(0)
-    , fLastMouseMovedTime(-2000000)
+    , fLastInputTime(-2000000)
     , fLastMousePos(0, 0)
+    , fLastScrollOffset(0, 0)
     , fAutoHidePointer(false)
     , fWebPage(new BWebPage(this, urlContext))
     , fUserData(nullptr)
@@ -251,19 +252,38 @@ void BWebView::Draw(BRect rect)
 
     BAutolock locker(tileGrid->Locker());
 
+    // Unpin all tiles first.
+    for (const auto& it : tileGrid->Map())
+        it.second->Unpin();
+
     for (const auto& it : tileGrid->Map()) {
         const Tile* tile = it.second.get();
-        if (tile->GetState() == COMPRESSED) {
-            // Decompress synchronously for now.
-            if (const_cast<Tile*>(tile)->Decompress(tileGrid))
-                tileGrid->EvictTiles(false);
-        }
+        BRect tileRect(tile->GetX() * 256, tile->GetY() * 256,
+                       (tile->GetX() + 1) * 256 - 1, (tile->GetY() + 1) * 256 - 1);
 
-        if (tile->GetBitmap() && tile->GetState() == RENDERED) {
-            BRect tileRect(tile->GetX() * 256, tile->GetY() * 256,
-                           (tile->GetX() + 1) * 256 - 1, (tile->GetY() + 1) * 256 - 1);
-            if (tileRect.Intersects(rect))
+        if (tileRect.Intersects(rect)) {
+            const_cast<Tile*>(tile)->Pin();
+
+            BAutolock locker(const_cast<Tile*>(tile)->Locker());
+            if (tile->GetState() == COMPRESSED) {
+                const_cast<Tile*>(tile)->SetState(DECOMPRESSING);
+                page->fThreadPool->Enqueue([page, tile, tileGrid]() {
+                    if (const_cast<Tile*>(tile)->Decompress(tileGrid))
+                        tileGrid->EvictTiles(false);
+
+                    BRect tileRect(tile->GetX() * 256, tile->GetY() * 256,
+                                   (tile->GetX() + 1) * 256 - 1, (tile->GetY() + 1) * 256 - 1);
+
+                    if (page->WebView()->LockLooper()) {
+                        page->WebView()->Invalidate(tileRect);
+                        page->WebView()->UnlockLooper();
+                    }
+                });
+            }
+
+            if (tile->GetBitmap() && tile->GetState() == RENDERED) {
                 DrawBitmap(tile->GetBitmap(), tileRect);
+            }
         }
     }
 }
@@ -294,6 +314,13 @@ void BWebView::MessageReceived(BMessage* message)
         GetMouse(&where, &buttons);
         BPoint screenWhere = ConvertToScreen(where);
         fWebPage->mouseWheelChanged(message, where, screenWhere);
+        if (WebCore::LocalFrame* frame = fWebPage->MainFrame()->Frame()) {
+            if (WebCore::LocalFrameView* view = frame->view()) {
+                WebCore::ScrollableArea* scrollable = view;
+                BPoint scrollOffset(scrollable->scrollPosition().x(), scrollable->scrollPosition().y());
+                _PrefetchTiles(scrollOffset);
+            }
+        }
         break;
     }
 
@@ -355,7 +382,7 @@ void BWebView::WindowActivated(bool activated)
 void BWebView::MouseMoved(BPoint where, uint32, const BMessage*)
 {
 	fLastMousePos = where;
-	fLastMouseMovedTime = system_time();
+	fLastInputTime = system_time();
     _DispatchMouseEvent(where, B_MOUSE_MOVED);
 }
 
@@ -391,7 +418,7 @@ void BWebView::Pulse()
 		return;
 
 	if (Bounds().Contains(fLastMousePos)
-		&& system_time() - fLastMouseMovedTime > 800000) {
+		&& system_time() - fLastInputTime > 800000) {
 		be_app->ObscureCursor();
 	}
 }
@@ -539,3 +566,24 @@ void BWebView::_DispatchKeyEvent(uint32 sanityWhat)
     fWebPage->keyEvent(message);
 }
 
+void BWebView::_PrefetchTiles(BPoint scrollOffset)
+{
+    bigtime_t now = system_time();
+    bigtime_t timeDelta = now - fLastInputTime;
+    fLastInputTime = now;
+
+    if (timeDelta <= 0)
+        return;
+
+    BPoint scrollDelta = scrollOffset - fLastScrollOffset;
+    fLastScrollOffset = scrollOffset;
+
+    float velocityX = scrollDelta.x * 1000000 / timeDelta;
+    float velocityY = scrollDelta.y * 1000000 / timeDelta;
+
+    BRect prefetchRect = Bounds();
+    prefetchRect.OffsetBy(velocityX * 0.2, velocityY * 0.2);
+        // Prefetch 200ms ahead.
+
+    WebPage()->paint(prefetchRect, false);
+}
