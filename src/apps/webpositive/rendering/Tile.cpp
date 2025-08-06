@@ -32,12 +32,6 @@ Tile::SetBitmap(std::unique_ptr<BBitmap> bitmap)
     fBitmap = std::move(bitmap);
 }
 
-std::unique_ptr<BBitmap>
-Tile::TakeBitmap()
-{
-    return std::move(fBitmap);
-}
-
 void
 Tile::SetCompressedData(char* data, size_t size)
 {

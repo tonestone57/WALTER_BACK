@@ -112,9 +112,7 @@
 #include "WebSettings.h"
 #include "WebStorageNamespaceProvider.h"
 #include "WebView.h"
-#include "rendering/BitmapPool.h"
 #include "rendering/TileGrid.h"
-#include "rendering/ThreadPool.h"
 #include "WebViewConstants.h"
 #include "WebViewGroup.h"
 #include "WebVisitedLinkStore.h"
@@ -135,9 +133,6 @@
 #include <wtf/text/AtomString.h>
 #include <wtf/Assertions.h>
 #include <wtf/Threading.h>
-
-#include <algorithm>
-#include <thread>
 
 #if USE(GCRYPT)
 #include <gcrypt.h>
@@ -272,7 +267,6 @@ BWebPage::BWebPage(BWebView* webView, BPrivate::Network::BUrlContext* context)
     , fStatusbarVisible(true)
     , fMenubarVisible(true)
     , fTileGrid(new TileGrid(64 * 1024 * 1024, 128 * 1024 * 1024))
-    , fThreadPool(new ThreadPool(std::max(1u, std::thread::hardware_concurrency() - 1)))
 {
     // FIXME we should get this from the page settings, but they are created
     // after the page, and we need this before the page is created.
@@ -375,7 +369,6 @@ BWebPage::~BWebPage()
     // main frame, the same mechanism is used.
     delete fSettings;
     delete fTileGrid;
-    delete fThreadPool;
 }
 
 // #pragma mark - public
@@ -821,43 +814,29 @@ void BWebPage::paint(BRect rect, bool immediate)
             TileIndex index = {r, c};
             Tile* tile = fTileGrid->GetOrCreateTile(index);
 
-            BAutolock locker(tile->Locker());
             if (tile->GetState() == NEEDS_RENDER) {
-                tile->SetState(RENDERING);
-
-                fThreadPool->Enqueue([this, tile, view, rect, c, r]() {
-                    std::unique_ptr<BBitmap> bitmap = BitmapPool::GetInstance().Acquire(256, 256);
-                    if (bitmap) {
-                        fTileGrid->AddMemoryUsage(bitmap->Size());
-                        BView offscreenView(bitmap->Bounds(), "temp", 0, 0);
-                        bitmap->AddChild(&offscreenView);
-                        if (offscreenView.LockLooper()) {
-                            WebCore::GraphicsContextHaiku context(&offscreenView);
-                            context.translate(-c * 256, -r * 256);
-                            // It is important to use the tile's rect for painting, not the invalidation rect.
-                            BRect tileRect(c * 256, r * 256, (c + 1) * 256 - 1, (r + 1) * 256 - 1);
-                            view->paint(context, IntRect(tileRect));
-                            offscreenView.Sync();
-                            offscreenView.UnlockLooper();
-                        }
-                        bitmap->RemoveChild(&offscreenView);
-
-                        BAutolock tileLocker(tile->Locker());
-                        tile->SetBitmap(std::move(bitmap));
-                        tile->SetState(RENDERED);
-
-                        if (fWebView->LockLooper()) {
-                            fWebView->Invalidate(tileRect);
-                            fWebView->UnlockLooper();
-                        }
-                    } else {
-                        // Could not get a bitmap, try again later.
-                        BAutolock tileLocker(tile->Locker());
-                        tile->SetState(NEEDS_RENDER);
+                std::unique_ptr<BBitmap> bitmap = BitmapPool::GetInstance().Acquire(256, 256);
+                if (bitmap) {
+                    BView offscreenView(bitmap->Bounds(), "temp", 0, 0);
+                    bitmap->AddChild(&offscreenView);
+                    if (offscreenView.LockLooper()) {
+                        WebCore::GraphicsContextHaiku context(&offscreenView);
+                        context.translate(-c * 256, -r * 256);
+                        view->paint(context, IntRect(rect));
+                        offscreenView.Sync();
+                        offscreenView.UnlockLooper();
                     }
-                });
+                    bitmap->RemoveChild(&offscreenView);
+                    tile->SetBitmap(std::move(bitmap));
+                    tile->SetState(RENDERED);
+                }
             }
         }
+    }
+
+    if (fWebView->LockLooper()) {
+        fWebView->Invalidate(rect);
+        fWebView->UnlockLooper();
     }
 
     fPageDirty = false;
@@ -870,25 +849,27 @@ void BWebPage::scroll(int xOffset, int yOffset, const BRect& rectToScroll,
     if (xOffset == 0 && yOffset == 0)
         return;
 
+    BAutolock locker(fTileGrid->Locker());
+
+    std::unordered_map<TileIndex, std::unique_ptr<Tile>> newGridMap;
+    BRect invalidRect;
+
+    for (auto const& [index, tile] : fTileGrid->Map()) {
+        BRect tileRect(tile->GetX() * 256, tile->GetY() * 256, (tile->GetX() + 1) * 256 - 1, (tile->GetY() + 1) * 256 - 1);
+        BRect scrolledRect = tileRect.OffsetByCopy(xOffset, yOffset);
+
+        if (rectToScroll.Intersects(scrolledRect)) {
+            TileIndex newIndex = { (int)floor(scrolledRect.top / 256), (int)floor(scrolledRect.left / 256) };
+            newGridMap[newIndex] = std::move(const_cast<std::unique_ptr<Tile>&>(tile));
+        } else {
+            invalidRect = invalidRect | tileRect;
+        }
+    }
+
+    fTileGrid->SetMap(std::move(newGridMap));
+
     if (fWebView->LockLooper()) {
-        // The area that can be scrolled.
-        BRect sourceRect = rectToScroll;
-        sourceRect.OffsetBy(-xOffset, -yOffset);
-        sourceRect = sourceRect & rectToScroll;
-
-        // The destination for the scrolled area.
-        BRect destRect = sourceRect;
-        destRect.OffsetBy(xOffset, yOffset);
-
-        fWebView->CopyBits(sourceRect, destRect);
-
-        // Invalidate the newly exposed area.
-        BRegion exposed;
-        exposed.Include(rectToScroll);
-        exposed.Exclude(destRect);
-        for (int i = 0; i < exposed.CountRects(); i++)
-            fWebView->Invalidate(exposed.RectAt(i));
-
+        fWebView->Invalidate(invalidRect);
         fWebView->UnlockLooper();
     }
 }

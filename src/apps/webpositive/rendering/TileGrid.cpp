@@ -73,13 +73,6 @@ TileGrid::RemoveTile(const TileIndex& index)
 }
 
 void
-TileGrid::AddMemoryUsage(size_t size)
-{
-    BAutolock locker(fGridLock);
-    fCurrentMemoryUsage += size;
-}
-
-void
 TileGrid::SetMemoryLimits(size_t softLimit, size_t hardLimit)
 {
     BAutolock locker(fGridLock);
@@ -99,10 +92,11 @@ TileGrid::EvictTiles(bool aggressive)
         fLruQueue.pop_back();
 
         auto it = fGrid.find(toEvict);
-        if (it != fGrid.end() && it->second->GetBitmap()) {
-            fCurrentMemoryUsage -= it->second->GetBitmap()->Size();
+        if (it != fGrid.end()) {
             // Release the bitmap back to the pool.
-            BitmapPool::GetInstance().Release(it->second->TakeBitmap());
+            BitmapPool::GetInstance().Release(
+                std::unique_ptr<BBitmap>(it->second->GetBitmap()));
+            fCurrentMemoryUsage -= it->second->GetBitmap()->Size();
             it->second->SetState(TileState::NEEDS_RENDER);
         }
         fLruMap.erase(toEvict);

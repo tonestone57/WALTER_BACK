@@ -7,6 +7,8 @@
 
 #include <Locker.h>
 #include <memory>
+#include <vector>
+#include <cstdint>
 
 // Forward declaration to avoid including the full BBitmap header here.
 class BBitmap;
@@ -18,6 +20,8 @@ enum TileState {
     RENDERING,
     // The tile has been rendered and its BBitmap is available.
     RENDERED,
+    // The tile is being compressed.
+    COMPRESSING,
     // The tile's bitmap has been compressed to save memory.
     COMPRESSED,
     // The tile is queued for eviction.
@@ -39,11 +43,8 @@ public:
     void SetBitmap(std::unique_ptr<BBitmap> bitmap);
     std::unique_ptr<BBitmap> TakeBitmap();
 
-    // In a real implementation, this would hold compressed data.
-    // For now, it's a placeholder.
-    char* GetCompressedData() const { return fCompressedData; }
-    void SetCompressedData(char* data, size_t size);
-    size_t GetCompressedSize() const { return fCompressedSize; }
+    const std::vector<uint8_t>& GetCompressedData() const { return fCompressedData; }
+    void SetCompressedData(std::vector<uint8_t>&& data);
 
     int32 GetX() const { return fX; }
     int32 GetY() const { return fY; }
@@ -55,8 +56,7 @@ private:
     int32 fY;
 
     std::unique_ptr<BBitmap> fBitmap;
-    char* fCompressedData;
-    size_t fCompressedSize;
+    std::vector<uint8_t> fCompressedData;
 };
 
 #endif // TILE_H
