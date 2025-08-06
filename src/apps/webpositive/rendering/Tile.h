@@ -46,6 +46,9 @@ public:
     const std::vector<uint8_t>& GetCompressedData() const { return fCompressedData; }
     void SetCompressedData(std::vector<uint8_t>&& data);
 
+    bool Compress();
+    bool Decompress();
+
     int32 GetX() const { return fX; }
     int32 GetY() const { return fY; }
 

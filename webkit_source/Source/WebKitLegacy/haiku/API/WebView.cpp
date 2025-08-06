@@ -253,6 +253,11 @@ void BWebView::Draw(BRect rect)
 
     for (const auto& it : tileGrid->Map()) {
         const Tile* tile = it.second.get();
+        if (tile->GetState() == COMPRESSED) {
+            // Decompress synchronously for now.
+            const_cast<Tile*>(tile)->Decompress();
+        }
+
         if (tile->GetBitmap() && tile->GetState() == RENDERED) {
             BRect tileRect(tile->GetX() * 256, tile->GetY() * 256,
                            (tile->GetX() + 1) * 256 - 1, (tile->GetY() + 1) * 256 - 1);

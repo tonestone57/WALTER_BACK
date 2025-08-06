@@ -814,29 +814,60 @@ void BWebPage::paint(BRect rect, bool immediate)
             TileIndex index = {r, c};
             Tile* tile = fTileGrid->GetOrCreateTile(index);
 
+            BAutolock locker(tile->Locker());
             if (tile->GetState() == NEEDS_RENDER) {
-                std::unique_ptr<BBitmap> bitmap = BitmapPool::GetInstance().Acquire(256, 256);
-                if (bitmap) {
-                    BView offscreenView(bitmap->Bounds(), "temp", 0, 0);
-                    bitmap->AddChild(&offscreenView);
-                    if (offscreenView.LockLooper()) {
-                        WebCore::GraphicsContextHaiku context(&offscreenView);
-                        context.translate(-c * 256, -r * 256);
-                        view->paint(context, IntRect(rect));
-                        offscreenView.Sync();
-                        offscreenView.UnlockLooper();
+                tile->SetState(RENDERING);
+
+                fThreadPool->Enqueue([this, tile, view, c, r]() {
+                    std::unique_ptr<BBitmap> bitmap = BitmapPool::GetInstance().Acquire(256, 256);
+                    if (bitmap) {
+                        fTileGrid->AddMemoryUsage(bitmap->Size());
+                        BView offscreenView(bitmap->Bounds(), "temp", 0, 0);
+                        bitmap->AddChild(&offscreenView);
+                        if (offscreenView.LockLooper()) {
+                            WebCore::GraphicsContextHaiku context(&offscreenView);
+                            context.translate(-c * 256, -r * 256);
+                            BRect tileRect(c * 256, r * 256, (c + 1) * 256 - 1, (r + 1) * 256 - 1);
+                            view->paint(context, IntRect(tileRect));
+                            offscreenView.Sync();
+                            offscreenView.UnlockLooper();
+                        }
+                        bitmap->RemoveChild(&offscreenView);
+
+                        BAutolock tileLocker(tile->Locker());
+                        tile->SetBitmap(std::move(bitmap));
+                        tile->SetState(RENDERED);
+
+                        BRect tileRect(c * 256, r * 256, (c + 1) * 256 - 1, (r + 1) * 256 - 1);
+
+                        if (fWebView->LockLooper()) {
+                            fWebView->Invalidate(tileRect);
+                            fWebView->UnlockLooper();
+                        }
+
+                        // Compress off-screen tiles
+                        BRect visibleRect;
+                        if (fWebView->LockLooper()) {
+                            visibleRect = fWebView->Bounds();
+                            fWebView->UnlockLooper();
+                        }
+
+                        if (!visibleRect.Intersects(tileRect)) {
+                            fThreadPool->Enqueue([tile]() {
+                                BAutolock locker(tile->Locker());
+                                if (tile->GetState() == RENDERED) {
+                                    tile->SetState(COMPRESSING);
+                                    tile->Compress();
+                                }
+                            });
+                        }
+                    } else {
+                        BAutolock tileLocker(tile->Locker());
+                        tile->SetState(NEEDS_RENDER);
                     }
-                    bitmap->RemoveChild(&offscreenView);
-                    tile->SetBitmap(std::move(bitmap));
-                    tile->SetState(RENDERED);
-                }
+                });
             }
         }
-    }
-
-    if (fWebView->LockLooper()) {
-        fWebView->Invalidate(rect);
-        fWebView->UnlockLooper();
     }
 
     fPageDirty = false;
