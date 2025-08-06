@@ -1,0 +1,12 @@
+
+PASS Property position-area value 'none'
+PASS Property position-area value 'span-all'
+PASS Property position-area value 'x-start'
+PASS Property position-area value 'center'
+PASS Property position-area value 'span-all span-all'
+PASS Property position-area value 'center center'
+PASS Property position-area value 'top center'
+PASS Property position-area value 'span-bottom span-all'
+PASS Property position-area has initial value none
+PASS Property position-area does not inherit
+

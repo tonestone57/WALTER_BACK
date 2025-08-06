@@ -1,0 +1,9 @@
+CONSOLE MESSAGE: Blocked script execution in 'about:blank' because the document's frame is sandboxed and the 'allow-scripts' permission is not set.
+CONSOLE MESSAGE: Blocked script execution in 'about:blank' because the document's frame is sandboxed and the 'allow-scripts' permission is not set.
+
+
+Harness Error (TIMEOUT), message = null
+
+TIMEOUT A loading='lazy' image starts loading when the element is moved into
+       an iframe where script is disabled Test timed out
+

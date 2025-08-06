@@ -1,0 +1,5 @@
+
+PASS Starts rendering with flip-block
+FAIL No successful position, keep flip-block assert_equals: expected 250 but got 0
+FAIL No successful position, last successful invalidated by position-try-fallbacks change assert_equals: expected -50 but got 0
+

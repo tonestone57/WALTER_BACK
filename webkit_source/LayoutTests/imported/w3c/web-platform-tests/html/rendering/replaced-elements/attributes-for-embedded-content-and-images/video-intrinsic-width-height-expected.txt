@@ -1,0 +1,8 @@
+
+PASS no width/height attributes
+PASS only width attribute
+PASS only height attribute
+PASS both width/height attributes
+PASS both width/height attributes and style
+FAIL both width/height attributes and style keeping aspect-ratio assert_equals: height expected 300 but got 150
+
