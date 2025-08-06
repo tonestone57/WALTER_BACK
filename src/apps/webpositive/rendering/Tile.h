@@ -44,6 +44,8 @@ public:
     void SetCompressedData(char* data, size_t size);
     size_t GetCompressedSize() const { return fCompressedSize; }
 
+    int32 GetX() const { return fX; }
+    int32 GetY() const { return fY; }
 
 private:
     BLocker fLock;

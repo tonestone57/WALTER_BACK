@@ -10,32 +10,40 @@
 
 #include <Locker.h>
 #include <unordered_map>
+#include <unordered_set>
+#include <list>
 #include <memory>
 
 class TileGrid {
 public:
-    TileGrid();
+    TileGrid(size_t softLimit, size_t hardLimit);
     ~TileGrid();
 
-    // Thread-safe method to get a tile. Returns nullptr if the tile
-    // does not exist.
     Tile* GetTile(const TileIndex& index);
-
-    // Thread-safe method to create a tile if it doesn't exist,
-    // or get it if it does.
     Tile* GetOrCreateTile(const TileIndex& index);
-
-    // Thread-safe method to remove a tile.
     void RemoveTile(const TileIndex& index);
 
-    // Provides direct, locked access to the grid for more complex
-    // operations, like iteration.
+    void SetMemoryLimits(size_t softLimit, size_t hardLimit);
+    void EvictTiles(bool aggressive);
+
     BLocker* Locker() { return &fGridLock; }
     const std::unordered_map<TileIndex, std::unique_ptr<Tile>>& Map() const { return fGrid; }
+    void SetMap(std::unordered_map<TileIndex, std::unique_ptr<Tile>>&& map);
 
 private:
+    void _PromoteTile(const TileIndex& index);
+
     BLocker fGridLock;
     std::unordered_map<TileIndex, std::unique_ptr<Tile>> fGrid;
+
+    // Caching
+    std::unordered_set<TileIndex> fSieveCandidates;
+    std::list<TileIndex> fLruQueue;
+    std::unordered_map<TileIndex, std::list<TileIndex>::iterator> fLruMap;
+
+    size_t fCurrentMemoryUsage;
+    size_t fSoftMemoryLimit;
+    size_t fHardMemoryLimit;
 };
 
 #endif // TILE_GRID_H

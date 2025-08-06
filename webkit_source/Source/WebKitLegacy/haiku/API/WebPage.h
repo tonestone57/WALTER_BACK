@@ -43,6 +43,7 @@ class BView;
 class BWebDownload;
 class BWebFrame;
 class BWebSettings;
+class TileGrid;
 class BWebView;
 
 namespace WTF {
@@ -102,6 +103,7 @@ public:
 			BWebFrame*			MainFrame() const;
 			BWebSettings*		Settings() const;
 			BWebView*			WebView() const;
+			TileGrid*			GetTileGrid() const { return fTileGrid; }
 				// NOTE: Using the BWebView requires locking it's looper!
 
 			void				LoadURL(const char* urlString);
@@ -244,6 +246,7 @@ private:
 			BWebFrame*						fMainFrame;
 			BWebSettings*					fSettings;
             BPrivate::Network::BUrlContext*	fContext;
+			TileGrid*						fTileGrid;
 			std::unique_ptr<WTF::Ref<WebCore::Page, WTF::RawPtrTraits<WebCore::Page>, WTF::DefaultRefDerefTraits<WebCore::Page>>>	fPage;
             WebCore::DumpRenderTreeClient*	fDumpRenderTree;
 

@@ -69,8 +69,6 @@ BWebView::BWebView(const char* name, BPrivate::Network::BUrlContext* urlContext)
     , fLastMouseMovedTime(-2000000)
     , fLastMousePos(0, 0)
     , fAutoHidePointer(false)
-    , fOffscreenBitmap(nullptr)
-    , fOffscreenView(nullptr)
     , fWebPage(new BWebPage(this, urlContext))
     , fUserData(nullptr)
 {
@@ -104,11 +102,6 @@ BWebView::~BWebView()
 {
     delete fWebPage;
     fWebPage = nullptr;
-
-    if (fOffscreenBitmap) {
-        fOffscreenBitmap->Lock();
-        delete fOffscreenBitmap;
-    }
 
 	SetUserData(0);
 }
@@ -248,20 +241,25 @@ void BWebView::Hide()
 
 void BWebView::Draw(BRect rect)
 {
-    SetDrawingMode(B_OP_COPY);
-
-    // Draw the page that was already rendered as an offscreen bitmap
-    if (fOffscreenBitmap == NULL || !fOffscreenBitmap->Lock()) {
-        SetHighColor(255, 255, 255);
-        FillRect(rect);
+    BWebPage* page = WebPage();
+    if (!page)
         return;
+
+    TileGrid* tileGrid = page->GetTileGrid();
+    if (!tileGrid)
+        return;
+
+    BAutolock locker(tileGrid->Locker());
+
+    for (const auto& it : tileGrid->Map()) {
+        const Tile* tile = it.second.get();
+        if (tile->GetBitmap() && tile->GetState() == RENDERED) {
+            BRect tileRect(tile->GetX() * 256, tile->GetY() * 256,
+                           (tile->GetX() + 1) * 256 - 1, (tile->GetY() + 1) * 256 - 1);
+            if (tileRect.Intersects(rect))
+                DrawBitmap(tile->GetBitmap(), tileRect);
+        }
     }
-
-    DrawBitmap(fOffscreenBitmap, rect, rect);
-
-    fOffscreenBitmap->Unlock();
-
-    GraphicsContextHaiku g(this);
 }
 
 void BWebView::FrameResized(float width, float height)
@@ -505,73 +503,7 @@ void BWebView::SetRootLayer(WebCore::GraphicsLayer* layer)
 }
 
 
-// #pragma mark - API for WebPage only
-
-void BWebView::SetOffscreenViewClean(BRect cleanRect, bool immediate)
-{
-    if (LockLooper()) {
-        if (immediate)
-            Draw(cleanRect);
-        else
-            Invalidate(cleanRect);
-        UnlockLooper();
-    }
-}
-
-
 // #pragma mark - private
-
-void BWebView::_ResizeOffscreenView(int width, int height)
-{
-	if (width <= 1 || height <= 1)
-		return;
-
-    BRect bounds(0, 0, width - 1, height - 1);
-
-    if (fOffscreenBitmap) {
-        fOffscreenBitmap->Lock();
-        if (fOffscreenBitmap->Bounds().Contains(bounds)) {
-            // Just resize the view and clear the exposed parts, but never
-            // shrink the bitmap).
-            BRect oldViewBounds(fOffscreenView->Bounds());
-            fOffscreenView->ResizeTo(width - 1, height - 1);
-            BRegion exposed(fOffscreenView->Bounds());
-            exposed.Exclude(oldViewBounds);
-            fOffscreenView->FillRegion(&exposed, B_SOLID_LOW);
-            fOffscreenBitmap->Unlock();
-            return;
-        }
-    }
-    BBitmap* oldBitmap = fOffscreenBitmap;
-    BView* oldView = fOffscreenView;
-
-    fOffscreenBitmap = new BBitmap(bounds, B_RGB32, true);
-    if (fOffscreenBitmap->InitCheck() != B_OK) {
-        BAlert* alert = new BAlert("Internal error",
-            "Unable to create off-screen bitmap for WebKit contents.", "OK");
-        alert->Go();
-        exit(1);
-    }
-    fOffscreenView = new BView(bounds, "WebKit offscreen view", 0, 0);
-    fOffscreenBitmap->Lock();
-    fOffscreenBitmap->AddChild(fOffscreenView);
-    fOffscreenView->SetDrawingMode(B_OP_COPY);
-    fOffscreenView->SetViewColor(B_TRANSPARENT_COLOR);
-
-    if (oldBitmap) {
-        // Transfer the old bitmap contents (just the visible part) and
-        // clear the rest.
-        BRegion region(fOffscreenView->Bounds());
-        BRect oldViewBounds = oldView->Bounds();
-        region.Exclude(oldViewBounds);
-        fOffscreenView->DrawBitmap(oldBitmap, oldViewBounds, oldViewBounds);
-        fOffscreenView->FillRegion(&region, B_SOLID_LOW);
-        delete oldBitmap;
-            // Takes care of old fOffscreenView too.
-    }
-
-    fOffscreenBitmap->Unlock();
-}
 
 
 void BWebView::_DispatchMouseEvent(const BPoint& where, uint32 sanityWhat)

@@ -112,6 +112,7 @@
 #include "WebSettings.h"
 #include "WebStorageNamespaceProvider.h"
 #include "WebView.h"
+#include "rendering/TileGrid.h"
 #include "WebViewConstants.h"
 #include "WebViewGroup.h"
 #include "WebVisitedLinkStore.h"
@@ -265,6 +266,7 @@ BWebPage::BWebPage(BWebView* webView, BPrivate::Network::BUrlContext* context)
     , fToolbarsVisible(true)
     , fStatusbarVisible(true)
     , fMenubarVisible(true)
+    , fTileGrid(new TileGrid(64 * 1024 * 1024, 128 * 1024 * 1024))
 {
     // FIXME we should get this from the page settings, but they are created
     // after the page, and we need this before the page is created.
@@ -366,6 +368,7 @@ BWebPage::~BWebPage()
     // free'd. For sub-frames, we don't maintain them anyway, and for the
     // main frame, the same mechanism is used.
     delete fSettings;
+    delete fTileGrid;
 }
 
 // #pragma mark - public
@@ -783,62 +786,58 @@ void BWebPage::requestDownload(const WebCore::ResourceRequest& request,
 
 void BWebPage::paint(BRect rect, bool immediate)
 {
-    if (!rect.IsValid())
-        return;
-    // Block any drawing as long as the BWebView is hidden
-    // (should be extended to when the containing BWebWindow is not
-    // currently on screen either...)
-    if (!fPageVisible) {
+    if (!rect.IsValid() || !fPageVisible) {
         fPageDirty = true;
         return;
     }
 
-    // NOTE: fMainFrame can be 0 because init() eventually ends up calling
-    // paint()! BWebFrame seems to cause an initial page to be loaded, maybe
-    // this ought to be avoided also for start-up speed reasons!
     if (!fMainFrame)
         return;
+
     WebCore::LocalFrame* frame = fMainFrame->Frame();
     WebCore::LocalFrameView* view = frame->view();
-
     if (!view || !frame->contentRenderer())
         return;
 
     page()->isolatedUpdateRendering();
-
     view->updateLayoutAndStyleIfNeededRecursive();
-
-    if (!fWebView->LockLooper())
-        return;
-    BView* offscreenView = fWebView->OffscreenView();
-
-    // Lock the offscreen bitmap while we still have the
-    // window locked. This cannot deadlock and makes sure
-    // the window is not deleting the offscreen view right
-    // after we unlock it and before locking the bitmap.
-    if (offscreenView == NULL || !offscreenView->LockLooper()) {
-        fWebView->UnlockLooper();
-        return;
-    }
-
-    fWebView->UnlockLooper();
     MainFrame()->Frame()->view()->flushCompositingStateIncludingSubframes();
 
-    offscreenView->PushState();
-    BRegion region(rect);
-    offscreenView->ConstrainClippingRegion(&region);
+    // Calculate tile range
+    int first_col = floor(rect.left / 256);
+    int first_row = floor(rect.top / 256);
+    int last_col = floor(rect.right / 256);
+    int last_row = floor(rect.bottom / 256);
 
-    // TODO do not recreate a context everytime this is called, we can preserve
-    // it alongside the offscreen view in BWebView?
-    WebCore::GraphicsContextHaiku context(offscreenView);
-    view->paint(context, IntRect(rect));
+    for (int r = first_row; r <= last_row; r++) {
+        for (int c = first_col; c <= last_col; c++) {
+            TileIndex index = {r, c};
+            Tile* tile = fTileGrid->GetOrCreateTile(index);
 
-    offscreenView->PopState();
-    offscreenView->Sync();
-    offscreenView->UnlockLooper();
+            if (tile->GetState() == NEEDS_RENDER) {
+                std::unique_ptr<BBitmap> bitmap = BitmapPool::GetInstance().Acquire(256, 256);
+                if (bitmap) {
+                    BView offscreenView(bitmap->Bounds(), "temp", 0, 0);
+                    bitmap->AddChild(&offscreenView);
+                    if (offscreenView.LockLooper()) {
+                        WebCore::GraphicsContextHaiku context(&offscreenView);
+                        context.translate(-c * 256, -r * 256);
+                        view->paint(context, IntRect(rect));
+                        offscreenView.Sync();
+                        offscreenView.UnlockLooper();
+                    }
+                    bitmap->RemoveChild(&offscreenView);
+                    tile->SetBitmap(std::move(bitmap));
+                    tile->SetState(RENDERED);
+                }
+            }
+        }
+    }
 
-    // Notify the window that it can now pull the bitmap in its own thread
-    fWebView->SetOffscreenViewClean(rect, immediate);
+    if (fWebView->LockLooper()) {
+        fWebView->Invalidate(rect);
+        fWebView->UnlockLooper();
+    }
 
     fPageDirty = false;
 }
@@ -847,46 +846,32 @@ void BWebPage::paint(BRect rect, bool immediate)
 void BWebPage::scroll(int xOffset, int yOffset, const BRect& rectToScroll,
        const BRect& clipRect)
 {
-    if (!rectToScroll.IsValid() || !clipRect.IsValid()
-        || (xOffset == 0 && yOffset == 0) || !fWebView->LockLooper()) {
+    if (xOffset == 0 && yOffset == 0)
         return;
+
+    BAutolock locker(fTileGrid->Locker());
+
+    std::unordered_map<TileIndex, std::unique_ptr<Tile>> newGridMap;
+    BRect invalidRect;
+
+    for (auto const& [index, tile] : fTileGrid->Map()) {
+        BRect tileRect(tile->GetX() * 256, tile->GetY() * 256, (tile->GetX() + 1) * 256 - 1, (tile->GetY() + 1) * 256 - 1);
+        BRect scrolledRect = tileRect.OffsetByCopy(xOffset, yOffset);
+
+        if (rectToScroll.Intersects(scrolledRect)) {
+            TileIndex newIndex = { (int)floor(scrolledRect.top / 256), (int)floor(scrolledRect.left / 256) };
+            newGridMap[newIndex] = std::move(const_cast<std::unique_ptr<Tile>&>(tile));
+        } else {
+            invalidRect = invalidRect | tileRect;
+        }
     }
 
-    BBitmap* bitmap = fWebView->OffscreenBitmap();
-    BView* offscreenView = fWebView->OffscreenView();
+    fTileGrid->SetMap(std::move(newGridMap));
 
-    // Lock the offscreen bitmap while we still have the
-    // window locked. This cannot deadlock and makes sure
-    // the window is not deleting the offscreen view right
-    // after we unlock it and before locking the bitmap.
-    if (!bitmap->Lock()) {
-       fWebView->UnlockLooper();
-       return;
+    if (fWebView->LockLooper()) {
+        fWebView->Invalidate(invalidRect);
+        fWebView->UnlockLooper();
     }
-    fWebView->UnlockLooper();
-
-    BRect clip = offscreenView->Bounds();
-    if (clipRect.IsValid())
-        clip = clip & clipRect;
-
-    BRect rectAtSrc = rectToScroll;
-    BRect rectAtDst = rectAtSrc.OffsetByCopy(xOffset, yOffset);
-
-    if (clip.Intersects(rectAtSrc) && clip.Intersects(rectAtDst)) {
-        // clip source rect
-        rectAtSrc = rectAtSrc & clip;
-        // clip dest rect
-        rectAtDst = rectAtDst & clip;
-
-        // move dest back over source and clip source to dest
-        rectAtDst.OffsetBy(-xOffset, -yOffset);
-        rectAtSrc = rectAtSrc & rectAtDst;
-        rectAtDst.OffsetBy(xOffset, yOffset);
-
-        offscreenView->CopyBits(rectAtSrc, rectAtDst);
-    }
-
-    bitmap->Unlock();
 }
 
 

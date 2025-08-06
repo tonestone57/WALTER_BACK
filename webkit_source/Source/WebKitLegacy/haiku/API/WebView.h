@@ -131,12 +131,6 @@ private:
     friend class WebCore::ChromeClientHaiku;
     friend class WebCore::AcceleratedCompositingContext;
 
-            inline BBitmap*     OffscreenBitmap() const
-                                    { return fOffscreenBitmap; }
-            inline  BView*      OffscreenView() const
-                                    { return fOffscreenView; }
-			void				SetOffscreenViewClean(BRect cleanRect,
-									bool immediate);
 
 private:
             void                _ResizeOffscreenView(int width, int height);
@@ -148,9 +142,6 @@ private:
 			bigtime_t			fLastMouseMovedTime;
 			BPoint				fLastMousePos;
 			bool				fAutoHidePointer;
-
-            BBitmap*            fOffscreenBitmap;
-            BView*              fOffscreenView;
 
 			BWebPage*			fWebPage;
 
