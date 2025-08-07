@@ -245,6 +245,7 @@ private:
 	void handleResendNotifications(BMessage* message);
 	void handleSendEditingCapabilities(BMessage* message);
 	void handleSendPageSource(BMessage* message);
+	void handleWarmUpTile(BMessage* message);
 
     status_t dispatchMessage(BMessage& message, BMessage* reply = NULL) const;
 

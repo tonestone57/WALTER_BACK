@@ -152,6 +152,7 @@
  */
 
 enum {
+    HANDLE_WARM_UP_TILE = 'wupt',
     HANDLE_DECAY_ACCESS_COUNT = 'dkay',
     HANDLE_COMPRESSION_TIER_UP = 'ctup',
     HANDLE_SHUTDOWN = 'sdwn',
@@ -530,8 +531,24 @@ void BWebPage::WarmUpCache()
 {
     BRect viewport = viewBounds();
     BRect warmUpRect = viewport;
-    warmUpRect.InsetBy(-viewport.Width(), -viewport.Height());
-    paint(warmUpRect, false);
+    warmUpRect.InsetBy(-viewport.Width() * 0.5, -viewport.Height() * 0.5);
+
+    float zoom = page()->pageZoomFactor();
+    int tileSize = 256 / zoom;
+
+    int first_col = floor(warmUpRect.left / tileSize);
+    int first_row = floor(warmUpRect.top / tileSize);
+    int last_col = floor(warmUpRect.right / tileSize);
+    int last_row = floor(warmUpRect.bottom / tileSize);
+
+    for (int r = first_row; r <= last_row; r++) {
+        for (int c = first_col; c <= last_col; c++) {
+            BMessage message(HANDLE_WARM_UP_TILE);
+            message.AddInt32("row", r);
+            message.AddInt32("col", c);
+            Looper()->PostMessage(&message, this);
+        }
+    }
 }
 
 void BWebPage::HandleMemoryPressure(int32 level)
@@ -1167,6 +1184,10 @@ void BWebPage::MessageReceived(BMessage* message)
         handleSendPageSource(message);
         break;
 
+    case HANDLE_WARM_UP_TILE:
+        handleWarmUpTile(message);
+        break;
+
     case HANDLE_DECAY_ACCESS_COUNT:
         for (auto const& [index, tile] : fTileGrid->Map()) {
             tile->DecayAccessCount();
@@ -1601,6 +1622,18 @@ void BWebPage::handleSendPageSource(BMessage*)
     message.AddString("type", fMainFrame->MIMEType());
 
     dispatchMessage(message);
+}
+
+void BWebPage::handleWarmUpTile(BMessage* message)
+{
+    int32 row, col;
+    if (message->FindInt32("row", &row) != B_OK
+        || message->FindInt32("col", &col) != B_OK)
+        return;
+
+    TileIndex index = {row, col};
+    fTileGrid->GetOrCreateTile(index);
+    fTileGrid->MarkTileAsDirty(index);
 }
 
 // #pragma mark -
