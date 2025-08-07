@@ -13,12 +13,12 @@ local sourceDirs =
 
 local sources =
 	# rendering
-	rendering/BitmapPool.cpp
-	rendering/MemoryPressureListener.cpp
-	rendering/Tile.cpp
-	rendering/TileGrid.cpp
-	rendering/TilePool.cpp
-	rendering/ThreadPool.cpp
+	BitmapPool.cpp
+	MemoryPressureListener.cpp
+	Tile.cpp
+	TileGrid.cpp
+	TilePool.cpp
+	ThreadPool.cpp
 
 	# autocompletion
 	AutoCompleter.cpp
