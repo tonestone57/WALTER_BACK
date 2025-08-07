@@ -89,7 +89,7 @@ Tile::Compress(TileGrid* grid, CompressionLevel level)
 
     int zstdLevel = 1;
     if (level == COMPRESSED_HIGH)
-        zstdLevel = 9;
+        zstdLevel = 5;
 
     size_t compressedSize = ZSTD_compress(compressedData.data(), compressedBound,
         uncompressedData, uncompressedSize, zstdLevel);
@@ -130,7 +130,7 @@ Tile::Recompress(TileGrid* grid, CompressionLevel newLevel)
     // Re-compress from the temporary buffer
     int zstdLevel = 1;
     if (newLevel == COMPRESSED_HIGH)
-        zstdLevel = 9;
+        zstdLevel = 5;
 
     size_t newCompressedBound = ZSTD_compressBound(decompressedSize);
     std::vector<uint8_t> newCompressedData(newCompressedBound);
