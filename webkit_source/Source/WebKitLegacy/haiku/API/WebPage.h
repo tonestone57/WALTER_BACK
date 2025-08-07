@@ -146,6 +146,7 @@ public:
 private:
 	friend class BWebFrame;
 	friend class BWebView;
+	friend class TileGrid;
 	friend class BPrivate::WebDownloadPrivate;
 
 								BWebPage(BWebView* webView, BPrivate::Network::BUrlContext* context);

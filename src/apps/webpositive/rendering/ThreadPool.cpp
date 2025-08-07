@@ -5,6 +5,8 @@
 
 #include "rendering/ThreadPool.h"
 #include <pthread.h>
+#include <sched.h>
+#include <stdexcept>
 
 ThreadPool::ThreadPool(size_t threads)
     :

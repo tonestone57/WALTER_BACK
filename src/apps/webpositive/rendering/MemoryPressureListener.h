@@ -1,7 +1,7 @@
 #ifndef MEMORY_PRESSURE_LISTENER_H
 #define MEMORY_PRESSURE_LISTENER_H
 
-#include <MemoryPressureListener.h>
+#include <private/kernel/low_resource_manager.h>
 
 class BWebPage;
 

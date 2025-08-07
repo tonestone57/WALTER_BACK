@@ -11,15 +11,16 @@ local sourceDirs =
 	rendering
 ;
 
-local sources =
-	# rendering
+local renderingSources =
 	BitmapPool.cpp
 	MemoryPressureListener.cpp
 	Tile.cpp
 	TileGrid.cpp
 	TilePool.cpp
 	ThreadPool.cpp
+;
 
+local sources =
 	# autocompletion
 	AutoCompleter.cpp
 	AutoCompleterDefaultImpl.cpp
@@ -75,10 +76,13 @@ for architectureObject in [ MultiArchSubDirSetup ] {
 				+= [ FDirName $(HAIKU_TOP) src apps webpositive $(sourceDir) ] ;
 		}
 
+		local renderingObjects = [ FGristFiles $(renderingSources) ] ;
+		MergeObject rendering.o : $(renderingObjects) ;
+		Includes $(renderingObjects) : [ BuildFeatureAttribute zstd : headers ] ;
+
 		Includes [ FGristFiles $(sources) ]
 			:
 			[ BuildFeatureAttribute webkit : headers ]
-			[ BuildFeatureAttribute zstd : headers ]
 			;
 			# Dependency needed to trigger downloading/unzipping the package
 			# before compiling the files.
@@ -89,11 +93,11 @@ for architectureObject in [ MultiArchSubDirSetup ] {
 		SubDirHdrs $(HAIKU_TOP) src kits tracker ;
 
 		Application WebPositive :
+			rendering.o
 			$(sources)
 			:
 			bnetapi [ MultiArchDefaultGristFiles libnetservices.a libcolumnlistview.a ]
 			[ BuildFeatureAttribute webkit : libraries ]
-			[ BuildFeatureAttribute zstd : library ]
 			[ TargetLibstdc++ ] localestub shared
 			be network tracker translation
 			:

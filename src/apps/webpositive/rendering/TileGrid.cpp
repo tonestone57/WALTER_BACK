@@ -2,6 +2,7 @@
 #include "rendering/Tile.h"
 #include "rendering/BitmapPool.h"
 #include "rendering/TilePool.h"
+#include "rendering/ThreadPool.h"
 
 #include <Autolock.h>
 #include <Bitmap.h>
@@ -12,13 +13,13 @@
 TileGrid::TileGrid(BWebPage* webPage, ThreadPool* threadPool, int32 tileSize, size_t softLimit, size_t hardLimit)
     :
     fGridLock("TileGridLock"),
-    fDirtyTilesLock("TileGridDirtyTilesLock"),
     fCurrentMemoryUsage(0),
     fSoftMemoryLimit(softLimit),
     fHardMemoryLimit(hardLimit),
     fWebPage(webPage),
     fThreadPool(threadPool),
-    fTileSize(tileSize)
+    fTileSize(tileSize),
+    fDirtyTilesLock("TileGridDirtyTilesLock")
 {
 }
 
@@ -77,7 +78,7 @@ TileGrid::RemoveTile(const TileIndex& index)
 
     // Update memory usage before destroying the tile.
     if (it->second->GetBitmap())
-        fCurrentMemoryUsage -= it->second->GetBitmap()->Size();
+        fCurrentMemoryUsage -= it->second->GetBitmap()->BitsLength();
     else if (!it->second->GetCompressedData().empty())
         fCurrentMemoryUsage -= it->second->GetCompressedData().size();
 
@@ -155,7 +156,7 @@ TileGrid::EvictTiles(bool aggressive)
                 double age = (double)(system_time() - tile->LastAccessTime());
                 double complexity = (double)tile->GetRenderComplexity();
                 double importance = (double)tile->GetFrameImportance();
-                double memUsage = (double)(tile->GetBitmap() ? tile->GetBitmap()->Size() : 1);
+                double memUsage = (double)(tile->GetBitmap() ? tile->GetBitmap()->BitsLength() : 1);
 
                 // Higher score is worse (more likely to be evicted).
                 double score = (age * memUsage) / (complexity * importance);
@@ -178,7 +179,7 @@ TileGrid::EvictTiles(bool aggressive)
                 if (gridIt != fGrid.end()) {
                     Tile* tile = gridIt->second.get();
                     if (tile->GetState() == RENDERED && tile->GetBitmap()) {
-                        fCurrentMemoryUsage -= tile->GetBitmap()->Size();
+                        fCurrentMemoryUsage -= tile->GetBitmap()->BitsLength();
                         BitmapPool::GetInstance().Release(tile->TakeBitmap());
                         tile->SetState(NEEDS_RENDER);
                         tile->SetLastEvictionTime(system_time());
@@ -213,11 +214,11 @@ TileGrid::PredictivelyDecompress(const BRect& viewport, const BPoint& scrollVelo
             if (!tile)
                 continue;
 
-            BAutolock tileLocker(tile->Locker());
+            BAutolock tileLocker(tile->Lock());
             if (tile->GetState() == COMPRESSED) {
                 tile->SetState(DECOMPRESSING);
                 fThreadPool->Enqueue([this, tile, index]() {
-                    BAutolock tileLocker(tile->Locker());
+                    BAutolock tileLocker(tile->Lock());
                     if (tile->Decompress(this)) {
                         MoveToRenderedQueue(index);
                     } else {
@@ -387,7 +388,7 @@ TileGrid::ProcessDirtyTiles(int32& renderBudget)
         if (tile->GetState() == COMPRESSED) {
             tile->SetState(DECOMPRESSING);
             fThreadPool->Enqueue([this, tile, index]() {
-                BAutolock tileLocker(tile->Locker());
+                BAutolock tileLocker(tile->Lock());
                 if (tile->Decompress(this)) {
                     MoveToRenderedQueue(index);
                 } else {
