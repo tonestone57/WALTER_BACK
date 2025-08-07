@@ -1,5 +1,5 @@
 #include "rendering/MemoryPressureListener.h"
-#include "API/WebPage.h"
+#include "WebPage.h"
 
 MemoryPressureListener::MemoryPressureListener(BWebPage* page)
     :

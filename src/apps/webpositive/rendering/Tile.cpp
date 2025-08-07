@@ -5,7 +5,6 @@
 
 #include "rendering/Tile.h"
 #include "rendering/TileGrid.h"
-#include "rendering/RenderingConstants.h"
 #include <Bitmap.h>
 #include <memory>
 #include <zstd.h>
