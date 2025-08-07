@@ -63,11 +63,13 @@ TileGrid::RemoveTile(const TileIndex& index)
     BAutolock locker(fGridLock);
     auto it = fGrid.find(index);
     if (it != fGrid.end()) {
-        fCurrentMemoryUsage -= it->second->GetBitmap()->Size();
+        if (it->second->GetBitmap())
+            fCurrentMemoryUsage -= it->second->GetBitmap()->Size();
+        else if (!it->second->GetCompressedData().empty())
+            fCurrentMemoryUsage -= it->second->GetCompressedData().size();
         fGrid.erase(it);
-        fLruMap.erase(index);
-        // The iterator in fLruQueue is now invalid, but it's okay
-        // because we've removed the corresponding entry from fLruMap.
+        fRenderedLruMap.erase(index);
+        fCompressedLruMap.erase(index);
     }
     fSieveCandidates.erase(index);
 }
@@ -94,31 +96,41 @@ TileGrid::EvictTiles(bool aggressive)
     BAutolock locker(fGridLock);
     size_t limit = aggressive ? fHardMemoryLimit : fSoftMemoryLimit;
 
-    while (fCurrentMemoryUsage > limit && !fLruQueue.empty()) {
-        TileIndex toEvict = fLruQueue.back();
-        fLruQueue.pop_back();
+    while (fCurrentMemoryUsage > limit && (!fCompressedLruQueue.empty() || !fRenderedLruQueue.empty())) {
+        if (!fCompressedLruQueue.empty()) {
+            TileIndex toEvict = fCompressedLruQueue.back();
+            fCompressedLruQueue.pop_back();
+            fCompressedLruMap.erase(toEvict);
 
-        auto it = fGrid.find(toEvict);
-        if (it != fGrid.end()) {
-            Tile* tile = it->second.get();
-            if (tile->IsPinned()) {
-                // Move to front of LRU so we don't try to evict it again soon.
-                fLruQueue.push_front(toEvict);
-                fLruMap[toEvict] = fLruQueue.begin();
-                continue;
+            auto it = fGrid.find(toEvict);
+            if (it != fGrid.end()) {
+                Tile* tile = it->second.get();
+                if (tile->GetState() == COMPRESSED) {
+                    fCurrentMemoryUsage -= tile->GetCompressedData().size();
+                    tile->SetCompressedData({});
+                    tile->SetState(NEEDS_RENDER);
+                }
             }
+        } else {
+            TileIndex toEvict = fRenderedLruQueue.back();
+            fRenderedLruQueue.pop_back();
+            fRenderedLruMap.erase(toEvict);
 
-            if (tile->GetState() == RENDERED && tile->GetBitmap()) {
-                fCurrentMemoryUsage -= tile->GetBitmap()->Size();
-                BitmapPool::GetInstance().Release(tile->TakeBitmap());
-                tile->SetState(NEEDS_RENDER);
-            } else if (tile->GetState() == COMPRESSED) {
-                fCurrentMemoryUsage -= tile->GetCompressedData().size();
-                tile->SetCompressedData({});
-                tile->SetState(NEEDS_RENDER);
+            auto it = fGrid.find(toEvict);
+            if (it != fGrid.end()) {
+                Tile* tile = it->second.get();
+                if (tile->IsPinned()) {
+                    fRenderedLruQueue.push_front(toEvict);
+                    fRenderedLruMap[toEvict] = fRenderedLruQueue.begin();
+                    continue;
+                }
+                if (tile->GetState() == RENDERED && tile->GetBitmap()) {
+                    fCurrentMemoryUsage -= tile->GetBitmap()->Size();
+                    BitmapPool::GetInstance().Release(tile->TakeBitmap());
+                    tile->SetState(NEEDS_RENDER);
+                }
             }
         }
-        fLruMap.erase(toEvict);
     }
 }
 
@@ -131,19 +143,56 @@ TileGrid::_PromoteTile(const TileIndex& index)
 
     Tile* tile = gridIt->second.get();
     tile->IncrementAccessCount();
+    tile->SetLastAccessTime(system_time());
 
-    // If the tile is in the LRU queue, move it to the front.
-    auto it = fLruMap.find(index);
-    if (it != fLruMap.end()) {
-        fLruQueue.erase(it->second);
-        fLruQueue.push_front(index);
-        fLruMap[index] = fLruQueue.begin();
-    } else {
-        // SIEVE1: If it's a candidate, promote it to the main cache.
-        if (fSieveCandidates.count(index)) {
-            fSieveCandidates.erase(index);
-            fLruQueue.push_front(index);
-            fLruMap[index] = fLruQueue.begin();
-        }
+    // If the tile is in the rendered LRU queue, move it to the front.
+    auto it = fRenderedLruMap.find(index);
+    if (it != fRenderedLruMap.end()) {
+        fRenderedLruQueue.erase(it->second);
+        fRenderedLruQueue.push_front(index);
+        fRenderedLruMap[index] = fRenderedLruQueue.begin();
+        return;
+    }
+
+    // If the tile is in the compressed LRU queue, move it to the front.
+    it = fCompressedLruMap.find(index);
+    if (it != fCompressedLruMap.end()) {
+        fCompressedLruQueue.erase(it->second);
+        fCompressedLruQueue.push_front(index);
+        fCompressedLruMap[index] = fCompressedLruQueue.begin();
+        return;
+    }
+
+    // SIEVE1: If it's a candidate, promote it to the main cache.
+    if (fSieveCandidates.count(index)) {
+        fSieveCandidates.erase(index);
+        fRenderedLruQueue.push_front(index);
+        fRenderedLruMap[index] = fRenderedLruQueue.begin();
+    }
+}
+
+void
+TileGrid::MoveToCompressedQueue(const TileIndex& index)
+{
+    BAutolock locker(fGridLock);
+    auto it = fRenderedLruMap.find(index);
+    if (it != fRenderedLruMap.end()) {
+        fRenderedLruQueue.erase(it->second);
+        fRenderedLruMap.erase(it);
+        fCompressedLruQueue.push_front(index);
+        fCompressedLruMap[index] = fCompressedLruQueue.begin();
+    }
+}
+
+void
+TileGrid::MoveToRenderedQueue(const TileIndex& index)
+{
+    BAutolock locker(fGridLock);
+    auto it = fCompressedLruMap.find(index);
+    if (it != fCompressedLruMap.end()) {
+        fCompressedLruQueue.erase(it->second);
+        fCompressedLruMap.erase(it);
+        fRenderedLruQueue.push_front(index);
+        fRenderedLruMap[index] = fRenderedLruQueue.begin();
     }
 }

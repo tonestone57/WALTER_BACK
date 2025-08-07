@@ -33,6 +33,7 @@ enum TileState {
 };
 
 class Tile {
+    friend class BWebPage;
 public:
     Tile(int32 x, int32 y);
     ~Tile();
@@ -68,6 +69,9 @@ public:
     void ClearDirtyRegion() { fDirtyRegion.MakeEmpty(); }
     const BRegion& DirtyRegion() const { return fDirtyRegion; }
 
+    bigtime_t LastAccessTime() const { return fLastAccessTime; }
+    void SetLastAccessTime(bigtime_t time) { fLastAccessTime = time; }
+
 private:
     BLocker fLock;
     TileState fState;
@@ -75,8 +79,10 @@ private:
     int32 fY;
     bool fPinned;
     uint32_t fAccessCount;
+    bigtime_t fLastAccessTime;
 
     std::unique_ptr<BBitmap> fBitmap;
+    std::unique_ptr<BBitmap> fBackBitmap;
     std::vector<uint8_t> fCompressedData;
     BRegion fDirtyRegion;
 };

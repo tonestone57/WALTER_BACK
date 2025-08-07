@@ -354,6 +354,9 @@ void FrameLoaderClientHaiku::dispatchDidChangeLocationWithinPage()
     message.AddPointer("frame", m_webFrame);
     message.AddString("url", m_webFrame->Frame()->document()->url().string());
     dispatchMessage(message);
+
+    if (m_webFrame == m_webPage->MainFrame())
+        m_webPage->WarmUpCache();
 }
 
 void FrameLoaderClientHaiku::dispatchDidPushStateWithinPage()

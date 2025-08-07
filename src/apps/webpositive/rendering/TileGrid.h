@@ -27,6 +27,9 @@ public:
     void EvictTiles(bool aggressive);
     void UpdateMemoryUsage(int64_t delta);
 
+    void MoveToCompressedQueue(const TileIndex& index);
+    void MoveToRenderedQueue(const TileIndex& index);
+
     BLocker* Locker() { return &fGridLock; }
     const std::unordered_map<TileIndex, std::unique_ptr<Tile>>& Map() const { return fGrid; }
     void SetMap(std::unordered_map<TileIndex, std::unique_ptr<Tile>>&& map);
@@ -39,8 +42,10 @@ private:
 
     // Caching
     std::unordered_set<TileIndex> fSieveCandidates;
-    std::list<TileIndex> fLruQueue;
-    std::unordered_map<TileIndex, std::list<TileIndex>::iterator> fLruMap;
+    std::list<TileIndex> fRenderedLruQueue;
+    std::unordered_map<TileIndex, std::list<TileIndex>::iterator> fRenderedLruMap;
+    std::list<TileIndex> fCompressedLruQueue;
+    std::unordered_map<TileIndex, std::list<TileIndex>::iterator> fCompressedLruMap;
 
     size_t fCurrentMemoryUsage;
     size_t fSoftMemoryLimit;

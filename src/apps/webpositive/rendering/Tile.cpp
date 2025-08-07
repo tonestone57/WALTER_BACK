@@ -9,6 +9,7 @@
 #include <memory>
 #include <zstd.h>
 #include <new>
+#include <OS.h>
 
 Tile::Tile(int32 x, int32 y)
     :
@@ -18,7 +19,9 @@ Tile::Tile(int32 x, int32 y)
     fY(y),
     fPinned(false),
     fAccessCount(0),
-    fBitmap(nullptr)
+    fLastAccessTime(system_time()),
+    fBitmap(nullptr),
+    fBackBitmap(nullptr)
 {
 }
 
@@ -56,8 +59,12 @@ Tile::Compress(TileGrid* grid)
 
     std::vector<uint8_t> compressedData(compressedBound);
 
+    int compressionLevel = 1;
+    if (system_time() - fLastAccessTime > 10 * 1000 * 1000)
+        compressionLevel = 10;
+
     size_t compressedSize = ZSTD_compress(compressedData.data(), compressedBound,
-        uncompressedData, uncompressedSize, 1);
+        uncompressedData, uncompressedSize, compressionLevel);
 
     if (ZSTD_isError(compressedSize)) {
         return false;

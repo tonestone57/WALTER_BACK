@@ -134,6 +134,7 @@ public:
 			void				SendEditingCapabilities();
 			void				SendPageSource();
 			void				Pulse();
+			void				WarmUpCache();
 
             void				RequestDownload(const BString& url);
 

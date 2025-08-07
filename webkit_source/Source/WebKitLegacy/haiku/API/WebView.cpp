@@ -271,8 +271,10 @@ void BWebView::Draw(BRect rect)
             if (tile->GetState() == COMPRESSED) {
                 const_cast<Tile*>(tile)->SetState(DECOMPRESSING);
                 page->fThreadPool->Enqueue([page, tile, tileGrid, tileSize]() {
-                    if (const_cast<Tile*>(tile)->Decompress(tileGrid))
+                    if (const_cast<Tile*>(tile)->Decompress(tileGrid)) {
+                        tileGrid->MoveToRenderedQueue(TileIndex{tile->GetY(), tile->GetX()});
                         tileGrid->EvictTiles(false);
+                    }
 
                     BRect tileRect(tile->GetX() * tileSize, tile->GetY() * tileSize,
                                    (tile->GetX() + 1) * tileSize - 1, (tile->GetY() + 1) * tileSize - 1);

@@ -487,6 +487,14 @@ void BWebPage::Pulse()
     fRenderBudget = 4;
 }
 
+void BWebPage::WarmUpCache()
+{
+    BRect viewport = viewBounds();
+    BRect warmUpRect = viewport;
+    warmUpRect.InsetBy(-viewport.Width(), -viewport.Height());
+    paint(warmUpRect, false);
+}
+
 void BWebPage::RequestDownload(const BString& url)
 {
 	ResourceRequest request(String::fromUTF8(url.String()));
@@ -837,11 +845,10 @@ void BWebPage::paint(BRect rect, bool immediate)
                 tile->SetState(RENDERING);
 
                 fThreadPool->Enqueue([this, tile, view, c, r, tileSize]() {
-                    std::unique_ptr<BBitmap> bitmap = BitmapPool::GetInstance().Acquire(tileSize, tileSize);
-                    if (bitmap) {
-                        fTileGrid->AddMemoryUsage(bitmap->Size());
-                        BView offscreenView(bitmap->Bounds(), "temp", 0, 0);
-                        bitmap->AddChild(&offscreenView);
+                    std::unique_ptr<BBitmap> backBitmap = BitmapPool::GetInstance().Acquire(tileSize, tileSize);
+                    if (backBitmap) {
+                        BView offscreenView(backBitmap->Bounds(), "temp", 0, 0);
+                        backBitmap->AddChild(&offscreenView);
                         if (offscreenView.LockLooper()) {
                             WebCore::GraphicsContextHaiku context(&offscreenView);
                             context.translate(-c * tileSize, -r * tileSize);
@@ -854,11 +861,13 @@ void BWebPage::paint(BRect rect, bool immediate)
                             offscreenView.Sync();
                             offscreenView.UnlockLooper();
                         }
-                        bitmap->RemoveChild(&offscreenView);
+                        backBitmap->RemoveChild(&offscreenView);
 
                         BAutolock tileLocker(tile->Locker());
-                        tile->SetBitmap(std::move(bitmap));
+                        tile->fBackBitmap = std::move(backBitmap);
+                        std::swap(tile->fBitmap, tile->fBackBitmap);
                         tile->SetState(RENDERED);
+                        fTileGrid->AddMemoryUsage(tile->fBitmap->Size());
 
                         BRect tileRect(c * tileSize, r * tileSize, (c + 1) * tileSize - 1, (r + 1) * tileSize - 1);
 
@@ -881,7 +890,8 @@ void BWebPage::paint(BRect rect, bool immediate)
                                 BAutolock locker(tile->Locker());
                                 if (tile->GetState() == RENDERED) {
                                     tile->SetState(COMPRESSING);
-                                    tile->Compress(fTileGrid);
+                                    if (tile->Compress(fTileGrid))
+                                        fTileGrid->MoveToCompressedQueue(TileIndex{tile->GetY(), tile->GetX()});
                                 }
                             });
                         }
