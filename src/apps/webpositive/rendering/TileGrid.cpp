@@ -119,7 +119,7 @@ TileGrid::EvictTiles(bool aggressive)
             auto it = fGrid.find(toEvict);
             if (it != fGrid.end()) {
                 Tile* tile = it->second.get();
-                if (tile->IsPinned()) {
+                if (tile->IsPinned() || (system_time() - tile->LastEvictionTime() < 1000000)) {
                     fRenderedLruQueue.push_front(toEvict);
                     fRenderedLruMap[toEvict] = fRenderedLruQueue.begin();
                     continue;
@@ -128,6 +128,7 @@ TileGrid::EvictTiles(bool aggressive)
                     fCurrentMemoryUsage -= tile->GetBitmap()->Size();
                     BitmapPool::GetInstance().Release(tile->TakeBitmap());
                     tile->SetState(NEEDS_RENDER);
+                    tile->SetLastEvictionTime(system_time());
                 }
             }
         }

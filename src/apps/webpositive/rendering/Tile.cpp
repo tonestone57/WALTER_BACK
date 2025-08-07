@@ -20,6 +20,7 @@ Tile::Tile(int32 x, int32 y)
     fPinned(false),
     fAccessCount(0),
     fLastAccessTime(system_time()),
+    fLastEvictionTime(0),
     fBitmap(nullptr),
     fBackBitmap(nullptr)
 {

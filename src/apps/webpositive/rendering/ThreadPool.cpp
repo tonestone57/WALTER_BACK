@@ -4,6 +4,7 @@
  */
 
 #include "rendering/ThreadPool.h"
+#include <pthread.h>
 
 ThreadPool::ThreadPool(size_t threads)
     :
@@ -11,8 +12,13 @@ ThreadPool::ThreadPool(size_t threads)
 {
     for(size_t i = 0; i < threads; ++i)
         fWorkers.emplace_back(
-            [this]
+            [this, i]
             {
+                cpu_set_t cpuset;
+                CPU_ZERO(&cpuset);
+                CPU_SET(i % std::thread::hardware_concurrency(), &cpuset);
+                pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+
                 for(;;)
                 {
                     std::function<void()> task;

@@ -39,6 +39,7 @@
 
 class BMessageRunner;
 class BNetworkCookieJar;
+class MemoryPressureListener;
 class BRegion;
 class BView;
 class BWebDownload;
@@ -135,6 +136,7 @@ public:
 			void				SendPageSource();
 			void				Pulse();
 			void				WarmUpCache();
+			void				HandleMemoryPressure(int32 level);
 
             void				RequestDownload(const BString& url);
 
@@ -258,6 +260,7 @@ private:
 			BString							fStatusMessage;
 			BString							fDisplayedStatusMessage;
 			BMessageRunner*					fDecayTimer;
+			MemoryPressureListener*			fMemoryPressureListener;
 
 		    bool							fPageVisible;
 		    bool							fPageDirty;

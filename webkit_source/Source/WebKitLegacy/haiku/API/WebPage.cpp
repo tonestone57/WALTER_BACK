@@ -112,6 +112,7 @@
 #include "WebSettings.h"
 #include "WebStorageNamespaceProvider.h"
 #include "WebView.h"
+#include "rendering/MemoryPressureListener.h"
 #include "rendering/TileGrid.h"
 #include "WebViewConstants.h"
 #include "WebViewGroup.h"
@@ -130,6 +131,7 @@
 #include <PopUpMenu.h>
 #include <Region.h>
 #include <Window.h>
+#include <sys/sysinfo.h>
 
 #include <wtf/text/AtomString.h>
 #include <wtf/Assertions.h>
@@ -183,6 +185,7 @@ class EmptyPluginInfoProvider final : public PluginInfoProvider {
 };
 
 BMessenger BWebPage::sDownloadListener;
+static bool gIsLowMemorySystem = false;
 void WebKitInitializeLogChannelsIfNecessary();
 
 /*static*/ void BWebPage::InitializeOnce()
@@ -209,6 +212,12 @@ void WebKitInitializeLogChannelsIfNecessary();
     PAL::UTF8Encoding();
 
     WebVisitedLinkStore::setShouldTrackVisitedLinks(true);
+
+    system_info sysInfo;
+    if (get_system_info(&sysInfo) == B_OK) {
+        if (sysInfo.max_pages * B_PAGE_SIZE < 2 * 1024 * 1024 * 1024)
+            gIsLowMemorySystem = true;
+    }
 
     RunLoop::run(); // This attaches it to the existing be_app looper
 }
@@ -268,9 +277,12 @@ BWebPage::BWebPage(BWebView* webView, BPrivate::Network::BUrlContext* context)
     , fToolbarsVisible(true)
     , fStatusbarVisible(true)
     , fMenubarVisible(true)
-    , fTileGrid(new TileGrid(64 * 1024 * 1024, 128 * 1024 * 1024))
+    , fTileGrid(gIsLowMemorySystem
+        ? new TileGrid(16 * 1024 * 1024, 32 * 1024 * 1024)
+        : new TileGrid(64 * 1024 * 1024, 128 * 1024 * 1024))
     , fDecayTimer(nullptr)
-    , fRenderBudget(4)
+    , fMemoryPressureListener(new MemoryPressureListener(this))
+    , fRenderBudget(gIsLowMemorySystem ? 2 : 4)
 {
     // FIXME we should get this from the page settings, but they are created
     // after the page, and we need this before the page is created.
@@ -374,6 +386,7 @@ BWebPage::~BWebPage()
     delete fSettings;
     delete fTileGrid;
     delete fDecayTimer;
+    delete fMemoryPressureListener;
 }
 
 // #pragma mark - public
@@ -493,6 +506,22 @@ void BWebPage::WarmUpCache()
     BRect warmUpRect = viewport;
     warmUpRect.InsetBy(-viewport.Width(), -viewport.Height());
     paint(warmUpRect, false);
+}
+
+void BWebPage::HandleMemoryPressure(int32 level)
+{
+    switch (level) {
+    case B_MEM_PRESSURE_NORMAL:
+        fTileGrid->SetMemoryLimits(64 * 1024 * 1024, 128 * 1024 * 1024);
+        break;
+    case B_MEM_PRESSURE_LOW:
+        fTileGrid->SetMemoryLimits(32 * 1024 * 1024, 64 * 1024 * 1024);
+        break;
+    case B_MEM_PRESSURE_CRITICAL:
+        fTileGrid->SetMemoryLimits(16 * 1024 * 1024, 32 * 1024 * 1024);
+        fTileGrid->EvictTiles(true);
+        break;
+    }
 }
 
 void BWebPage::RequestDownload(const BString& url)
@@ -885,7 +914,7 @@ void BWebPage::paint(BRect rect, bool immediate)
                             fWebView->UnlockLooper();
                         }
 
-                        if (!visibleRect.Intersects(tileRect)) {
+                        if (!gIsLowMemorySystem && !visibleRect.Intersects(tileRect)) {
                             fThreadPool->Enqueue([this, tile]() {
                                 BAutolock locker(tile->Locker());
                                 if (tile->GetState() == RENDERED) {

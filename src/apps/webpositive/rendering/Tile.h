@@ -72,6 +72,9 @@ public:
     bigtime_t LastAccessTime() const { return fLastAccessTime; }
     void SetLastAccessTime(bigtime_t time) { fLastAccessTime = time; }
 
+    bigtime_t LastEvictionTime() const { return fLastEvictionTime; }
+    void SetLastEvictionTime(bigtime_t time) { fLastEvictionTime = time; }
+
 private:
     BLocker fLock;
     TileState fState;
@@ -80,6 +83,7 @@ private:
     bool fPinned;
     uint32_t fAccessCount;
     bigtime_t fLastAccessTime;
+    bigtime_t fLastEvictionTime;
 
     std::unique_ptr<BBitmap> fBitmap;
     std::unique_ptr<BBitmap> fBackBitmap;
