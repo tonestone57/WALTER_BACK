@@ -8,9 +8,18 @@ local sourceDirs =
 	autocompletion
 	support
 	tabview
+	rendering
 ;
 
 local sources =
+	# rendering
+	rendering/BitmapPool.cpp
+	rendering/MemoryPressureListener.cpp
+	rendering/Tile.cpp
+	rendering/TileGrid.cpp
+	rendering/TilePool.cpp
+	rendering/ThreadPool.cpp
+
 	# autocompletion
 	AutoCompleter.cpp
 	AutoCompleterDefaultImpl.cpp
@@ -67,7 +76,10 @@ for architectureObject in [ MultiArchSubDirSetup ] {
 		}
 
 		Includes [ FGristFiles $(sources) ]
-			: [ BuildFeatureAttribute webkit : headers ] ;
+			:
+			[ BuildFeatureAttribute webkit : headers ]
+			[ BuildFeatureAttribute zstd : headers ]
+			;
 			# Dependency needed to trigger downloading/unzipping the package
 			# before compiling the files.
 
@@ -81,8 +93,9 @@ for architectureObject in [ MultiArchSubDirSetup ] {
 			:
 			bnetapi [ MultiArchDefaultGristFiles libnetservices.a libcolumnlistview.a ]
 			[ BuildFeatureAttribute webkit : libraries ]
+			[ BuildFeatureAttribute zstd : library ]
 			[ TargetLibstdc++ ] localestub shared
-			be network tracker translation zstd_devel
+			be network tracker translation
 			:
 			WebPositive.rdef
 			;
