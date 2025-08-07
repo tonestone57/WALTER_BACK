@@ -1026,6 +1026,9 @@ void BWebPage::scroll(int xOffset, int yOffset, const BRect& rectToScroll,
         fWebView->UnlockLooper();
     }
 
+    // Predictively decompress tiles in the direction of the scroll.
+    fTileGrid->PredictivelyDecompress(viewBounds(), BPoint(xOffset, yOffset));
+    // Also prefetch new tiles that need rendering.
     fTileGrid->PrefetchTiles(viewBounds(), BPoint(xOffset, yOffset));
 }
 

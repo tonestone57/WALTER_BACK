@@ -193,6 +193,43 @@ TileGrid::EvictTiles(bool aggressive)
 }
 
 void
+TileGrid::PredictivelyDecompress(const BRect& viewport, const BPoint& scrollVelocity)
+{
+    const float kPrefetchFactor = 2.0;
+    BRect prefetchRect = viewport;
+    prefetchRect.OffsetBy(scrollVelocity.x * kPrefetchFactor, scrollVelocity.y * kPrefetchFactor);
+
+    BAutolock locker(fGridLock);
+
+    int32 first_col = floor(prefetchRect.left / fTileSize);
+    int32 first_row = floor(prefetchRect.top / fTileSize);
+    int32 last_col = floor(prefetchRect.right / fTileSize);
+    int32 last_row = floor(prefetchRect.bottom / fTileSize);
+
+    for (int32 r = first_row; r <= last_row; r++) {
+        for (int32 c = last_col; c >= first_col; c--) {
+            TileIndex index = {r, c};
+            Tile* tile = GetTile(index);
+            if (!tile)
+                continue;
+
+            BAutolock tileLocker(tile->Locker());
+            if (tile->GetState() == COMPRESSED) {
+                tile->SetState(DECOMPRESSING);
+                fThreadPool->Enqueue([this, tile, index]() {
+                    BAutolock tileLocker(tile->Locker());
+                    if (tile->Decompress(this)) {
+                        MoveToRenderedQueue(index);
+                    } else {
+                        tile->SetState(NEEDS_RENDER);
+                    }
+                });
+            }
+        }
+    }
+}
+
+void
 TileGrid::_PromoteTile(const TileIndex& index)
 {
     auto gridIt = fGrid.find(index);

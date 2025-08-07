@@ -23,6 +23,7 @@ public:
     ~TileGrid();
 
     void PrefetchTiles(BRect viewport, BPoint scrollVelocity);
+    void PredictivelyDecompress(const BRect& viewport, const BPoint& scrollVelocity);
     void MarkTileAsDirty(const TileIndex& index);
     void ProcessDirtyTiles(int32& renderBudget);
     Tile* GetTile(const TileIndex& index);
