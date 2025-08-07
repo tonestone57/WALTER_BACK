@@ -1,6 +1,7 @@
 #include "rendering/TileGrid.h"
 #include "rendering/Tile.h"
 #include "rendering/BitmapPool.h"
+#include "rendering/TilePool.h"
 
 #include <Autolock.h>
 #include <Bitmap.h>
@@ -47,7 +48,7 @@ TileGrid::GetOrCreateTile(const TileIndex& index)
         return it->second.get();
     }
 
-    auto newTile = std::make_unique<Tile>(index.col, index.row);
+    auto newTile = TilePool::GetInstance().Acquire(index.col, index.row);
     Tile* tilePtr = newTile.get();
     fGrid[index] = std::move(newTile);
 
@@ -79,6 +80,8 @@ TileGrid::RemoveTile(const TileIndex& index)
         fCurrentMemoryUsage -= it->second->GetBitmap()->Size();
     else if (!it->second->GetCompressedData().empty())
         fCurrentMemoryUsage -= it->second->GetCompressedData().size();
+
+    TilePool::GetInstance().Release(std::move(it->second));
 
     // Remove from LRU lists and maps.
     auto renderedIt = fRenderedLruMap.find(index);
@@ -270,6 +273,8 @@ TileGrid::Scroll(int xOffset, int yOffset, const BRect& rectToScroll)
             newGrid[newIndex] = std::move(tile);
         } else {
             invalidRect = invalidRect | tileRect;
+            // This tile is scrolled out of view. Release it to the pool.
+            TilePool::GetInstance().Release(std::move(tile));
         }
     }
 

@@ -45,6 +45,8 @@ public:
     Tile(int32 x, int32 y);
     ~Tile();
 
+    void Reset(int32 x, int32 y);
+
     bool Lock() { return fLock.Lock(); }
     void Unlock() { fLock.Unlock(); }
 

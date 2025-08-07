@@ -35,6 +35,29 @@ Tile::~Tile()
 }
 
 void
+Tile::Reset(int32 x, int32 y)
+{
+    // Reset all members to their initial state, similar to the constructor.
+    fState = NEEDS_RENDER;
+    fCompressionLevel = UNCOMPRESSED;
+    fX = x;
+    fY = y;
+    fPinned = false;
+    fAccessCount = 0;
+    fRenderComplexity = 1.0f;
+    fFrameImportance = 1;
+    fLastAccessTime = system_time();
+    fLastEvictionTime = 0;
+
+    // Clear any existing bitmap data
+    fBitmap.reset();
+    fBackBitmap.reset();
+    fCompressedData.clear();
+    fCompressedData.shrink_to_fit();
+    fDirtyRegion.MakeEmpty();
+}
+
+void
 Tile::SetBitmap(std::unique_ptr<BBitmap> bitmap)
 {
     fBitmap = std::move(bitmap);
