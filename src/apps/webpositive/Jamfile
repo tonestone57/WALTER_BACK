@@ -102,7 +102,7 @@ for architectureObject in [ MultiArchSubDirSetup ] {
 			bnetapi [ MultiArchDefaultGristFiles libnetservices.a libcolumnlistview.a ]
 			[ BuildFeatureAttribute webkit : libraries ]
 			[ TargetLibstdc++ ] localestub shared
-			be network tracker translation
+			be network tracker translation zstd_devel
 			:
 			WebPositive.rdef
 			;
