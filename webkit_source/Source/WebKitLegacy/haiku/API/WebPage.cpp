@@ -507,6 +507,7 @@ void BWebPage::SendPageSource()
 void BWebPage::Pulse()
 {
     fRenderBudget = 4;
+    fTileGrid->ProcessDirtyTiles();
 }
 
 void BWebPage::WarmUpCache()
@@ -875,70 +876,7 @@ void BWebPage::paint(BRect rect, bool immediate)
             TileIndex index = {r, c};
             Tile* tile = fTileGrid->GetOrCreateTile(index);
 
-            BAutolock locker(tile->Locker());
-            if (tile->GetState() == NEEDS_RENDER) {
-                if (fRenderBudget-- <= 0)
-                    return;
-
-                tile->SetState(RENDERING);
-
-                fThreadPool->Enqueue([this, tile, view, c, r, tileSize]() {
-                    std::unique_ptr<BBitmap> backBitmap = BitmapPool::GetInstance().Acquire(tileSize, tileSize);
-                    if (backBitmap) {
-                        BView offscreenView(backBitmap->Bounds(), "temp", 0, 0);
-                        backBitmap->AddChild(&offscreenView);
-                        if (offscreenView.LockLooper()) {
-                            WebCore::GraphicsContextHaiku context(&offscreenView);
-                            context.translate(-c * tileSize, -r * tileSize);
-                            BRegion dirty = tile->DirtyRegion();
-                            tile->ClearDirtyRegion();
-                            for (int i = 0; i < dirty.CountRects(); i++) {
-                                BRect rect = dirty.RectAt(i);
-                                view->paint(context, IntRect(rect));
-                            }
-                            offscreenView.Sync();
-                            offscreenView.UnlockLooper();
-                        }
-                        backBitmap->RemoveChild(&offscreenView);
-
-                        BAutolock tileLocker(tile->Locker());
-                        tile->fBackBitmap = std::move(backBitmap);
-                        std::swap(tile->fBitmap, tile->fBackBitmap);
-                        tile->SetState(RENDERED);
-                        fTileGrid->AddMemoryUsage(tile->fBitmap->Size());
-
-                        BRect tileRect(c * tileSize, r * tileSize, (c + 1) * tileSize - 1, (r + 1) * tileSize - 1);
-
-                        if (fWebView->LockLooper()) {
-                            fWebView->Invalidate(tileRect);
-                            fWebView->UnlockLooper();
-                        }
-
-                        fTileGrid->EvictTiles(false);
-
-                        // Compress off-screen tiles
-                        BRect visibleRect;
-                        if (fWebView->LockLooper()) {
-                            visibleRect = fWebView->Bounds();
-                            fWebView->UnlockLooper();
-                        }
-
-                        if (!gIsLowMemorySystem && !visibleRect.Intersects(tileRect)) {
-                            fThreadPool->Enqueue([this, tile]() {
-                                BAutolock locker(tile->Locker());
-                                if (tile->GetState() == RENDERED) {
-                                    tile->SetState(COMPRESSING);
-                                    if (tile->Compress(fTileGrid))
-                                        fTileGrid->MoveToCompressedQueue(TileIndex{tile->GetY(), tile->GetX()});
-                                }
-                            });
-                        }
-                    } else {
-                        BAutolock tileLocker(tile->Locker());
-                        tile->SetState(NEEDS_RENDER);
-                    }
-                });
-            }
+            fTileGrid->MarkTileAsDirty(index);
         }
     }
 

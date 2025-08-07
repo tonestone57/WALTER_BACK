@@ -12,6 +12,7 @@
 TileGrid::TileGrid(BWebPage* webPage, ThreadPool* threadPool, size_t softLimit, size_t hardLimit)
     :
     fGridLock("TileGridLock"),
+    fDirtyTilesLock("TileGridDirtyTilesLock"),
     fCurrentMemoryUsage(0),
     fSoftMemoryLimit(softLimit),
     fHardMemoryLimit(hardLimit),
@@ -193,6 +194,46 @@ TileGrid::_PromoteTile(const TileIndex& index)
     }
 }
 
+void
+TileGrid::MarkTileAsDirty(const TileIndex& index)
+{
+    BAutolock locker(fDirtyTilesLock);
+    fDirtyTiles.insert(index);
+}
+
+void
+TileGrid::ProcessDirtyTiles()
+{
+    BAutolock locker(fDirtyTilesLock);
+    if (fDirtyTiles.empty())
+        return;
+
+    std::unordered_set<TileIndex> dirtyTiles = std::move(fDirtyTiles);
+    locker.Unlock();
+
+    for (const auto& index : dirtyTiles) {
+        Tile* tile = GetTile(index);
+        if (!tile)
+            continue;
+
+        BAutolock tileLocker(tile->Locker());
+        if (tile->GetState() == COMPRESSED) {
+            tile->SetState(DECOMPRESSING);
+            fThreadPool->Enqueue([this, tile, index]() {
+                BAutolock tileLocker(tile->Locker());
+                if (tile->Decompress(this)) {
+                    MoveToRenderedQueue(index);
+                } else {
+                    tile->SetState(NEEDS_RENDER);
+                    MarkTileAsDirty(index);
+                }
+            });
+        } else if (tile->GetState() == NEEDS_RENDER) {
+            fWebPage->paint(BRect(index.col * kTileSize, index.row * kTileSize, (index.col + 1) * kTileSize - 1, (index.row + 1) * kTileSize - 1), false);
+        }
+    }
+}
+
 
 void
 TileGrid::PrefetchTiles(BRect viewport, BPoint scrollVelocity)
@@ -215,20 +256,7 @@ TileGrid::PrefetchTiles(BRect viewport, BPoint scrollVelocity)
             if (!tile)
                 continue;
 
-            BAutolock tileLocker(tile->Locker());
-            if (tile->GetState() == COMPRESSED) {
-                tile->SetState(DECOMPRESSING);
-                fThreadPool->Enqueue([this, tile]() {
-                    BAutolock tileLocker(tile->Locker());
-                    if (tile->Decompress(this)) {
-                        MoveToRenderedQueue(TileIndex{tile->GetY(), tile->GetX()});
-                    } else {
-                        tile->SetState(NEEDS_RENDER);
-                    }
-                });
-            } else if (tile->GetState() == NEEDS_RENDER) {
-                fWebPage->paint(BRect(c * kTileSize, r * kTileSize, (c + 1) * kTileSize -1, (r + 1) * kTileSize -1), false);
-            }
+            MarkTileAsDirty(index);
         }
     }
 }

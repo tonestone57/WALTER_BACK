@@ -23,6 +23,8 @@ public:
     ~TileGrid();
 
     void PrefetchTiles(BRect viewport, BPoint scrollVelocity);
+    void MarkTileAsDirty(const TileIndex& index);
+    void ProcessDirtyTiles();
     Tile* GetTile(const TileIndex& index);
     Tile* GetOrCreateTile(const TileIndex& index);
     void RemoveTile(const TileIndex& index);
@@ -57,6 +59,9 @@ private:
 
     BWebPage* fWebPage;
     ThreadPool* fThreadPool;
+
+    BLocker fDirtyTilesLock;
+    std::unordered_set<TileIndex> fDirtyTiles;
 };
 
 #endif // TILE_GRID_H
