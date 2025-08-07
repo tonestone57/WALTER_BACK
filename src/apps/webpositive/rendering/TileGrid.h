@@ -14,11 +14,15 @@
 #include <list>
 #include <memory>
 
+class BWebPage;
+class ThreadPool;
+
 class TileGrid {
 public:
-    TileGrid(size_t softLimit, size_t hardLimit);
+    TileGrid(BWebPage* webPage, ThreadPool* threadPool, size_t softLimit, size_t hardLimit);
     ~TileGrid();
 
+    void PrefetchTiles(BRect viewport, BPoint scrollVelocity);
     Tile* GetTile(const TileIndex& index);
     Tile* GetOrCreateTile(const TileIndex& index);
     void RemoveTile(const TileIndex& index);
@@ -50,6 +54,9 @@ private:
     size_t fCurrentMemoryUsage;
     size_t fSoftMemoryLimit;
     size_t fHardMemoryLimit;
+
+    BWebPage* fWebPage;
+    ThreadPool* fThreadPool;
 };
 
 #endif // TILE_GRID_H

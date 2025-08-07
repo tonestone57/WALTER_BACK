@@ -46,6 +46,7 @@ class BWebDownload;
 class BWebFrame;
 class BWebSettings;
 class TileGrid;
+class ThreadPool;
 class BWebView;
 
 namespace WTF {
@@ -251,6 +252,7 @@ private:
 			BWebFrame*						fMainFrame;
 			BWebSettings*					fSettings;
             BPrivate::Network::BUrlContext*	fContext;
+			ThreadPool*						fThreadPool;
 			TileGrid*						fTileGrid;
 			std::unique_ptr<WTF::Ref<WebCore::Page, WTF::RawPtrTraits<WebCore::Page>, WTF::DefaultRefDerefTraits<WebCore::Page>>>	fPage;
             WebCore::DumpRenderTreeClient*	fDumpRenderTree;

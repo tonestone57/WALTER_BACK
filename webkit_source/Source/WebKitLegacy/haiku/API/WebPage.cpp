@@ -114,6 +114,7 @@
 #include "WebView.h"
 #include "rendering/MemoryPressureListener.h"
 #include "rendering/TileGrid.h"
+#include "rendering/ThreadPool.h"
 #include "WebViewConstants.h"
 #include "WebViewGroup.h"
 #include "WebVisitedLinkStore.h"
@@ -277,13 +278,20 @@ BWebPage::BWebPage(BWebView* webView, BPrivate::Network::BUrlContext* context)
     , fToolbarsVisible(true)
     , fStatusbarVisible(true)
     , fMenubarVisible(true)
-    , fTileGrid(gIsLowMemorySystem
-        ? new TileGrid(16 * 1024 * 1024, 32 * 1024 * 1024)
-        : new TileGrid(64 * 1024 * 1024, 128 * 1024 * 1024))
+    , fThreadPool(nullptr)
+    , fTileGrid(nullptr)
     , fDecayTimer(nullptr)
     , fMemoryPressureListener(new MemoryPressureListener(this))
     , fRenderBudget(gIsLowMemorySystem ? 2 : 4)
 {
+    system_info sysInfo;
+    get_system_info(&sysInfo);
+    int32 threadCount = sysInfo.cpu_count > 1 ? sysInfo.cpu_count - 1 : 1;
+    fThreadPool = new ThreadPool(threadCount);
+
+    fTileGrid = gIsLowMemorySystem
+        ? new TileGrid(this, fThreadPool, 16 * 1024 * 1024, 32 * 1024 * 1024)
+        : new TileGrid(this, fThreadPool, 64 * 1024 * 1024, 128 * 1024 * 1024);
     // FIXME we should get this from the page settings, but they are created
     // after the page, and we need this before the page is created.
     BPath storagePath;
@@ -387,6 +395,7 @@ BWebPage::~BWebPage()
     delete fTileGrid;
     delete fDecayTimer;
     delete fMemoryPressureListener;
+    delete fThreadPool;
 }
 
 // #pragma mark - public
@@ -966,6 +975,8 @@ void BWebPage::scroll(int xOffset, int yOffset, const BRect& rectToScroll,
         fWebView->Invalidate(invalidRect);
         fWebView->UnlockLooper();
     }
+
+    fTileGrid->PrefetchTiles(viewBounds(), BPoint(xOffset, yOffset));
 }
 
 

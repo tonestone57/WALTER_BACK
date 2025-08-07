@@ -5,6 +5,7 @@
 
 #include "rendering/Tile.h"
 #include "rendering/TileGrid.h"
+#include "rendering/RenderingConstants.h"
 #include <Bitmap.h>
 #include <memory>
 #include <zstd.h>
@@ -92,7 +93,7 @@ Tile::Decompress(TileGrid* grid)
     if (decompressedSize == ZSTD_CONTENTSIZE_ERROR || decompressedSize == ZSTD_CONTENTSIZE_UNKNOWN)
         return false;
 
-    std::unique_ptr<BBitmap> bitmap = std::make_unique<BBitmap>(BRect(0, 0, 255, 255), B_RGB32, true);
+    std::unique_ptr<BBitmap> bitmap = std::make_unique<BBitmap>(kTileRect, B_RGB32, true);
     if (!bitmap || bitmap->BitsLength() != decompressedSize)
         return false;
 
