@@ -187,6 +187,7 @@ class EmptyPluginInfoProvider final : public PluginInfoProvider {
 
 BMessenger BWebPage::sDownloadListener;
 static bool gIsLowMemorySystem = false;
+static const int32 kRenderBudget = 4;
 void WebKitInitializeLogChannelsIfNecessary();
 
 /*static*/ void BWebPage::InitializeOnce()
@@ -506,8 +507,18 @@ void BWebPage::SendPageSource()
 
 void BWebPage::Pulse()
 {
-    fRenderBudget = 4;
-    fTileGrid->ProcessDirtyTiles();
+    fRenderBudget = kRenderBudget;
+    fTileGrid->ProcessDirtyTiles(fRenderBudget);
+}
+
+bool BWebPage::HasRenderBudget()
+{
+    BAutolock locker(fRenderBudgetLock);
+    if (fRenderBudget > 0) {
+        fRenderBudget--;
+        return true;
+    }
+    return false;
 }
 
 void BWebPage::WarmUpCache()
@@ -883,6 +894,69 @@ void BWebPage::paint(BRect rect, bool immediate)
     fPageDirty = false;
 }
 
+
+void BWebPage::_RenderTile(Tile* tile)
+{
+    float zoom = page()->pageZoomFactor();
+    int tileSize = 256 / zoom;
+    WebCore::LocalFrame* frame = fMainFrame->Frame();
+    WebCore::LocalFrameView* view = frame->view();
+
+    std::unique_ptr<BBitmap> backBitmap = BitmapPool::GetInstance().Acquire(tileSize, tileSize);
+    if (backBitmap) {
+        BView offscreenView(backBitmap->Bounds(), "temp", 0, 0);
+        backBitmap->AddChild(&offscreenView);
+        if (offscreenView.LockLooper()) {
+            WebCore::GraphicsContextHaiku context(&offscreenView);
+            context.translate(-tile->GetX() * tileSize, -tile->GetY() * tileSize);
+            BRegion dirty = tile->DirtyRegion();
+            tile->ClearDirtyRegion();
+            for (int i = 0; i < dirty.CountRects(); i++) {
+                BRect rect = dirty.RectAt(i);
+                view->paint(context, IntRect(rect));
+            }
+            offscreenView.Sync();
+            offscreenView.UnlockLooper();
+        }
+        backBitmap->RemoveChild(&offscreenView);
+
+        BAutolock tileLocker(tile->Locker());
+        tile->fBackBitmap = std::move(backBitmap);
+        std::swap(tile->fBitmap, tile->fBackBitmap);
+        tile->SetState(RENDERED);
+        fTileGrid->UpdateMemoryUsage(tile->GetBitmap()->Size());
+
+        BRect tileRect(tile->GetX() * tileSize, tile->GetY() * tileSize, (tile->GetX() + 1) * tileSize - 1, (tile->GetY() + 1) * tileSize - 1);
+
+        if (fWebView->LockLooper()) {
+            fWebView->Invalidate(tileRect);
+            fWebView->UnlockLooper();
+        }
+
+        fTileGrid->EvictTiles(false);
+
+        // Compress off-screen tiles
+        BRect visibleRect;
+        if (fWebView->LockLooper()) {
+            visibleRect = fWebView->Bounds();
+            fWebView->UnlockLooper();
+        }
+
+        if (!gIsLowMemorySystem && !visibleRect.Intersects(tileRect)) {
+            fThreadPool->Enqueue([this, tile]() {
+                BAutolock locker(tile->Locker());
+                if (tile->GetState() == RENDERED) {
+                    tile->SetState(COMPRESSING);
+                    if (tile->Compress(fTileGrid))
+                        fTileGrid->MoveToCompressedQueue(TileIndex{tile->GetY(), tile->GetX()});
+                }
+            });
+        }
+    } else {
+        BAutolock tileLocker(tile->Locker());
+        tile->SetState(NEEDS_RENDER);
+    }
+}
 
 void BWebPage::scroll(int xOffset, int yOffset, const BRect& rectToScroll,
        const BRect& clipRect)

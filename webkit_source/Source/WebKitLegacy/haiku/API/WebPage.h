@@ -45,6 +45,7 @@ class BView;
 class BWebDownload;
 class BWebFrame;
 class BWebSettings;
+class Tile;
 class TileGrid;
 class ThreadPool;
 class BWebView;
@@ -138,6 +139,7 @@ public:
 			void				Pulse();
 			void				WarmUpCache();
 			void				HandleMemoryPressure(int32 level);
+			bool				HasRenderBudget();
 
             void				RequestDownload(const BString& url);
 
@@ -163,6 +165,7 @@ private:
 
     void scroll(int scrollDeltaX, int scrollDeltaY, const BRect& rectToScroll,
         const BRect& clipRect);
+    void _RenderTile(Tile* tile);
 
 private:
     // The following methods are only supposed to be called by the
@@ -263,6 +266,7 @@ private:
 			BString							fDisplayedStatusMessage;
 			BMessageRunner*					fDecayTimer;
 			MemoryPressureListener*			fMemoryPressureListener;
+			BLocker							fRenderBudgetLock;
 
 		    bool							fPageVisible;
 		    bool							fPageDirty;

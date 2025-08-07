@@ -24,7 +24,7 @@ public:
 
     void PrefetchTiles(BRect viewport, BPoint scrollVelocity);
     void MarkTileAsDirty(const TileIndex& index);
-    void ProcessDirtyTiles();
+    void ProcessDirtyTiles(int32& renderBudget);
     Tile* GetTile(const TileIndex& index);
     Tile* GetOrCreateTile(const TileIndex& index);
     void RemoveTile(const TileIndex& index);

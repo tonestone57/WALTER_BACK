@@ -202,7 +202,7 @@ TileGrid::MarkTileAsDirty(const TileIndex& index)
 }
 
 void
-TileGrid::ProcessDirtyTiles()
+TileGrid::ProcessDirtyTiles(int32& renderBudget)
 {
     BAutolock locker(fDirtyTilesLock);
     if (fDirtyTiles.empty())
@@ -229,7 +229,15 @@ TileGrid::ProcessDirtyTiles()
                 }
             });
         } else if (tile->GetState() == NEEDS_RENDER) {
-            fWebPage->paint(BRect(index.col * kTileSize, index.row * kTileSize, (index.col + 1) * kTileSize - 1, (index.row + 1) * kTileSize - 1), false);
+            if (renderBudget <= 0) {
+                MarkTileAsDirty(index);
+                continue;
+            }
+            renderBudget--;
+            tile->SetState(RENDERING);
+            fThreadPool->Enqueue([this, tile]() {
+                fWebPage->_RenderTile(tile);
+            });
         }
     }
 }
