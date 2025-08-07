@@ -908,8 +908,14 @@ void BWebPage::paint(BRect rect, bool immediate)
         for (int c = first_col; c <= last_col; c++) {
             TileIndex index = {r, c};
             Tile* tile = fTileGrid->GetOrCreateTile(index);
-
-            fTileGrid->MarkTileAsDirty(index);
+            if (tile) {
+                BRect tileRect(c * tileSize, r * tileSize, (c + 1) * tileSize - 1, (r + 1) * tileSize - 1);
+                BRect intersection = rect & tileRect;
+                if (intersection.IsValid()) {
+                    tile->AddDirtyRect(intersection);
+                    fTileGrid->MarkTileAsDirty(index);
+                }
+            }
         }
     }
 
@@ -935,9 +941,16 @@ void BWebPage::_RenderTile(Tile* tile)
             tile->ClearDirtyRegion();
 
             bigtime_t startTime = system_time();
-            for (int i = 0; i < dirty.CountRects(); i++) {
-                BRect rect = dirty.RectAt(i);
-                view->paint(context, IntRect(rect));
+            if (dirty.CountRects() > 0) {
+                for (int i = 0; i < dirty.CountRects(); i++) {
+                    BRect rect = dirty.RectAt(i);
+                    view->paint(context, IntRect(rect));
+                }
+            } else {
+                // If the dirty region is empty, assume the whole tile needs painting.
+                BRect tileRect(tile->GetX() * tileSize, tile->GetY() * tileSize,
+                    (tile->GetX() + 1) * tileSize - 1, (tile->GetY() + 1) * tileSize - 1);
+                view->paint(context, IntRect(tileRect));
             }
             bigtime_t endTime = system_time();
             tile->SetRenderComplexity(endTime - startTime + 1); // Add 1 to avoid zero
