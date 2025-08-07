@@ -56,6 +56,8 @@
 #include "WebFrame.h"
 #include "WebView.h"
 #include "WebWindow.h"
+#include "rendering/TileGrid.h"
+#include "rendering/Tile.h"
 
 #include <Alert.h>
 #include <FilePanel.h>
@@ -297,6 +299,31 @@ void ChromeClientHaiku::invalidateRootView(const IntRect& rect)
 
 void ChromeClientHaiku::invalidateContentsAndRootView(const IntRect& rect)
 {
+    TileGrid* tileGrid = m_webPage->GetTileGrid();
+    if (!tileGrid) {
+        m_webPage->draw(BRect(rect));
+        return;
+    }
+
+    BAutolock locker(tileGrid->Locker());
+
+    int first_col = floor(rect.left / 256);
+    int first_row = floor(rect.top / 256);
+    int last_col = floor(rect.right / 256);
+    int last_row = floor(rect.bottom / 256);
+
+    for (int r = first_row; r <= last_row; r++) {
+        for (int c = first_col; c <= last_col; c++) {
+            TileIndex index = {r, c};
+            Tile* tile = tileGrid->GetOrCreateTile(index);
+            if (tile) {
+                BAutolock tileLocker(tile->Locker());
+                tile->AddDirtyRect(rect);
+                tile->SetState(NEEDS_RENDER);
+            }
+        }
+    }
+
     m_webPage->draw(BRect(rect));
 }
 

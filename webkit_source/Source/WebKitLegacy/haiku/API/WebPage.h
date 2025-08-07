@@ -37,6 +37,7 @@
 
 #include <memory>
 
+class BMessageRunner;
 class BNetworkCookieJar;
 class BRegion;
 class BView;
@@ -132,6 +133,7 @@ public:
 
 			void				SendEditingCapabilities();
 			void				SendPageSource();
+			void				Pulse();
 
             void				RequestDownload(const BString& url);
 
@@ -251,8 +253,10 @@ private:
             WebCore::DumpRenderTreeClient*	fDumpRenderTree;
 
 			float							fLoadingProgress;
+			int32							fRenderBudget;
 			BString							fStatusMessage;
 			BString							fDisplayedStatusMessage;
+			BMessageRunner*					fDecayTimer;
 
 		    bool							fPageVisible;
 		    bool							fPageDirty;

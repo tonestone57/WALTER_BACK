@@ -252,14 +252,17 @@ void BWebView::Draw(BRect rect)
 
     BAutolock locker(tileGrid->Locker());
 
+    float zoom = page->page()->pageZoomFactor();
+    int tileSize = 256 / zoom;
+
     // Unpin all tiles first.
     for (const auto& it : tileGrid->Map())
         it.second->Unpin();
 
     for (const auto& it : tileGrid->Map()) {
         const Tile* tile = it.second.get();
-        BRect tileRect(tile->GetX() * 256, tile->GetY() * 256,
-                       (tile->GetX() + 1) * 256 - 1, (tile->GetY() + 1) * 256 - 1);
+        BRect tileRect(tile->GetX() * tileSize, tile->GetY() * tileSize,
+                       (tile->GetX() + 1) * tileSize - 1, (tile->GetY() + 1) * tileSize - 1);
 
         if (tileRect.Intersects(rect)) {
             const_cast<Tile*>(tile)->Pin();
@@ -267,12 +270,12 @@ void BWebView::Draw(BRect rect)
             BAutolock locker(const_cast<Tile*>(tile)->Locker());
             if (tile->GetState() == COMPRESSED) {
                 const_cast<Tile*>(tile)->SetState(DECOMPRESSING);
-                page->fThreadPool->Enqueue([page, tile, tileGrid]() {
+                page->fThreadPool->Enqueue([page, tile, tileGrid, tileSize]() {
                     if (const_cast<Tile*>(tile)->Decompress(tileGrid))
                         tileGrid->EvictTiles(false);
 
-                    BRect tileRect(tile->GetX() * 256, tile->GetY() * 256,
-                                   (tile->GetX() + 1) * 256 - 1, (tile->GetY() + 1) * 256 - 1);
+                    BRect tileRect(tile->GetX() * tileSize, tile->GetY() * tileSize,
+                                   (tile->GetX() + 1) * tileSize - 1, (tile->GetY() + 1) * tileSize - 1);
 
                     if (page->WebView()->LockLooper()) {
                         page->WebView()->Invalidate(tileRect);
@@ -414,6 +417,8 @@ void BWebView::KeyUp(const char*, int32)
 
 void BWebView::Pulse()
 {
+    fWebPage->Pulse();
+
 	if (!fAutoHidePointer || !IsFocus() || !Window()->IsActive())
 		return;
 

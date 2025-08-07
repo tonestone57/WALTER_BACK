@@ -124,6 +124,7 @@
 #include <Font.h>
 #include <MenuItem.h>
 #include <Message.h>
+#include <MessageRunner.h>
 #include <app/MessageQueue.h>
 #include <Messenger.h>
 #include <PopUpMenu.h>
@@ -148,6 +149,7 @@
  */
 
 enum {
+    HANDLE_DECAY_ACCESS_COUNT = 'dkay',
     HANDLE_SHUTDOWN = 'sdwn',
 
     HANDLE_LOAD_URL = 'lurl',
@@ -267,6 +269,8 @@ BWebPage::BWebPage(BWebView* webView, BPrivate::Network::BUrlContext* context)
     , fStatusbarVisible(true)
     , fMenubarVisible(true)
     , fTileGrid(new TileGrid(64 * 1024 * 1024, 128 * 1024 * 1024))
+    , fDecayTimer(nullptr)
+    , fRenderBudget(4)
 {
     // FIXME we should get this from the page settings, but they are created
     // after the page, and we need this before the page is created.
@@ -369,6 +373,7 @@ BWebPage::~BWebPage()
     // main frame, the same mechanism is used.
     delete fSettings;
     delete fTileGrid;
+    delete fDecayTimer;
 }
 
 // #pragma mark - public
@@ -377,6 +382,8 @@ void BWebPage::Init()
 {
 	WebFramePrivate* data = new WebFramePrivate(fPage->ptr());
 	fMainFrame = new BWebFrame(this, 0, data);
+    fDecayTimer = new BMessageRunner(BMessenger(this),
+        new BMessage(HANDLE_DECAY_ACCESS_COUNT), 10 * 1000 * 1000, -1);
 }
 
 void BWebPage::Shutdown()
@@ -473,6 +480,11 @@ void BWebPage::SendEditingCapabilities()
 void BWebPage::SendPageSource()
 {
 	Looper()->PostMessage(HANDLE_SEND_PAGE_SOURCE, this);
+}
+
+void BWebPage::Pulse()
+{
+    fRenderBudget = 4;
 }
 
 void BWebPage::RequestDownload(const BString& url)
@@ -803,11 +815,14 @@ void BWebPage::paint(BRect rect, bool immediate)
     view->updateLayoutAndStyleIfNeededRecursive();
     MainFrame()->Frame()->view()->flushCompositingStateIncludingSubframes();
 
+    float zoom = page()->pageZoomFactor();
+    int tileSize = 256 / zoom;
+
     // Calculate tile range
-    int first_col = floor(rect.left / 256);
-    int first_row = floor(rect.top / 256);
-    int last_col = floor(rect.right / 256);
-    int last_row = floor(rect.bottom / 256);
+    int first_col = floor(rect.left / tileSize);
+    int first_row = floor(rect.top / tileSize);
+    int last_col = floor(rect.right / tileSize);
+    int last_row = floor(rect.bottom / tileSize);
 
     for (int r = first_row; r <= last_row; r++) {
         for (int c = first_col; c <= last_col; c++) {
@@ -816,19 +831,26 @@ void BWebPage::paint(BRect rect, bool immediate)
 
             BAutolock locker(tile->Locker());
             if (tile->GetState() == NEEDS_RENDER) {
+                if (fRenderBudget-- <= 0)
+                    return;
+
                 tile->SetState(RENDERING);
 
-                fThreadPool->Enqueue([this, tile, view, c, r]() {
-                    std::unique_ptr<BBitmap> bitmap = BitmapPool::GetInstance().Acquire(256, 256);
+                fThreadPool->Enqueue([this, tile, view, c, r, tileSize]() {
+                    std::unique_ptr<BBitmap> bitmap = BitmapPool::GetInstance().Acquire(tileSize, tileSize);
                     if (bitmap) {
                         fTileGrid->AddMemoryUsage(bitmap->Size());
                         BView offscreenView(bitmap->Bounds(), "temp", 0, 0);
                         bitmap->AddChild(&offscreenView);
                         if (offscreenView.LockLooper()) {
                             WebCore::GraphicsContextHaiku context(&offscreenView);
-                            context.translate(-c * 256, -r * 256);
-                            BRect tileRect(c * 256, r * 256, (c + 1) * 256 - 1, (r + 1) * 256 - 1);
-                            view->paint(context, IntRect(tileRect));
+                            context.translate(-c * tileSize, -r * tileSize);
+                            BRegion dirty = tile->DirtyRegion();
+                            tile->ClearDirtyRegion();
+                            for (int i = 0; i < dirty.CountRects(); i++) {
+                                BRect rect = dirty.RectAt(i);
+                                view->paint(context, IntRect(rect));
+                            }
                             offscreenView.Sync();
                             offscreenView.UnlockLooper();
                         }
@@ -838,7 +860,7 @@ void BWebPage::paint(BRect rect, bool immediate)
                         tile->SetBitmap(std::move(bitmap));
                         tile->SetState(RENDERED);
 
-                        BRect tileRect(c * 256, r * 256, (c + 1) * 256 - 1, (r + 1) * 256 - 1);
+                        BRect tileRect(c * tileSize, r * tileSize, (c + 1) * tileSize - 1, (r + 1) * tileSize - 1);
 
                         if (fWebView->LockLooper()) {
                             fWebView->Invalidate(tileRect);
@@ -1086,6 +1108,12 @@ void BWebPage::MessageReceived(BMessage* message)
         break;
     case HANDLE_SEND_PAGE_SOURCE:
         handleSendPageSource(message);
+        break;
+
+    case HANDLE_DECAY_ACCESS_COUNT:
+        for (auto const& [index, tile] : fTileGrid->Map()) {
+            tile->DecayAccessCount();
+        }
         break;
 
     case B_REFS_RECEIVED: {

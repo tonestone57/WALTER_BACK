@@ -9,6 +9,7 @@
 #include <memory>
 #include <vector>
 #include <cstdint>
+#include <Region.h>
 
 // Forward declaration to avoid including the full BBitmap header here.
 class BBitmap;
@@ -59,15 +60,25 @@ public:
     void Unpin() { fPinned = false; }
     bool IsPinned() const { return fPinned; }
 
+    uint32 AccessCount() const { return fAccessCount; }
+    void IncrementAccessCount() { fAccessCount++; }
+    void DecayAccessCount() { fAccessCount /= 2; }
+
+    void AddDirtyRect(const BRect& rect) { fDirtyRegion.Include(rect); }
+    void ClearDirtyRegion() { fDirtyRegion.MakeEmpty(); }
+    const BRegion& DirtyRegion() const { return fDirtyRegion; }
+
 private:
     BLocker fLock;
     TileState fState;
     int32 fX;
     int32 fY;
     bool fPinned;
+    uint32_t fAccessCount;
 
     std::unique_ptr<BBitmap> fBitmap;
     std::vector<uint8_t> fCompressedData;
+    BRegion fDirtyRegion;
 };
 
 #endif // TILE_H

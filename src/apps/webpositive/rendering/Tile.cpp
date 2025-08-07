@@ -17,6 +17,7 @@ Tile::Tile(int32 x, int32 y)
     fX(x),
     fY(y),
     fPinned(false),
+    fAccessCount(0),
     fBitmap(nullptr)
 {
 }

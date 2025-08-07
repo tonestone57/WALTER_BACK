@@ -125,6 +125,13 @@ TileGrid::EvictTiles(bool aggressive)
 void
 TileGrid::_PromoteTile(const TileIndex& index)
 {
+    auto gridIt = fGrid.find(index);
+    if (gridIt == fGrid.end())
+        return;
+
+    Tile* tile = gridIt->second.get();
+    tile->IncrementAccessCount();
+
     // If the tile is in the LRU queue, move it to the front.
     auto it = fLruMap.find(index);
     if (it != fLruMap.end()) {
