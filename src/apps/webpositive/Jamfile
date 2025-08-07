@@ -78,7 +78,10 @@ for architectureObject in [ MultiArchSubDirSetup ] {
 
 		local renderingObjects = [ FGristFiles $(renderingSources) ] ;
 		MergeObject rendering.o : $(renderingObjects) ;
-		Includes $(renderingObjects) : [ BuildFeatureAttribute zstd : headers ] ;
+		Includes $(renderingObjects) :
+			[ BuildFeatureAttribute zstd : headers ]
+			[ BuildFeatureAttribute webkit : headers ]
+			;
 
 		Includes [ FGristFiles $(sources) ]
 			:
