@@ -1,7 +1,6 @@
 #include "rendering/TileGrid.h"
 #include "rendering/Tile.h"
 #include "rendering/BitmapPool.h"
-#include "rendering/RenderingConstants.h"
 
 #include <Autolock.h>
 #include <Bitmap.h>
@@ -9,7 +8,7 @@
 #include "WebView.h"
 #include "WebPage.h"
 
-TileGrid::TileGrid(BWebPage* webPage, ThreadPool* threadPool, size_t softLimit, size_t hardLimit)
+TileGrid::TileGrid(BWebPage* webPage, ThreadPool* threadPool, int32 tileSize, size_t softLimit, size_t hardLimit)
     :
     fGridLock("TileGridLock"),
     fDirtyTilesLock("TileGridDirtyTilesLock"),
@@ -17,7 +16,8 @@ TileGrid::TileGrid(BWebPage* webPage, ThreadPool* threadPool, size_t softLimit, 
     fSoftMemoryLimit(softLimit),
     fHardMemoryLimit(hardLimit),
     fWebPage(webPage),
-    fThreadPool(threadPool)
+    fThreadPool(threadPool),
+    fTileSize(tileSize)
 {
 }
 
@@ -151,10 +151,11 @@ TileGrid::EvictTiles(bool aggressive)
 
                 double age = (double)(system_time() - tile->LastAccessTime());
                 double complexity = (double)tile->GetRenderComplexity();
+                double importance = (double)tile->GetFrameImportance();
                 double memUsage = (double)(tile->GetBitmap() ? tile->GetBitmap()->Size() : 1);
 
                 // Higher score is worse (more likely to be evicted).
-                double score = (age * memUsage) / complexity;
+                double score = (age * memUsage) / (complexity * importance);
 
                 if (score > maxScore) {
                     maxScore = score;
@@ -245,13 +246,13 @@ TileGrid::Scroll(int xOffset, int yOffset, const BRect& rectToScroll)
         const TileIndex& oldIndex = pair.first;
         std::unique_ptr<Tile>& tile = pair.second;
 
-        BRect tileRect(tile->fX * kTileSize, tile->fY * kTileSize,
-            (tile->fX + 1) * kTileSize - 1, (tile->fY + 1) * kTileSize - 1);
+        BRect tileRect(tile->fX * fTileSize, tile->fY * fTileSize,
+            (tile->fX + 1) * fTileSize - 1, (tile->fY + 1) * fTileSize - 1);
         BRect scrolledRect = tileRect.OffsetByCopy(xOffset, yOffset);
 
         if (rectToScroll.Intersects(scrolledRect)) {
-            TileIndex newIndex = { (int)floor(scrolledRect.top / kTileSize),
-                (int)floor(scrolledRect.left / kTileSize) };
+            TileIndex newIndex = { (int)floor(scrolledRect.top / fTileSize),
+                (int)floor(scrolledRect.left / fTileSize) };
             tile->fX = newIndex.col;
             tile->fY = newIndex.row;
 
@@ -376,10 +377,10 @@ TileGrid::PrefetchTiles(BRect viewport, BPoint scrollVelocity)
 
     BAutolock locker(fGridLock);
 
-    int32 first_col = floor(prefetchRect.left / kTileSize);
-    int32 first_row = floor(prefetchRect.top / kTileSize);
-    int32 last_col = floor(prefetchRect.right / kTileSize);
-    int32 last_row = floor(prefetchRect.bottom / kTileSize);
+    int32 first_col = floor(prefetchRect.left / fTileSize);
+    int32 first_row = floor(prefetchRect.top / fTileSize);
+    int32 last_col = floor(prefetchRect.right / fTileSize);
+    int32 last_row = floor(prefetchRect.bottom / fTileSize);
 
     for (int32 r = first_row; r <= last_row; r++) {
         for (int32 c = last_col; c >= first_col; c--) {

@@ -88,6 +88,9 @@ public:
     float GetRenderComplexity() const { return fRenderComplexity; }
     void SetRenderComplexity(float complexity) { fRenderComplexity = complexity; }
 
+    int GetFrameImportance() const { return fFrameImportance; }
+    void SetFrameImportance(int importance) { fFrameImportance = importance; }
+
 private:
     BLocker fLock;
     TileState fState;
@@ -97,6 +100,7 @@ private:
     bool fPinned;
     uint32_t fAccessCount;
     float fRenderComplexity;
+    int fFrameImportance;
     bigtime_t fLastAccessTime;
     bigtime_t fLastEvictionTime;
 

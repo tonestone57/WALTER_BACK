@@ -127,6 +127,7 @@
 #include <MenuItem.h>
 #include <Message.h>
 #include <MessageRunner.h>
+#include <Screen.h>
 #include <app/MessageQueue.h>
 #include <Messenger.h>
 #include <PopUpMenu.h>
@@ -283,6 +284,7 @@ BWebPage::BWebPage(BWebView* webView, BPrivate::Network::BUrlContext* context)
     , fMenubarVisible(true)
     , fThreadPool(nullptr)
     , fTileGrid(nullptr)
+    , fTileSize(256)
     , fDecayTimer(nullptr)
     , fCompressionTierTimer(nullptr)
     , fMemoryPressureListener(new MemoryPressureListener(this))
@@ -293,9 +295,15 @@ BWebPage::BWebPage(BWebView* webView, BPrivate::Network::BUrlContext* context)
     int32 threadCount = sysInfo.cpu_count > 1 ? sysInfo.cpu_count - 1 : 1;
     fThreadPool = new ThreadPool(threadCount);
 
+    if (B_OK == BScreen(webView->Window()).GetResolution(&fTileSize, nullptr, nullptr)) {
+        // FIXME: use logical pixels instead of physical pixels
+    } else {
+        fTileSize = 256;
+    }
+
     fTileGrid = gIsLowMemorySystem
-        ? new TileGrid(this, fThreadPool, 16 * 1024 * 1024, 32 * 1024 * 1024)
-        : new TileGrid(this, fThreadPool, 64 * 1024 * 1024, 128 * 1024 * 1024);
+        ? new TileGrid(this, fThreadPool, fTileSize, 16 * 1024 * 1024, 32 * 1024 * 1024)
+        : new TileGrid(this, fThreadPool, fTileSize, 64 * 1024 * 1024, 128 * 1024 * 1024);
     // FIXME we should get this from the page settings, but they are created
     // after the page, and we need this before the page is created.
     BPath storagePath;
@@ -534,12 +542,12 @@ void BWebPage::WarmUpCache()
     warmUpRect.InsetBy(-viewport.Width() * 0.5, -viewport.Height() * 0.5);
 
     float zoom = page()->pageZoomFactor();
-    int tileSize = 256 / zoom;
+    int zoomAdjustedTileSize = fTileSize / zoom;
 
-    int first_col = floor(warmUpRect.left / tileSize);
-    int first_row = floor(warmUpRect.top / tileSize);
-    int last_col = floor(warmUpRect.right / tileSize);
-    int last_row = floor(warmUpRect.bottom / tileSize);
+    int first_col = floor(warmUpRect.left / zoomAdjustedTileSize);
+    int first_row = floor(warmUpRect.top / zoomAdjustedTileSize);
+    int last_col = floor(warmUpRect.right / zoomAdjustedTileSize);
+    int last_row = floor(warmUpRect.bottom / zoomAdjustedTileSize);
 
     for (int r = first_row; r <= last_row; r++) {
         for (int c = first_col; c <= last_col; c++) {
@@ -896,20 +904,20 @@ void BWebPage::paint(BRect rect, bool immediate)
     MainFrame()->Frame()->view()->flushCompositingStateIncludingSubframes();
 
     float zoom = page()->pageZoomFactor();
-    int tileSize = 256 / zoom;
+    int zoomAdjustedTileSize = fTileSize / zoom;
 
     // Calculate tile range
-    int first_col = floor(rect.left / tileSize);
-    int first_row = floor(rect.top / tileSize);
-    int last_col = floor(rect.right / tileSize);
-    int last_row = floor(rect.bottom / tileSize);
+    int first_col = floor(rect.left / zoomAdjustedTileSize);
+    int first_row = floor(rect.top / zoomAdjustedTileSize);
+    int last_col = floor(rect.right / zoomAdjustedTileSize);
+    int last_row = floor(rect.bottom / zoomAdjustedTileSize);
 
     for (int r = first_row; r <= last_row; r++) {
         for (int c = first_col; c <= last_col; c++) {
             TileIndex index = {r, c};
             Tile* tile = fTileGrid->GetOrCreateTile(index);
             if (tile) {
-                BRect tileRect(c * tileSize, r * tileSize, (c + 1) * tileSize - 1, (r + 1) * tileSize - 1);
+                BRect tileRect(c * zoomAdjustedTileSize, r * zoomAdjustedTileSize, (c + 1) * zoomAdjustedTileSize - 1, (r + 1) * zoomAdjustedTileSize - 1);
                 BRect intersection = rect & tileRect;
                 if (intersection.IsValid()) {
                     tile->AddDirtyRect(intersection);
@@ -926,17 +934,22 @@ void BWebPage::paint(BRect rect, bool immediate)
 void BWebPage::_RenderTile(Tile* tile)
 {
     float zoom = page()->pageZoomFactor();
-    int tileSize = 256 / zoom;
+    int zoomAdjustedTileSize = fTileSize / zoom;
     WebCore::LocalFrame* frame = fMainFrame->Frame();
     WebCore::LocalFrameView* view = frame->view();
 
-    std::unique_ptr<BBitmap> backBitmap = BitmapPool::GetInstance().Acquire(tileSize, tileSize);
+    if (view->frame().isMainFrame())
+        tile->SetFrameImportance(10);
+    else
+        tile->SetFrameImportance(1);
+
+    std::unique_ptr<BBitmap> backBitmap = BitmapPool::GetInstance().Acquire(zoomAdjustedTileSize, zoomAdjustedTileSize);
     if (backBitmap) {
         BView offscreenView(backBitmap->Bounds(), "temp", 0, 0);
         backBitmap->AddChild(&offscreenView);
         if (offscreenView.LockLooper()) {
             WebCore::GraphicsContextHaiku context(&offscreenView);
-            context.translate(-tile->GetX() * tileSize, -tile->GetY() * tileSize);
+            context.translate(-tile->GetX() * zoomAdjustedTileSize, -tile->GetY() * zoomAdjustedTileSize);
             BRegion dirty = tile->DirtyRegion();
             tile->ClearDirtyRegion();
 
@@ -948,8 +961,8 @@ void BWebPage::_RenderTile(Tile* tile)
                 }
             } else {
                 // If the dirty region is empty, assume the whole tile needs painting.
-                BRect tileRect(tile->GetX() * tileSize, tile->GetY() * tileSize,
-                    (tile->GetX() + 1) * tileSize - 1, (tile->GetY() + 1) * tileSize - 1);
+                BRect tileRect(tile->GetX() * zoomAdjustedTileSize, tile->GetY() * zoomAdjustedTileSize,
+                    (tile->GetX() + 1) * zoomAdjustedTileSize - 1, (tile->GetY() + 1) * zoomAdjustedTileSize - 1);
                 view->paint(context, IntRect(tileRect));
             }
             bigtime_t endTime = system_time();
@@ -966,7 +979,7 @@ void BWebPage::_RenderTile(Tile* tile)
         tile->SetState(RENDERED);
         fTileGrid->UpdateMemoryUsage(tile->GetBitmap()->Size());
 
-        BRect tileRect(tile->GetX() * tileSize, tile->GetY() * tileSize, (tile->GetX() + 1) * tileSize - 1, (tile->GetY() + 1) * tileSize - 1);
+        BRect tileRect(tile->GetX() * zoomAdjustedTileSize, tile->GetY() * zoomAdjustedTileSize, (tile->GetX() + 1) * zoomAdjustedTileSize - 1, (tile->GetY() + 1) * zoomAdjustedTileSize - 1);
 
         if (fWebView->LockLooper()) {
             fWebView->Invalidate(tileRect);

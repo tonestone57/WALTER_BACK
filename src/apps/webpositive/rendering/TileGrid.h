@@ -19,7 +19,7 @@ class ThreadPool;
 
 class TileGrid {
 public:
-    TileGrid(BWebPage* webPage, ThreadPool* threadPool, size_t softLimit, size_t hardLimit);
+    TileGrid(BWebPage* webPage, ThreadPool* threadPool, int32 tileSize, size_t softLimit, size_t hardLimit);
     ~TileGrid();
 
     void PrefetchTiles(BRect viewport, BPoint scrollVelocity);
@@ -62,6 +62,7 @@ private:
 
     BWebPage* fWebPage;
     ThreadPool* fThreadPool;
+    int32 fTileSize;
 
     BLocker fDirtyTilesLock;
     std::unordered_set<TileIndex> fDirtyTiles;

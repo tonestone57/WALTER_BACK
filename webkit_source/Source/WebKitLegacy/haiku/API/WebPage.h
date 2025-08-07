@@ -258,6 +258,7 @@ private:
             BPrivate::Network::BUrlContext*	fContext;
 			ThreadPool*						fThreadPool;
 			TileGrid*						fTileGrid;
+			int32							fTileSize;
 			std::unique_ptr<WTF::Ref<WebCore::Page, WTF::RawPtrTraits<WebCore::Page>, WTF::DefaultRefDerefTraits<WebCore::Page>>>	fPage;
             WebCore::DumpRenderTreeClient*	fDumpRenderTree;
 
