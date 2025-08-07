@@ -153,6 +153,7 @@
 
 enum {
     HANDLE_DECAY_ACCESS_COUNT = 'dkay',
+    HANDLE_COMPRESSION_TIER_UP = 'ctup',
     HANDLE_SHUTDOWN = 'sdwn',
 
     HANDLE_LOAD_URL = 'lurl',
@@ -282,6 +283,7 @@ BWebPage::BWebPage(BWebView* webView, BPrivate::Network::BUrlContext* context)
     , fThreadPool(nullptr)
     , fTileGrid(nullptr)
     , fDecayTimer(nullptr)
+    , fCompressionTierTimer(nullptr)
     , fMemoryPressureListener(new MemoryPressureListener(this))
     , fRenderBudget(gIsLowMemorySystem ? 2 : 4)
 {
@@ -395,6 +397,7 @@ BWebPage::~BWebPage()
     delete fSettings;
     delete fTileGrid;
     delete fDecayTimer;
+    delete fCompressionTierTimer;
     delete fMemoryPressureListener;
     delete fThreadPool;
 }
@@ -407,6 +410,8 @@ void BWebPage::Init()
 	fMainFrame = new BWebFrame(this, 0, data);
     fDecayTimer = new BMessageRunner(BMessenger(this),
         new BMessage(HANDLE_DECAY_ACCESS_COUNT), 10 * 1000 * 1000, -1);
+    fCompressionTierTimer = new BMessageRunner(BMessenger(this),
+        new BMessage(HANDLE_COMPRESSION_TIER_UP), 30 * 1000 * 1000, -1);
 }
 
 void BWebPage::Shutdown()
@@ -911,10 +916,15 @@ void BWebPage::_RenderTile(Tile* tile)
             context.translate(-tile->GetX() * tileSize, -tile->GetY() * tileSize);
             BRegion dirty = tile->DirtyRegion();
             tile->ClearDirtyRegion();
+
+            bigtime_t startTime = system_time();
             for (int i = 0; i < dirty.CountRects(); i++) {
                 BRect rect = dirty.RectAt(i);
                 view->paint(context, IntRect(rect));
             }
+            bigtime_t endTime = system_time();
+            tile->SetRenderComplexity(endTime - startTime + 1); // Add 1 to avoid zero
+
             offscreenView.Sync();
             offscreenView.UnlockLooper();
         }
@@ -947,7 +957,7 @@ void BWebPage::_RenderTile(Tile* tile)
                 BAutolock locker(tile->Locker());
                 if (tile->GetState() == RENDERED) {
                     tile->SetState(COMPRESSING);
-                    if (tile->Compress(fTileGrid))
+                    if (tile->Compress(fTileGrid, COMPRESSED_FAST))
                         fTileGrid->MoveToCompressedQueue(TileIndex{tile->GetY(), tile->GetX()});
                 }
             });
@@ -965,25 +975,10 @@ void BWebPage::scroll(int xOffset, int yOffset, const BRect& rectToScroll,
         return;
 
     BAutolock locker(fTileGrid->Locker());
+    BRect invalidRect = fTileGrid->Scroll(xOffset, yOffset, rectToScroll);
+    locker.Unlock();
 
-    std::unordered_map<TileIndex, std::unique_ptr<Tile>> newGridMap;
-    BRect invalidRect;
-
-    for (auto const& [index, tile] : fTileGrid->Map()) {
-        BRect tileRect(tile->GetX() * 256, tile->GetY() * 256, (tile->GetX() + 1) * 256 - 1, (tile->GetY() + 1) * 256 - 1);
-        BRect scrolledRect = tileRect.OffsetByCopy(xOffset, yOffset);
-
-        if (rectToScroll.Intersects(scrolledRect)) {
-            TileIndex newIndex = { (int)floor(scrolledRect.top / 256), (int)floor(scrolledRect.left / 256) };
-            newGridMap[newIndex] = std::move(const_cast<std::unique_ptr<Tile>&>(tile));
-        } else {
-            invalidRect = invalidRect | tileRect;
-        }
-    }
-
-    fTileGrid->SetMap(std::move(newGridMap));
-
-    if (fWebView->LockLooper()) {
+    if (invalidRect.IsValid() && fWebView->LockLooper()) {
         fWebView->Invalidate(invalidRect);
         fWebView->UnlockLooper();
     }
@@ -1176,6 +1171,10 @@ void BWebPage::MessageReceived(BMessage* message)
         for (auto const& [index, tile] : fTileGrid->Map()) {
             tile->DecayAccessCount();
         }
+        break;
+
+    case HANDLE_COMPRESSION_TIER_UP:
+        fTileGrid->UpgradeCompressionTier();
         break;
 
     case B_REFS_RECEIVED: {

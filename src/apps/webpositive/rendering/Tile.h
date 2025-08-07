@@ -32,8 +32,15 @@ enum TileState {
     EVICTING
 };
 
+enum CompressionLevel {
+    UNCOMPRESSED,
+    COMPRESSED_FAST,
+    COMPRESSED_HIGH
+};
+
 class Tile {
     friend class BWebPage;
+    friend class TileGrid;
 public:
     Tile(int32 x, int32 y);
     ~Tile();
@@ -51,7 +58,8 @@ public:
     const std::vector<uint8_t>& GetCompressedData() const { return fCompressedData; }
     void SetCompressedData(std::vector<uint8_t>&& data);
 
-    bool Compress(TileGrid* grid);
+    bool Compress(TileGrid* grid, CompressionLevel level);
+    bool Recompress(TileGrid* grid, CompressionLevel newLevel);
     bool Decompress(TileGrid* grid);
 
     int32 GetX() const { return fX; }
@@ -75,13 +83,20 @@ public:
     bigtime_t LastEvictionTime() const { return fLastEvictionTime; }
     void SetLastEvictionTime(bigtime_t time) { fLastEvictionTime = time; }
 
+    CompressionLevel GetCompressionLevel() const { return fCompressionLevel; }
+
+    float GetRenderComplexity() const { return fRenderComplexity; }
+    void SetRenderComplexity(float complexity) { fRenderComplexity = complexity; }
+
 private:
     BLocker fLock;
     TileState fState;
+    CompressionLevel fCompressionLevel;
     int32 fX;
     int32 fY;
     bool fPinned;
     uint32_t fAccessCount;
+    float fRenderComplexity;
     bigtime_t fLastAccessTime;
     bigtime_t fLastEvictionTime;
 

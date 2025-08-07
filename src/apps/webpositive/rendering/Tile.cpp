@@ -16,10 +16,12 @@ Tile::Tile(int32 x, int32 y)
     :
     fLock("TileLock"),
     fState(NEEDS_RENDER),
+    fCompressionLevel(UNCOMPRESSED),
     fX(x),
     fY(y),
     fPinned(false),
     fAccessCount(0),
+    fRenderComplexity(1.0f),
     fLastAccessTime(system_time()),
     fLastEvictionTime(0),
     fBitmap(nullptr),
@@ -50,7 +52,7 @@ Tile::SetCompressedData(std::vector<uint8_t>&& data)
 }
 
 bool
-Tile::Compress(TileGrid* grid)
+Tile::Compress(TileGrid* grid, CompressionLevel level)
 {
     if (!fBitmap)
         return false;
@@ -61,12 +63,12 @@ Tile::Compress(TileGrid* grid)
 
     std::vector<uint8_t> compressedData(compressedBound);
 
-    int compressionLevel = 1;
-    if (system_time() - fLastAccessTime > 10 * 1000 * 1000)
-        compressionLevel = 10;
+    int zstdLevel = 1;
+    if (level == COMPRESSED_HIGH)
+        zstdLevel = 9;
 
     size_t compressedSize = ZSTD_compress(compressedData.data(), compressedBound,
-        uncompressedData, uncompressedSize, compressionLevel);
+        uncompressedData, uncompressedSize, zstdLevel);
 
     if (ZSTD_isError(compressedSize)) {
         return false;
@@ -78,6 +80,49 @@ Tile::Compress(TileGrid* grid)
 
     SetCompressedData(std::move(compressedData));
     fBitmap.reset();
+    fCompressionLevel = level;
+    SetState(COMPRESSED);
+    return true;
+}
+
+bool
+Tile::Recompress(TileGrid* grid, CompressionLevel newLevel)
+{
+    if (fCompressedData.empty() || fCompressionLevel == newLevel)
+        return false;
+
+    size_t oldCompressedSize = fCompressedData.size();
+
+    // Decompress to a temporary buffer
+    size_t decompressedSize = ZSTD_getFrameContentSize(fCompressedData.data(), oldCompressedSize);
+    if (decompressedSize == ZSTD_CONTENTSIZE_ERROR || decompressedSize == ZSTD_CONTENTSIZE_UNKNOWN)
+        return false;
+
+    std::vector<uint8_t> decompressedData(decompressedSize);
+    size_t result = ZSTD_decompress(decompressedData.data(), decompressedSize, fCompressedData.data(), oldCompressedSize);
+    if (ZSTD_isError(result))
+        return false;
+
+    // Re-compress from the temporary buffer
+    int zstdLevel = 1;
+    if (newLevel == COMPRESSED_HIGH)
+        zstdLevel = 9;
+
+    size_t newCompressedBound = ZSTD_compressBound(decompressedSize);
+    std::vector<uint8_t> newCompressedData(newCompressedBound);
+    size_t newCompressedSize = ZSTD_compress(newCompressedData.data(), newCompressedBound,
+        decompressedData.data(), decompressedSize, zstdLevel);
+
+    if (ZSTD_isError(newCompressedSize)) {
+        return false;
+    }
+
+    newCompressedData.resize(newCompressedSize);
+
+    grid->UpdateMemoryUsage(newCompressedSize - oldCompressedSize);
+
+    SetCompressedData(std::move(newCompressedData));
+    fCompressionLevel = newLevel;
     SetState(COMPRESSED);
     return true;
 }

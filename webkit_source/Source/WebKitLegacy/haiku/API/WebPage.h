@@ -265,6 +265,7 @@ private:
 			BString							fStatusMessage;
 			BString							fDisplayedStatusMessage;
 			BMessageRunner*					fDecayTimer;
+			BMessageRunner*					fCompressionTierTimer;
 			MemoryPressureListener*			fMemoryPressureListener;
 			BLocker							fRenderBudgetLock;
 

@@ -30,8 +30,11 @@ public:
     void RemoveTile(const TileIndex& index);
 
     void SetMemoryLimits(size_t softLimit, size_t hardLimit);
+    BRect Scroll(int xOffset, int yOffset, const BRect& rectToScroll);
     void EvictTiles(bool aggressive);
     void UpdateMemoryUsage(int64_t delta);
+
+    void UpgradeCompressionTier();
 
     void MoveToCompressedQueue(const TileIndex& index);
     void MoveToRenderedQueue(const TileIndex& index);

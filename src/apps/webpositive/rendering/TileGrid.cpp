@@ -134,24 +134,55 @@ TileGrid::EvictTiles(bool aggressive)
                 }
             }
         } else {
-            TileIndex toEvict = fRenderedLruQueue.back();
-            fRenderedLruQueue.pop_back();
-            fRenderedLruMap.erase(toEvict);
+            const int kCandidateCount = 16;
+            TileIndex worstCandidate;
+            double maxScore = -1.0;
+            auto candidateIt = fRenderedLruQueue.rbegin();
 
-            auto it = fGrid.find(toEvict);
-            if (it != fGrid.end()) {
-                Tile* tile = it->second.get();
-                if (tile->IsPinned() || (system_time() - tile->LastEvictionTime() < 1000000)) {
-                    fRenderedLruQueue.push_front(toEvict);
-                    fRenderedLruMap[toEvict] = fRenderedLruQueue.begin();
+            for (int i = 0; i < kCandidateCount && candidateIt != fRenderedLruQueue.rend(); ++i, ++candidateIt) {
+                const TileIndex& currentIndex = *candidateIt;
+                auto gridIt = fGrid.find(currentIndex);
+                if (gridIt == fGrid.end())
                     continue;
+
+                Tile* tile = gridIt->second.get();
+                if (tile->IsPinned() || (system_time() - tile->LastEvictionTime() < 1000000))
+                    continue;
+
+                double age = (double)(system_time() - tile->LastAccessTime());
+                double complexity = (double)tile->GetRenderComplexity();
+                double memUsage = (double)(tile->GetBitmap() ? tile->GetBitmap()->Size() : 1);
+
+                // Higher score is worse (more likely to be evicted).
+                double score = (age * memUsage) / complexity;
+
+                if (score > maxScore) {
+                    maxScore = score;
+                    worstCandidate = currentIndex;
                 }
-                if (tile->GetState() == RENDERED && tile->GetBitmap()) {
-                    fCurrentMemoryUsage -= tile->GetBitmap()->Size();
-                    BitmapPool::GetInstance().Release(tile->TakeBitmap());
-                    tile->SetState(NEEDS_RENDER);
-                    tile->SetLastEvictionTime(system_time());
+            }
+
+            if (maxScore >= 0) {
+                // We found a victim, evict it.
+                auto mapIt = fRenderedLruMap.find(worstCandidate);
+                if (mapIt != fRenderedLruMap.end()) {
+                    fRenderedLruQueue.erase(mapIt->second);
+                    fRenderedLruMap.erase(mapIt);
                 }
+
+                auto gridIt = fGrid.find(worstCandidate);
+                if (gridIt != fGrid.end()) {
+                    Tile* tile = gridIt->second.get();
+                    if (tile->GetState() == RENDERED && tile->GetBitmap()) {
+                        fCurrentMemoryUsage -= tile->GetBitmap()->Size();
+                        BitmapPool::GetInstance().Release(tile->TakeBitmap());
+                        tile->SetState(NEEDS_RENDER);
+                        tile->SetLastEvictionTime(system_time());
+                    }
+                }
+            } else {
+                // No suitable candidate found in the top N, so stop.
+                break;
             }
         }
     }
@@ -192,6 +223,99 @@ TileGrid::_PromoteTile(const TileIndex& index)
         fRenderedLruQueue.push_front(index);
         fRenderedLruMap[index] = fRenderedLruQueue.begin();
     }
+
+
+BRect
+TileGrid::Scroll(int xOffset, int yOffset, const BRect& rectToScroll)
+{
+    // This function completely rebuilds the grid and LRU lists
+    // to reflect the scrolled state.
+
+    std::unordered_map<TileIndex, std::unique_ptr<Tile>> newGrid;
+    std::list<TileIndex> newRenderedLruQueue;
+    std::unordered_map<TileIndex, std::list<TileIndex>::iterator> newRenderedLruMap;
+    std::list<TileIndex> newCompressedLruQueue;
+    std::unordered_map<TileIndex, std::list<TileIndex>::iterator> newCompressedLruMap;
+    std::unordered_set<TileIndex> newSieveCandidates;
+
+    BRect invalidRect;
+
+    // Process the old grid map. We move tiles from fGrid into newGrid.
+    for (auto& pair : fGrid) {
+        const TileIndex& oldIndex = pair.first;
+        std::unique_ptr<Tile>& tile = pair.second;
+
+        BRect tileRect(tile->fX * kTileSize, tile->fY * kTileSize,
+            (tile->fX + 1) * kTileSize - 1, (tile->fY + 1) * kTileSize - 1);
+        BRect scrolledRect = tileRect.OffsetByCopy(xOffset, yOffset);
+
+        if (rectToScroll.Intersects(scrolledRect)) {
+            TileIndex newIndex = { (int)floor(scrolledRect.top / kTileSize),
+                (int)floor(scrolledRect.left / kTileSize) };
+            tile->fX = newIndex.col;
+            tile->fY = newIndex.row;
+
+            // Move the tile to the new data structures, preserving its cache status.
+            if (fRenderedLruMap.count(oldIndex)) {
+                newRenderedLruQueue.push_back(newIndex);
+                newRenderedLruMap[newIndex] = std::prev(newRenderedLruQueue.end());
+            } else if (fCompressedLruMap.count(oldIndex)) {
+                newCompressedLruQueue.push_back(newIndex);
+                newCompressedLruMap[newIndex] = std::prev(newCompressedLruQueue.end());
+            } else if (fSieveCandidates.count(oldIndex)) {
+                newSieveCandidates.insert(newIndex);
+            }
+
+            newGrid[newIndex] = std::move(tile);
+        } else {
+            invalidRect = invalidRect | tileRect;
+        }
+    }
+
+    // Now, efficiently swap all the data structures.
+    fGrid = std::move(newGrid);
+    fRenderedLruQueue = std::move(newRenderedLruQueue);
+    fRenderedLruMap = std::move(newRenderedLruMap);
+    fCompressedLruQueue = std::move(newCompressedLruQueue);
+    fCompressedLruMap = std::move(newCompressedLruMap);
+    fSieveCandidates = std::move(newSieveCandidates);
+
+    return invalidRect;
+}
+
+
+void
+TileGrid::UpgradeCompressionTier()
+{
+    BAutolock locker(fGridLock);
+    // Copy the queue to avoid iterator invalidation issues if a background
+    // thread modifies the main queue while we are iterating.
+    std::list<TileIndex> queueCopy = fCompressedLruQueue;
+    locker.Unlock();
+
+    for (const auto& index : queueCopy) {
+        // GetTile also promotes the tile, which is a minor side-effect.
+        Tile* tile = GetTile(index);
+        if (!tile)
+            continue;
+
+        if (tile->Lock()) {
+            if (tile->GetState() == COMPRESSED
+                && tile->GetCompressionLevel() == COMPRESSED_FAST
+                && (system_time() - tile->LastAccessTime() > 30 * 1000 * 1000)) {
+
+                tile->SetState(COMPRESSING);
+                fThreadPool->Enqueue([this, tile]() {
+                    // This task now "owns" the tile lock until it's done.
+                    tile->Recompress(this, COMPRESSED_HIGH);
+                    tile->Unlock();
+                });
+            } else {
+                tile->Unlock();
+            }
+        }
+    }
+}
 }
 
 void
