@@ -353,7 +353,7 @@ TileGrid::ProcessDirtyTiles(int32& renderBudget)
                     MarkTileAsDirty(index);
                 }
             });
-        } else if (tile->GetState() == NEEDS_RENDER) {
+        } else if (tile->GetState() == NEEDS_RENDER || tile->GetState() == RENDERED) {
             if (renderBudget <= 0) {
                 MarkTileAsDirty(index);
                 continue;
