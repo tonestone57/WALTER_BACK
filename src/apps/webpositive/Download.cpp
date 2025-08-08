@@ -54,7 +54,6 @@ BDownload::RequestCompleted(BPrivate::Network::BUrlRequest* caller,
 	fRequest = NULL;
 	delete fOutputFile;
 	fOutputFile = NULL;
-	delete this;
 }
 
 

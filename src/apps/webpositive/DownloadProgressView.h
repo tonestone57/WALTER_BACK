@@ -30,6 +30,7 @@ class DownloadProgressView : public BGroupView {
 public:
 								DownloadProgressView(BDownload* download);
 								DownloadProgressView(const BMessage* archive);
+	virtual						~DownloadProgressView();
 
 			bool				Init(BMessage* archive = NULL);
 

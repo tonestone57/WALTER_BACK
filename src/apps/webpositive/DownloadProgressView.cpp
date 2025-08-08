@@ -206,6 +206,12 @@ DownloadProgressView::DownloadProgressView(BDownload* download)
 }
 
 
+DownloadProgressView::~DownloadProgressView()
+{
+	delete fDownload;
+}
+
+
 DownloadProgressView::DownloadProgressView(const BMessage* archive)
 	:
 	BGroupView(B_HORIZONTAL, 8),
@@ -726,7 +732,9 @@ DownloadProgressView::CancelDownload()
 		fStatusBar->SetBarColor(ui_color(B_FAILURE_COLOR));
 	}
 
+	delete fDownload;
 	fDownload = NULL;
+
 	if (fPauseButton)
 		fPauseButton->SetEnabled(false);
 	fTopButton->SetLabel(B_TRANSLATE("Restart"));
