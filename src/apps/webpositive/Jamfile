@@ -75,7 +75,7 @@ for architectureObject in [ MultiArchSubDirSetup ] {
 				+= [ FDirName $(HAIKU_TOP) src apps webpositive $(sourceDir) ] ;
 		}
 
-		Includes [ FGristFiles $(sources) ]
+		Includes $(sources)
 			:
 			[ BuildFeatureAttribute zstd : headers ]
 			[ BuildFeatureAttribute webkit : headers ]
