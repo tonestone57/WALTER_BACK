@@ -66,7 +66,8 @@ DataLoader::_LoadData()
 	message.AddPointer("history", historyItems);
 
 	// Send the message to the target.
-	fTarget.SendMessage(&message);
+	if (fTarget.SendMessage(&message) != B_OK)
+		delete historyItems;
 
 	return 0;
 }
