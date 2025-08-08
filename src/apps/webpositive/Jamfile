@@ -76,12 +76,12 @@ for architectureObject in [ MultiArchSubDirSetup ] {
 				+= [ FDirName $(HAIKU_TOP) src apps webpositive $(sourceDir) ] ;
 		}
 
-		local renderingObjects = [ FGristFiles $(renderingSources) ] ;
-		MergeObject rendering.o : $(renderingObjects) ;
-		Includes $(renderingObjects) :
+		Includes $(renderingSources) :
 			[ BuildFeatureAttribute zstd : headers ]
 			[ BuildFeatureAttribute webkit : headers ]
 			;
+		local renderingObjects = [ FGristFiles $(renderingSources) ] ;
+		MergeObject rendering.o : $(renderingObjects) ;
 
 		Includes [ FGristFiles $(sources) ]
 			:
@@ -102,7 +102,7 @@ for architectureObject in [ MultiArchSubDirSetup ] {
 			bnetapi [ MultiArchDefaultGristFiles libnetservices.a libcolumnlistview.a ]
 			[ BuildFeatureAttribute webkit : libraries ]
 			[ TargetLibstdc++ ] localestub shared
-			be network tracker translation zstd_devel
+			be network tracker translation zstd
 			:
 			WebPositive.rdef
 			;
