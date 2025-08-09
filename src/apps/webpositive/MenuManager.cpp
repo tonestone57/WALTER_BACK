@@ -195,16 +195,5 @@ MenuManager::~MenuManager()
 BMenu*
 MenuManager::HistoryMenu()
 {
-	if (fHistoryMenu == NULL) {
-		fHistoryMenu = new BMenu(B_TRANSLATE("History"));
-		fHistoryMenu->AddItem(fBackMenuItem = new BMenuItem(B_TRANSLATE("Back"),
-			new BMessage(MSG_GO_BACK), B_LEFT_ARROW));
-		fHistoryMenu->AddItem(fForwardMenuItem
-			= new BMenuItem(B_TRANSLATE("Forward"), new BMessage(MSG_GO_FORWARD),
-			B_RIGHT_ARROW));
-		fHistoryMenu->AddSeparatorItem();
-		fHistoryMenuFixedItemCount = fHistoryMenu->CountItems();
-		fMenuBar->AddItem(fHistoryMenu);
-	}
 	return fHistoryMenu;
 }

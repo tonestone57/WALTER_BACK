@@ -502,7 +502,7 @@ std::bitset<N> inc32(const std::bitset<N> X) {
 #endif // __clang__
 
 /** Algorithm 1 @private */
-inline Block mul_blocks(const Block X, const Block Y) {
+inline Block mul_blocks(const Block& X, const Block& Y) {
     const bitset128 R = (std::bitset<8>("11100001") || std::bitset<120>());
 
     bitset128 X_bits = X.to_bits();
@@ -510,12 +510,8 @@ inline Block mul_blocks(const Block X, const Block Y) {
     bitset128 V = Y.to_bits();
     for (int i = 127; i >= 0; --i) {
         // Z
-        if (X_bits[i] == false) {
-            Z = Z;
-        }
-        else {
+        if (X_bits[i])
             Z = Z ^ V;
-        }
 
         // V
         if (V[0] == false) {

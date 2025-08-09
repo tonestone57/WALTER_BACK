@@ -47,7 +47,8 @@ AuthenticationPanel::AuthenticationPanel(BRect parentFrame)
 	m_cancelButton(new BButton("cancel", B_TRANSLATE("Cancel"),
 		new BMessage(B_QUIT_REQUESTED))),
 	m_cancelled(false),
-	m_exitSemaphore(create_sem(0, "Authentication Panel"))
+	m_exitSemaphore(create_sem(0, "Authentication Panel")),
+	fRememberCredentials(false)
 {
 }
 
