@@ -1093,6 +1093,10 @@ if (APPLE)
     WEBKIT_ADD_TARGET_CXX_FLAGS(WebKit -fobjc-weak)
 endif ()
 
+if (PORT STREQUAL "Haiku")
+    include(PlatformHaiku.cmake)
+endif ()
+
 if ("${PORT}" STREQUAL "Mac")
     WEBKIT_DEFINE_XPC_SERVICES()
 else ()
@@ -1100,14 +1104,17 @@ else ()
 
     set_target_properties(WebKit PROPERTIES VERSION ${WEBKIT_VERSION} SOVERSION ${WEBKIT_VERSION_MAJOR})
 
-    install(TARGETS WebKit WebProcess NetworkProcess
+    install(TARGETS WebKit
         LIBRARY DESTINATION "${LIB_INSTALL_DIR}"
-        RUNTIME DESTINATION "${LIBEXEC_INSTALL_DIR}"
     )
-    if (ENABLE_GPU_PROCESS)
-        install(TARGETS GPUProcess
-            LIBRARY DESTINATION "${LIB_INSTALL_DIR}"
+    if (NOT HAIKU)
+        install(TARGETS WebProcess NetworkProcess
             RUNTIME DESTINATION "${LIBEXEC_INSTALL_DIR}"
         )
+        if (ENABLE_GPU_PROCESS)
+            install(TARGETS GPUProcess
+                RUNTIME DESTINATION "${LIBEXEC_INSTALL_DIR}"
+            )
+        endif ()
     endif ()
 endif ()

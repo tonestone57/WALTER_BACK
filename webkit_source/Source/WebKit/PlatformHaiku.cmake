@@ -1,126 +1,122 @@
-include(Headers.cmake)
+LIST(APPEND WebKit_INCLUDE_DIRECTORIES
+    "${CMAKE_SOURCE_DIR}/Source"
+    "${DERIVED_SOURCES_JAVASCRIPTCORE_DIR}"
+    "${WEBKIT_DIR}/haiku"
+    "${WEBKIT_DIR}/haiku/API"
+    "${WEBKIT_DIR}/haiku/WebCoreSupport"
+    "${WTF_DIR}"
+    "${LIBXML2_INCLUDE_DIR}"
+    "${LIBXSLT_INCLUDE_DIR}"
+    "${SQLITE_INCLUDE_DIR}"
+    "${CMAKE_BINARY_DIR}"
+    "${FORWARDING_HEADERS_DIR}"
+    /system/develop/headers/private/netservices
+)
 
-file(MAKE_DIRECTORY ${DERIVED_SOURCES_HAIKU_API_DIR})
+# These folders have includes with the same name as Haiku system ones. So we
+# add them with -iquote only, as a way to reach the Haiku includes with
+# #include <>
+SET(WebKit_LOCAL_INCLUDE_DIRECTORIES
+    "${FORWARDING_HEADERS_DIR}/WebCore"
+    "${WEBCORE_DIR}/Modules/notifications" # Notification.h
+    "${WEBCORE_DIR}/platform/text" # DateTimeFormat.h
+)
 
-configure_file(UIProcess/API/haiku/WebKitVersion.h.in ${DERIVED_SOURCES_HAIKU_API_DIR}/WebKitVersion.h)
+foreach(inc ${WebKit_LOCAL_INCLUDE_DIRECTORIES})
+    ADD_DEFINITIONS(-iquote ${inc})
+endforeach(inc)
+
+IF (ENABLE_VIDEO_TRACK)
+    LIST(APPEND WebKit_INCLUDE_DIRECTORIES
+        "${WEBCORE_DIR}/html/track"
+    )
+ENDIF ()
+
+add_definitions("-include WebKitPrefix.h")
+add_definitions("-D_DEFAULT_SOURCE")
+
+LIST(APPEND WebKit_SOURCES
+    haiku/WebCoreSupport/BackForwardList.cpp
+    haiku/WebCoreSupport/ChromeClientHaiku.cpp
+    haiku/WebCoreSupport/ContextMenuClientHaiku.cpp
+    haiku/WebCoreSupport/DragClientHaiku.cpp
+    haiku/WebCoreSupport/DumpRenderTreeSupportHaiku.cpp
+    haiku/WebCoreSupport/EditorClientHaiku.cpp
+    haiku/WebCoreSupport/FrameLoaderClientHaiku.cpp
+    haiku/WebCoreSupport/FrameNetworkingContextHaiku.cpp
+    haiku/WebCoreSupport/FullscreenVideoController.cpp
+    haiku/WebCoreSupport/IconDatabase.cpp
+    haiku/WebCoreSupport/InspectorClientHaiku.cpp
+    haiku/WebCoreSupport/LegacyHistoryItemClient.cpp
+    haiku/WebCoreSupport/NotificationClientHaiku.cpp
+    haiku/WebCoreSupport/PlatformStrategiesHaiku.cpp
+    haiku/WebCoreSupport/ProgressTrackerHaiku.cpp
+    haiku/WebCoreSupport/SocketStreamHandleHaiku.cpp
+    haiku/WebCoreSupport/WebApplicationCache.cpp
+    haiku/WebCoreSupport/WebCryptoClient.cpp
+    haiku/WebCoreSupport/WebDatabaseProvider.cpp
+    haiku/WebCoreSupport/WebDiagnosticLoggingClient.cpp
+    haiku/WebCoreSupport/WebKitLogging.cpp
+    haiku/WebCoreSupport/WebPreferencesDefaultValues.cpp
+    haiku/WebCoreSupport/WebResourceLoadScheduler.cpp
+    haiku/WebCoreSupport/WebVisitedLinkStore.cpp
+
+    haiku/API/WebDownload.cpp
+    haiku/API/WebDownloadPrivate.cpp
+    haiku/API/WebFrame.cpp
+    haiku/API/WebKitInfo.cpp
+    haiku/API/WebPage.cpp
+    haiku/API/WebSettings.cpp
+    haiku/API/WebSettingsPrivate.cpp
+    haiku/API/WebView.cpp
+    haiku/API/WebWindow.cpp
+)
+
+# FIXME there is something not working right: WebCore should already depend on PAL and WTF, but
+# it doesn't depend on WTF currently. So we have to add both explicitly here, in the right order
+# since they are static libraries.
+LIST(APPEND WebKit_LIBRARIES
+    ${LIBXML2_LIBRARIES}
+    ${SQLITE_LIBRARIES}
+    ${PNG_LIBRARY}
+    ${JPEG_LIBRARY}
+    ${CMAKE_DL_LIBS}
+    be bnetapi GL shared translation tracker
+    WebCore PAL WTF
+)
+
+INSTALL(FILES
+    haiku/API/WebWindow.h
+    haiku/API/WebViewConstants.h
+    haiku/API/WebView.h
+    haiku/API/WebSettings.h
+    haiku/API/WebPage.h
+    haiku/API/WebKitInfo.h
+    haiku/API/WebFrame.h
+    haiku/API/WebDownload.h
+    DESTINATION develop/headers${CMAKE_HAIKU_SECONDARY_ARCH_SUBDIR}
+    COMPONENT devel
+)
+
+set(WebKit_WEB_PREFERENCES_TEMPLATES
+    ${WEBKIT_DIR}/haiku/Scripts/PreferencesTemplates/WebPreferencesDefinitions.h.erb
+    ${WEBKIT_DIR}/haiku/Scripts/PreferencesTemplates/WebSettingsPrivateGenerated.cpp.erb
+)
+
+set(WebKit_WEB_PREFERENCES
+    ${WTF_SCRIPTS_DIR}/Preferences/UnifiedWebPreferences.yaml
+)
+
+set_source_files_properties(${WebKit_WEB_PREFERENCES} PROPERTIES GENERATED TRUE)
+
+add_custom_command(
+    OUTPUT ${WebKit_DERIVED_SOURCES_DIR}/WebPreferencesDefinitions.h ${WebKit_DERIVED_SOURCES_DIR}/WebSettingsPrivateGenerated.cpp
+    DEPENDS ${WebKit_WEB_PREFERENCES_TEMPLATES} ${WebKit_WEB_PREFERENCES} WTF_CopyPreferences
+    COMMAND ${RUBY_EXECUTABLE} ${WTF_SCRIPTS_DIR}/GeneratePreferences.rb --frontend WebKit --outputDir "${WebKit_DERIVED_SOURCES_DIR}" --template ${WEBKIT_DIR}/haiku/Scripts/PreferencesTemplates/WebSettingsPrivateGenerated.cpp.erb --template ${WEBKIT_DIR}/haiku/Scripts/PreferencesTemplates/WebPreferencesDefinitions.h.erb ${WebKit_WEB_PREFERENCES}
+    VERBATIM)
 
 list(APPEND WebKit_SOURCES
-    NetworkProcess/cache/NetworkCacheDataHaiku.cpp
-    NetworkProcess/cache/NetworkCacheIOChannelHaiku.cpp
-    NetworkProcess/haiku/NetworkProcessHaiku.cpp
-    NetworkProcess/haiku/NetworkProcessMainHaiku.cpp
-
-    Platform/IPC/unix/AttachmentUnix.cpp
-    Platform/IPC/unix/ConnectionUnix.cpp
-    Platform/haiku/LoggingHaiku.cpp
-    Platform/haiku/ModuleHaiku.cpp
-    Platform/unix/SharedMemoryUnix.cpp
-
-    Shared/WebCoreArgumentCoders.cpp
-    Shared/haiku/AuxiliaryProcessMainHaiku.cpp
-    Shared/haiku/ProcessExecutablePathHaiku.cpp
-    Shared/haiku/WebCoreArgumentCodersHaiku.cpp
-    Shared/haiku/WebMemorySamplerHaiku.cpp
-
-    UIProcess/API/haiku/APIWebsiteDataStoreHaiku.cpp
-    UIProcess/DefaultUndoController.cpp
-    UIProcess/Launcher/haiku/ProcessLauncherHaiku.cpp
-    UIProcess/LegacySessionStateCodingNone.cpp
-    UIProcess/WebsiteData/haiku/WebsiteDataStoreHaiku.cpp
-    UIProcess/haiku/TextCheckerHaiku.cpp
-    UIProcess/haiku/WebInspectorProxyHaiku.cpp
-    UIProcess/haiku/WebPageProxyHaiku.cpp
-    UIProcess/haiku/WebProcessPoolHaiku.cpp
-
-    WebProcess/Cookies/haiku/WebCookieManagerHaiku.cpp
-    WebProcess/InjectedBundle/haiku/InjectedBundleHaiku.cpp
-    WebProcess/InjectedBundle/haiku/InjectedBundleHaiku.cpp
-    WebProcess/WebCoreSupport/haiku/WebFrameNetworkingContext.cpp
-    WebProcess/WebPage/AcceleratedDrawingArea.cpp
-    WebProcess/WebPage/CoordinatedGraphics/CoordinatedLayerTreeHost.cpp
-    WebProcess/WebPage/DrawingAreaImpl.cpp
-    WebProcess/WebPage/LayerTreeHost.cpp
-    WebProcess/WebPage/haiku/WebInspectorHaiku.cpp
-    WebProcess/WebPage/haiku/WebPageHaiku.cpp
-    WebProcess/haiku/WebProcessHaiku.cpp
-    WebProcess/haiku/WebProcessMainHaiku.cpp
+    ${WebKit_DERIVED_SOURCES_DIR}/WebSettingsPrivateGenerated.cpp
 )
 
-list(APPEND WebKit_INCLUDE_DIRECTORIES
-    "${DERIVED_SOURCES_HAIKU_API_DIR}"
-    "${WEBKIT_DIR}/NetworkProcess/unix"
-    "${WEBKIT_DIR}/Platform"
-    "${WEBKIT_DIR}/Platform/IPC/unix"
-    "${WEBKIT_DIR}/Shared/API/c/haiku"
-    "${WEBKIT_DIR}/Shared/CoordinatedGraphics"
-    "${WEBKIT_DIR}/Shared/unix"
-    "${WEBKIT_DIR}/Shared/haiku"
-    "${WEBKIT_DIR}/UIProcess/API/C/CoordinatedGraphics"
-    "${WEBKIT_DIR}/UIProcess/API/C/haiku"
-    "${WEBKIT_DIR}/UIProcess/API/haiku"
-    "${WEBKIT_DIR}/UIProcess/haiku"
-    "${WEBKIT_DIR}/UIProcess/CoordinatedGraphics"
-    "${WEBKIT_DIR}/WebProcess/unix"
-    "${WEBKIT_DIR}/WebProcess/WebCoreSupport/haiku"
-    "${WEBKIT_DIR}/WebProcess/WebPage/CoordinatedGraphics"
-    ${LIBXML2_INCLUDE_DIR}
-    ${LIBXSLT_INCLUDE_DIRS}
-    ${SQLITE_INCLUDE_DIRS}
-    ${WTF_DIR}
-    "${DERIVED_SOURCES_WEBCORE_DIR}"
-)
-
-list(APPEND WebKit_LIBRARIES
-    ${CMAKE_DL_LIBS}
-    ${FONTCONFIG_LIBRARIES}
-    ${FREETYPE2_LIBRARIES}
-    ${JPEG_LIBRARIES}
-    ${LIBXML2_LIBRARIES}
-    ${OPENGL_LIBRARIES}
-    ${PNG_LIBRARIES}
-    ${SQLITE_LIBRARIES}
-)
-
-list(APPEND WebProcess_SOURCES
-    WebProcess/EntryPoint/unix/WebProcessMain.cpp
-)
-
-list(APPEND NetworkProcess_SOURCES
-    NetworkProcess/EntryPoint/unix/NetworkProcessMain.cpp
-)
-
-list(APPEND WebProcess_LIBRARIES
-    ${LIBXML2_LIBRARIES}
-    ${LIBXSLT_LIBRARIES}
-    ${OPENGL_LIBRARIES}
-    ${SQLITE_LIBRARIES}
-)
-
-add_custom_target(forwarding-headerHaiku
-    COMMAND ${PERL_EXECUTABLE} ${WEBKIT_DIR}/Scripts/generate-forwarding-headers.pl ${WEBKIT_DIR} ${DERIVED_SOURCES_WEBKIT_DIR}/include haiku
-    COMMAND ${PERL_EXECUTABLE} ${WEBKIT_DIR}/Scripts/generate-forwarding-headers.pl ${WEBKIT_DIR} ${DERIVED_SOURCES_WEBKIT_DIR}/include CoordinatedGraphics
-)
-
-set(WEBKIT_EXTRA_DEPENDENCIES
-    forwarding-headerHaiku
-)
-
-add_definitions(
-    -DLIBEXECDIR=\"${EXEC_INSTALL_DIR}\"
-    -DWEBPROCESSNAME=\"WebProcess\"
-    -DPLUGINPROCESSNAME=\"PluginProcess\"
-    -DNETWORKPROCESSNAME=\"NetworkProcess\"
-)
-
-set(WebKit_FORWARDING_HEADERS_DIRECTORIES
-   Shared/API/c
-   Shared/API/c/haiku
-   UIProcess/API/C
-   Platform/IPC/unix
-   WebProcess/InjectedBundle/API/c
-)
-
-list(APPEND WebKit_PUBLIC_FRAMEWORK_HEADERS
-    Shared/API/c/haiku/WKBaseHaiku.h
-)
-
+list(APPEND WebKit_SOURCES ${WebKit_INCLUDES} ${WebKit_SOURCES_Classes} ${WebKit_SOURCES_WebCoreSupport})
