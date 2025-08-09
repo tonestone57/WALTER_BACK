@@ -253,9 +253,14 @@ BrowsingHistory::_AddItem(const BrowsingHistoryItem& item, bool internal)
 		BrowsingHistoryItem* existingItem = fHistoryItems.ItemAt(i);
 		if (existingItem->URL() == item.URL()) {
 			if (!internal) {
-				existingItem->Invoked();
-				// The list is now potentially unsorted. This is a pre-existing issue.
-				// TODO: Fix this by re-sorting or using a better data structure.
+				// Create a copy, since we are going to remove and
+				// delete the existing item from the list.
+				BrowsingHistoryItem updatedItem(*existingItem);
+				updatedItem.Invoked();
+				fHistoryItems.RemoveItem(existingItem);
+				// The list is now sorted again, so we can add the
+				// updated item.
+				_AddItem(updatedItem, true);
 			}
 			return true;
 		}

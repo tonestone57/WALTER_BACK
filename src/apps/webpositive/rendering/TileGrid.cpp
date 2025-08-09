@@ -218,7 +218,6 @@ TileGrid::PredictivelyDecompress(const BRect& viewport, const BPoint& scrollVelo
             if (tile->GetState() == COMPRESSED) {
                 tile->SetState(DECOMPRESSING);
                 fThreadPool->Enqueue([this, tile, index]() {
-                    BAutolock tileLocker(tile->Lock());
                     if (tile->Decompress(this)) {
                         MoveToRenderedQueue(index);
                     } else {
@@ -388,7 +387,6 @@ TileGrid::ProcessDirtyTiles(int32& renderBudget)
         if (tile->GetState() == COMPRESSED) {
             tile->SetState(DECOMPRESSING);
             fThreadPool->Enqueue([this, tile, index]() {
-                BAutolock tileLocker(tile->Lock());
                 if (tile->Decompress(this)) {
                     MoveToRenderedQueue(index);
                 } else {

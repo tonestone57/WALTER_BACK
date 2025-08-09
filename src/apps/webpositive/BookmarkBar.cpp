@@ -222,9 +222,9 @@ BookmarkBar::MessageReceived(BMessage* message)
 				BPath path;
 				entry.GetPath(&path);
 
-				BMessage* message = new BMessage(B_REFS_RECEIVED);
-				message->AddRef("refs", &ref);
-				Window()->PostMessage(message);
+				BMessage message(B_REFS_RECEIVED);
+				message.AddRef("refs", &ref);
+				Window()->PostMessage(&message);
 			}
 			break;
 		}

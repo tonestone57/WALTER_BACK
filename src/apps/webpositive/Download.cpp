@@ -95,6 +95,8 @@ BDownload::SetListener(const BMessenger& listener)
 status_t
 BDownload::Start(const BPath& target)
 {
+	BAutolock lock(fLock);
+
 	fTarget = target;
 	fOutputFile = new BFile(fTarget.Path(), B_CREATE_FILE | B_ERASE_FILE | B_WRITE_ONLY);
 	if (fOutputFile->InitCheck() != B_OK) {
@@ -103,7 +105,6 @@ BDownload::Start(const BPath& target)
 		return B_ERROR;
 	}
 
-	BAutolock lock(fLock);
 	BPrivate::Network::BUrlContext* context = new BPrivate::Network::BUrlContext();
 	fRequest = BPrivate::Network::BUrlProtocolRoster::MakeRequest(fUrl, fOutputFile, this, context);
 	if (!fRequest) {
