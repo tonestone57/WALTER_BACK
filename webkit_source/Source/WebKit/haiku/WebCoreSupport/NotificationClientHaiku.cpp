@@ -5,6 +5,7 @@
 
 
 #include "NotificationClientHaiku.h"
+#include "IconDownloader.h"
 #include "WebCore/NotificationData.h"
 
 #include "WebPage.h"
@@ -23,6 +24,15 @@ NotificationClientHaiku::fromDescriptor(NotificationData& descriptor)
     } else {
         notification.SetContent(descriptor.title);
     }
+
+#if !USE(CURL)
+    // TODO we should cache the data, in case the notification is re-sent
+    // with some changes for an update.
+    if (!descriptor.iconURL.isEmpty()) {
+        IconDownloader* downloader = new IconDownloader(notification);
+        downloader->Start(BUrl(descriptor.iconURL.string()));
+    }
+#endif
 
     notification.SetMessageID(descriptor.tag);
 

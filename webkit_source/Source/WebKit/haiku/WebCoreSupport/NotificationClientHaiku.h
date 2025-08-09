@@ -34,15 +34,10 @@
 
 #include "wtf/CompletionHandler.h"
 
-#include <support/Locker.h>
 #include <app/Notification.h>
 
-#include <Bitmap.h>
-#include <TranslationUtils.h>
-#include <UrlProtocolRoster.h>
-#include <UrlSynchronousRequest.h>
-
 class BWebPage;
+class IconDownloader;
 
 namespace WebCore {
 

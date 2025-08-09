@@ -46,6 +46,7 @@ LIST(APPEND WebKit_SOURCES
     haiku/WebCoreSupport/FrameNetworkingContextHaiku.cpp
     haiku/WebCoreSupport/FullscreenVideoController.cpp
     haiku/WebCoreSupport/IconDatabase.cpp
+    haiku/WebCoreSupport/IconDownloader.cpp
     haiku/WebCoreSupport/InspectorClientHaiku.cpp
     haiku/WebCoreSupport/LegacyHistoryItemClient.cpp
     haiku/WebCoreSupport/NotificationClientHaiku.cpp
