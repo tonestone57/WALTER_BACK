@@ -94,10 +94,10 @@ public:
     void didFinishURLImport() override { }
 };
 
-static IconDatabaseClient* defaultClient()
+static IconDatabaseClient& defaultClient()
 {
-    static IconDatabaseClient* defaultClient = new DefaultIconDatabaseClient;
-    return defaultClient;
+    static NeverDestroyed<DefaultIconDatabaseClient> client;
+    return client.get();
 }
 
 IconDatabase::IconRecord::IconRecord(const String& url)
@@ -272,9 +272,11 @@ void IconDatabase::removeAllIcons()
         Locker locker(m_urlAndIconLock);
 
         // Clear the IconRecords for every page URL - RefCounting will cause the IconRecords themselves to be deleted
-        // We don't delete the actual PageRecords because we have the "retain icon for url" count to keep track of
-        for (auto& pageURL : m_pageURLToRecordMap.values())
+        for (auto& pageURL : m_pageURLToRecordMap.values()) {
             pageURL->setIconRecord(nullptr);
+            delete pageURL;
+        }
+        m_pageURLToRecordMap.clear();
 
         // Clear the iconURL -> IconRecord map
         m_iconURLToRecordMap.clear();
@@ -737,7 +739,7 @@ void IconDatabase::checkIntegrityBeforeOpening()
 
 IconDatabase::IconDatabase()
     : m_syncTimer(RunLoop::main(), this, &IconDatabase::syncTimerFired)
-    , m_client(defaultClient())
+    , m_client(&defaultClient())
 {
     LOG(IconDatabase, "Creating IconDatabase %p", this);
     ASSERT(isMainThread());
@@ -1698,7 +1700,7 @@ inline void readySQLiteStatement(std::unique_ptr<SQLiteStatement>& statement, SQ
     }
     if (!statement) {
         auto temp = db.prepareHeapStatement(str);
-        if (statement)
+        if (!temp)
             LOG_ERROR("Preparing statement %s failed", str.characters());
         else
             statement = temp.value().moveToUniquePtr();
