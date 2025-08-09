@@ -117,6 +117,7 @@ URLHandler::Handle(const BString& url)
 					"Deny", "Allow Once", "Always Allow");
 				alert->SetShortcut(0, B_ESCAPE);
 				int32 choice = alert->Go();
+				delete alert;
 
 				if (choice == 0) { // Deny
 					fProtocolHandlers->SetValue(protocol.String(), "deny");

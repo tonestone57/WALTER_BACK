@@ -246,7 +246,8 @@ BrowsingHistory::MaxHistoryItemAge() const
 bool
 BrowsingHistory::_AddItem(const BrowsingHistoryItem& item, bool internal)
 {
-	int32 count = CountItems();
+	_LoadSettings();
+	int32 count = fHistoryItems.CountItems();
 	// First, check for duplicate URL.
 	for (int32 i = 0; i < count; i++) {
 		BrowsingHistoryItem* existingItem = fHistoryItems.ItemAt(i);
@@ -335,10 +336,10 @@ BrowsingHistory::_SaveSettings()
 		BMessage settingsArchive;
 		settingsArchive.AddInt32("max history item age", fMaxHistoryItemAge);
 		BMessage historyItemArchive;
-		int32 count = CountItems();
+		int32 count = fHistoryItems.CountItems();
 		for (int32 i = 0; i < count; i++) {
-			BrowsingHistoryItem item = HistoryItemAt(i);
-			if (item.Archive(&historyItemArchive) != B_OK)
+			BrowsingHistoryItem* item = fHistoryItems.ItemAt(i);
+			if (item->Archive(&historyItemArchive) != B_OK)
 				break;
 			if (settingsArchive.AddMessage("history item",
 					&historyItemArchive) != B_OK) {

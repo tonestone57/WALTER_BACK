@@ -20,10 +20,15 @@ BDownload::BDownload(const BUrl& url)
 }
 
 
+#include <Autolock.h>
+
+
 BDownload::~BDownload()
 {
+	BAutolock lock(fLock);
 	if (fRequest)
 		fRequest->Stop();
+	delete fRequest;
 	delete fOutputFile;
 }
 
@@ -51,6 +56,8 @@ BDownload::RequestCompleted(BPrivate::Network::BUrlRequest* caller,
 		completed.AddPointer("download", this);
 		fListener.SendMessage(&completed);
 	}
+	BAutolock lock(fLock);
+	delete fRequest;
 	fRequest = NULL;
 	delete fOutputFile;
 	fOutputFile = NULL;
@@ -96,6 +103,7 @@ BDownload::Start(const BPath& target)
 		return B_ERROR;
 	}
 
+	BAutolock lock(fLock);
 	BPrivate::Network::BUrlContext* context = new BPrivate::Network::BUrlContext();
 	fRequest = BPrivate::Network::BUrlProtocolRoster::MakeRequest(fUrl, fOutputFile, this, context);
 	if (!fRequest) {
@@ -111,6 +119,7 @@ BDownload::Start(const BPath& target)
 void
 BDownload::Stop()
 {
+	BAutolock lock(fLock);
 	if (fRequest)
 		fRequest->Stop();
 }

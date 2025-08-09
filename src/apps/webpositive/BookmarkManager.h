@@ -45,8 +45,8 @@ private:
 			bool				_CheckBookmarkExists(const BString& url) const;
 
 private:
-			std::set<BString>	fBookmarkURLs;
-			bool				fBookmarksLoaded;
+	mutable	std::set<BString>	fBookmarkURLs;
+	mutable	bool				fBookmarksLoaded;
 };
 
 

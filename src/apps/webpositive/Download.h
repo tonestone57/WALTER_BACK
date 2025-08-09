@@ -6,6 +6,7 @@
 #include <Path.h>
 #include <Url.h>
 #include <UrlRequest.h>
+#include <Locker.h>
 
 class BFile;
 
@@ -44,6 +45,7 @@ private:
 			BPrivate::Network::BUrlRequest*		fRequest;
 			bool				fPaused;
 			off_t				fBytesReceived;
+			BLocker				fLock;
 };
 
 #endif // DOWNLOAD_H

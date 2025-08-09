@@ -254,6 +254,7 @@ URLInputGroup::URLTextView::MouseDown(BPoint where)
 
 		menu->SetTargetForItems(this);
 		menu->Go(ConvertToScreen(where), true, true, true);
+		delete menu;
 		return;
 	}
 

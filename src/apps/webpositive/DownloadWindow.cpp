@@ -147,16 +147,19 @@ DownloadWindow::DownloadWindow(BRect frame, bool visible,
 		delete menuBar;
 		return;
 	}
-	BMenuItem* openDownloadsFolderItem = new (std::nothrow) BMenuItem(
-		B_TRANSLATE("Open downloads folder"),
+	std::unique_ptr<BMessage> openDownloadsFolderMessage(
 		new BMessage(OPEN_DOWNLOADS_FOLDER));
+	BMenuItem* openDownloadsFolderItem = new (std::nothrow) BMenuItem(
+		B_TRANSLATE("Open downloads folder"), openDownloadsFolderMessage.get());
 	if (openDownloadsFolderItem == NULL) {
 		delete menu;
 		delete menuBar;
 		return;
 	}
+	openDownloadsFolderMessage.release();
 	menu->AddItem(openDownloadsFolderItem);
-	BMessage* newWindowMessage = new (std::nothrow) BMessage(NEW_WINDOW);
+
+	std::unique_ptr<BMessage> newWindowMessage(new BMessage(NEW_WINDOW));
 	if (newWindowMessage == NULL) {
 		delete menu;
 		delete menuBar;
@@ -164,23 +167,26 @@ DownloadWindow::DownloadWindow(BRect frame, bool visible,
 	}
 	newWindowMessage->AddString("url", "");
 	BMenuItem* newWindowItem = new (std::nothrow) BMenuItem(
-		B_TRANSLATE("New browser window"), newWindowMessage, 'N');
+		B_TRANSLATE("New browser window"), newWindowMessage.get(), 'N');
 	if (newWindowItem == NULL) {
-		delete newWindowMessage;
 		delete menu;
 		delete menuBar;
 		return;
 	}
+	newWindowMessage.release();
 	menu->AddItem(newWindowItem);
 	newWindowItem->SetTarget(be_app);
 	menu->AddSeparatorItem();
+
+	std::unique_ptr<BMessage> quitMessage(new BMessage(B_QUIT_REQUESTED));
 	BMenuItem* closeItem = new (std::nothrow) BMenuItem(B_TRANSLATE("Close"),
-		new BMessage(B_QUIT_REQUESTED), 'D');
+		quitMessage.get(), 'D');
 	if (closeItem == NULL) {
 		delete menu;
 		delete menuBar;
 		return;
 	}
+	quitMessage.release();
 	menu->AddItem(closeItem);
 	menuBar->AddItem(menu);
 

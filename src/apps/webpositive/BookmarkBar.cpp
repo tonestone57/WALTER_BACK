@@ -249,6 +249,7 @@ BookmarkBar::MessageReceived(BMessage* message)
 					errorMessage.ReplaceFirst("%path%", path.Path());
 					BAlert* alert = new BAlert("Error", errorMessage.String(), B_TRANSLATE("OK"));
 					alert->Go();
+					delete alert;
 					break;
 				}
 
@@ -260,6 +261,7 @@ BookmarkBar::MessageReceived(BMessage* message)
 					errorMessage.ReplaceFirst("%leaf%", path.Leaf());
 					BAlert* alert = new BAlert("Error", errorMessage.String(), B_TRANSLATE("OK"));
 					alert->Go();
+					delete alert;
 				}
 			}
 			break;

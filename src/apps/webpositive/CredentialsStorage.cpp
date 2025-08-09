@@ -16,10 +16,28 @@
 #include <Entry.h>
 #include <File.h>
 #include <FindDirectory.h>
+#include <Key.h>
+#include <KeyStore.h>
 #include <Message.h>
 #include <Path.h>
 
 #include "BrowserApp.h"
+
+
+static bool
+get_keystore_key(BKey& key)
+{
+	BKeyStore keyStore;
+	if (keyStore.GetKey(B_KEY_TYPE_GENERIC, "WebPositive master key", key) == B_OK)
+		return true;
+
+	// Key not found, create it.
+	unsigned char keyData[16];
+	arc4random_buf(keyData, sizeof(keyData));
+	key.SetTo(B_KEY_PURPOSE_ENCRYPT, "WebPositive master key", NULL, keyData,
+		sizeof(keyData));
+	return keyStore.AddKey(key) == B_OK;
+}
 
 
 Credentials::Credentials()
@@ -68,14 +86,18 @@ Credentials::Credentials(const BMessage* archive)
 	archive->FindString("salt", &fSalt);
 	BString encryptedPassword;
 	if (archive->FindString("password", &encryptedPassword) == B_OK) {
-		const char key_str[17] = "a 16-byte key!!";
-		const std::vector<unsigned char> key = plusaes::key_from_string(&key_str);
-		unsigned char iv[16];
-		memcpy(iv, fSalt.String(), 16);
-		std::vector<unsigned char> decrypted(encryptedPassword.Length());
-		unsigned long padded_size = 0;
-		plusaes::decrypt_cbc((unsigned char*)encryptedPassword.String(), encryptedPassword.Length(), &key[0], key.size(), &iv, &decrypted[0], decrypted.size(), &padded_size);
-		fPassword.SetTo((const char*)decrypted.data(), decrypted.size() - padded_size);
+		BKey key;
+		if (get_keystore_key(key)) {
+			unsigned char iv[16];
+			memcpy(iv, fSalt.String(), 16);
+			std::vector<unsigned char> decrypted(encryptedPassword.Length());
+			unsigned long padded_size = 0;
+			plusaes::decrypt_cbc((unsigned char*)encryptedPassword.String(),
+				encryptedPassword.Length(), key.Data(), key.DataLength(),
+				&iv, &decrypted[0], decrypted.size(), &padded_size);
+			fPassword.SetTo((const char*)decrypted.data(),
+				decrypted.size() - padded_size);
+		}
 	}
 }
 
@@ -94,15 +116,21 @@ Credentials::Archive(BMessage* archive) const
 	if (status == B_OK)
 		status = archive->AddString("salt", fSalt);
 	if (status == B_OK) {
-		const char key_str[17] = "a 16-byte key!!";
-		const std::vector<unsigned char> key = plusaes::key_from_string(&key_str);
-		unsigned char iv[16];
-		memcpy(iv, fSalt.String(), 16);
-		const unsigned long encrypted_size = plusaes::get_padded_encrypted_size(fPassword.Length());
-		std::vector<unsigned char> encrypted(encrypted_size);
-		plusaes::encrypt_cbc((unsigned char*)fPassword.String(), fPassword.Length(), &key[0], key.size(), &iv, &encrypted[0], encrypted.size(), true);
-		BString encryptedPassword((const char*)encrypted.data(), encrypted.size());
-		status = archive->AddString("password", encryptedPassword);
+		BKey key;
+		if (get_keystore_key(key)) {
+			unsigned char iv[16];
+			memcpy(iv, fSalt.String(), 16);
+			const unsigned long encrypted_size
+				= plusaes::get_padded_encrypted_size(fPassword.Length());
+			std::vector<unsigned char> encrypted(encrypted_size);
+			plusaes::encrypt_cbc((unsigned char*)fPassword.String(),
+				fPassword.Length(), key.Data(), key.DataLength(), &iv,
+				&encrypted[0], encrypted.size(), true);
+			BString encryptedPassword((const char*)encrypted.data(),
+				encrypted.size());
+			status = archive->AddString("password", encryptedPassword);
+		} else
+			status = B_ERROR;
 	}
 	return status;
 }

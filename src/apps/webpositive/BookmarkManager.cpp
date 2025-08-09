@@ -285,8 +285,8 @@ bool
 BookmarkManager::_CheckBookmarkExists(const BString& url) const
 {
 	if (!fBookmarksLoaded) {
-		const_cast<BookmarkManager*>(this)->_LoadBookmarkURLs();
-		const_cast<BookmarkManager*>(this)->fBookmarksLoaded = true;
+		_LoadBookmarkURLs();
+		fBookmarksLoaded = true;
 	}
 
 	return fBookmarkURLs.count(url) > 0;

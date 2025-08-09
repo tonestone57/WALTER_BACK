@@ -70,12 +70,12 @@ MenuManager::MenuManager(BHandler* target)
 		newWindowMessage, 'N');
 	menu->AddItem(newItem);
 	newItem->SetTarget(be_app);
-	BMessage* newTabMessage = new BMessage(NEW_TAB);
-	newTabMessage->AddString("url", "");
-	newTabMessage->AddPointer("window", target);
-	newTabMessage->AddBool("select", true);
+	BMessage newTabMessage(NEW_TAB);
+	newTabMessage.AddString("url", "");
+	newTabMessage.AddPointer("window", target);
+	newTabMessage.AddBool("select", true);
 	newItem = new BMenuItem(B_TRANSLATE("New tab"),
-		new BMessage(*newTabMessage), 'T');
+		new BMessage(newTabMessage), 'T');
 	menu->AddItem(newItem);
 	newItem->SetTarget(be_app);
 	menu->AddItem(new BMenuItem(B_TRANSLATE("Open location"),

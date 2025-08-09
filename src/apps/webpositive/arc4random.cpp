@@ -31,6 +31,9 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
+#include <Autolock.h>
+#include <Locker.h>
+
 #include "arc4random.h"
 
 typedef unsigned char u8;
@@ -267,6 +270,8 @@ static struct _rsx {
 } rsx_data;
 static struct _rsx* rsx = &rsx_data;
 
+static BLocker sArc4randomLocker("arc4random lock");
+
 static inline void _rs_rekey(u_char *dat, size_t datlen);
 
 static inline void
@@ -342,6 +347,7 @@ _rs_rekey(u_char *dat, size_t datlen)
 void
 arc4random_buf(void *_buf, size_t n)
 {
+	BAutolock lock(sArc4randomLocker);
         u_char *buf = (u_char *)_buf;
         u_char *keystream;
         size_t m;

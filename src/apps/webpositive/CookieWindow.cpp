@@ -414,7 +414,9 @@ CookieWindow::_DeleteCookies()
 	BAlert* alert = new BAlert(B_TRANSLATE("Delete cookies"),
 		B_TRANSLATE("Are you sure you want to delete the selected cookies?"),
 		B_TRANSLATE("Delete"), B_TRANSLATE("Cancel"));
-	if (alert->Go() == 1)
+	int32 choice = alert->Go();
+	delete alert;
+	if (choice == 1)
 		return;
 
 	BRow* row;
