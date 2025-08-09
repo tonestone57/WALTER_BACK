@@ -235,13 +235,16 @@ void BWebWindow::MessageReceived(BMessage* message)
         BString text = message->FindString("text");
         BAlert* alert = new BAlert("JavaScript", text, "OK");
         alert->Go();
+        delete alert;
         break;
     }
     case SHOW_JS_CONFIRM: {
         BString text = message->FindString("text");
         BAlert* alert = new BAlert("JavaScript", text, "Yes", "No");
+        bool result = !alert->Go();
+        delete alert;
         BMessage reply;
-        reply.AddBool("result", !alert->Go());
+        reply.AddBool("result", result);
         message->SendReply(&reply);
         break;
     }
@@ -431,6 +434,7 @@ void BWebWindow::MainDocumentError(const BString& failingURL,
         "OK");
     alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
     alert->Go(NULL);
+    delete alert;
 }
 
 void BWebWindow::TitleChanged(const BString& title, BWebView* /*view*/)
