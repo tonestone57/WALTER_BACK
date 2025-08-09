@@ -23,46 +23,23 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-#include "DrawingAreaHaiku.h"
+#pragma once
 
-#include "WebPage.h"
-#include <WebCore/NotImplemented.h>
+#include "DrawingArea.h"
 
 namespace WebKit {
 
-std::unique_ptr<DrawingArea> DrawingArea::create(WebPage& webPage, const WebPageCreationParameters& parameters)
-{
-    return makeUnique<DrawingAreaHaiku>(webPage, parameters);
-}
+class DrawingAreaHaiku final : public DrawingArea {
+public:
+    DrawingAreaHaiku(WebPage&, const WebPageCreationParameters&);
+    virtual ~DrawingAreaHaiku();
 
-DrawingAreaHaiku::DrawingAreaHaiku(WebPage& webPage, const WebPageCreationParameters& parameters)
-    : DrawingArea(DrawingAreaType::Haiku, webPage, parameters)
-{
-}
-
-DrawingAreaHaiku::~DrawingAreaHaiku()
-{
-}
-
-void DrawingAreaHaiku::setNeedsDisplay()
-{
-    notImplemented();
-}
-
-void DrawingAreaHaiku::setNeedsDisplayInRect(const WebCore::IntRect&)
-{
-    notImplemented();
-}
-
-void DrawingAreaHaiku::scroll(const WebCore::IntRect&, const WebCore::IntSize&)
-{
-    notImplemented();
-}
-
-void DrawingAreaHaiku::updateGeometry(const WebCore::IntSize&)
-{
-    notImplemented();
-}
+private:
+    // DrawingArea
+    void setNeedsDisplay() override;
+    void setNeedsDisplayInRect(const WebCore::IntRect&) override;
+    void scroll(const WebCore::IntRect&, const WebCore::IntSize&) override;
+    void updateGeometry(const WebCore::IntSize&) override;
+};
 
 } // namespace WebKit
