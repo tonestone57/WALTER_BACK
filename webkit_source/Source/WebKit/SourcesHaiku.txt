@@ -40,3 +40,4 @@ WebProcess/haiku/WebPageHaiku.cpp
 WebProcess/haiku/WebFrameHaiku.cpp
 WebProcess/WebCoreSupport/haiku/WebChromeClientHaiku.cpp
 WebProcess/WebCoreSupport/haiku/WebFrameLoaderClientHaiku.cpp
+WebProcess/WebPage/haiku/DrawingAreaHaiku.cpp
