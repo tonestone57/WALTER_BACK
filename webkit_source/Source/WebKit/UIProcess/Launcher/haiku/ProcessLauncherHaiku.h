@@ -19,40 +19,24 @@
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT of THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-#include "ProcessLauncherHaiku.h"
+#pragma once
 
-#include "Connection.h"
-#include "ProcessExecutablePath.h"
-#include <wtf/text/CString.h>
+#include "ProcessLauncher.h"
 
 namespace WebKit {
 
-ProcessLauncherHaiku::ProcessLauncherHaiku(ProcessLauncher::Client& client, LaunchOptions&& launchOptions)
-    : ProcessLauncher(client, WTFMove(launchOptions))
-{
-}
+class ProcessLauncherHaiku : public ProcessLauncher {
+public:
+    ProcessLauncherHaiku(ProcessLauncher::Client&, LaunchOptions&&);
 
-void ProcessLauncherHaiku::launchProcess()
-{
-    // Implementation of process launching on Haiku will go here.
-    // This will likely involve using load_image() and resume_thread().
-
-    // For now, we will just fail gracefully.
-    didFinishLaunchingProcess(0, IPC::Connection::Identifier{});
-}
-
-void ProcessLauncherHaiku::terminateProcess()
-{
-    // Implementation of process termination on Haiku will go here.
-}
-
-void ProcessLauncherHaiku::platformInvalidate()
-{
-}
+private:
+    void launchProcess() override;
+    void terminateProcess() override;
+    void platformInvalidate() override;
+};
 
 } // namespace WebKit

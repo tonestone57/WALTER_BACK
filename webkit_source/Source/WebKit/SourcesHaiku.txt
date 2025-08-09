@@ -32,3 +32,5 @@ haiku/API/WebSettings.cpp
 haiku/API/WebSettingsPrivate.cpp
 haiku/API/WebView.cpp
 haiku/API/WebWindow.cpp
+UIProcess/Launcher/haiku/ProcessLauncherHaiku.cpp
+WebProcess/EntryPoint/haiku/WebProcessMainHaiku.cpp

@@ -24,35 +24,30 @@
  */
 
 #include "config.h"
-#include "ProcessLauncherHaiku.h"
+#include "WebProcessMain.h"
 
-#include "Connection.h"
-#include "ProcessExecutablePath.h"
-#include <wtf/text/CString.h>
+#include "AuxiliaryProcessMain.h"
+#include "WebProcess.h"
 
 namespace WebKit {
 
-ProcessLauncherHaiku::ProcessLauncherHaiku(ProcessLauncher::Client& client, LaunchOptions&& launchOptions)
-    : ProcessLauncher(client, WTFMove(launchOptions))
-{
-}
+class WebProcessMainHaiku final : public AuxiliaryProcessMainBase<WebProcess> {
+public:
+    bool platformInitialize() override
+    {
+        // Platform-specific initialization goes here.
+        return true;
+    }
 
-void ProcessLauncherHaiku::launchProcess()
-{
-    // Implementation of process launching on Haiku will go here.
-    // This will likely involve using load_image() and resume_thread().
+    void platformFinalize() override
+    {
+        // Platform-specific finalization goes here.
+    }
+};
 
-    // For now, we will just fail gracefully.
-    didFinishLaunchingProcess(0, IPC::Connection::Identifier{});
-}
-
-void ProcessLauncherHaiku::terminateProcess()
+int WebProcessMain(int argc, char** argv)
 {
-    // Implementation of process termination on Haiku will go here.
-}
-
-void ProcessLauncherHaiku::platformInvalidate()
-{
+    return AuxiliaryProcessMain<WebProcessMainHaiku>(argc, argv);
 }
 
 } // namespace WebKit
