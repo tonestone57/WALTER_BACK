@@ -35,4 +35,67 @@ WebChromeClientHaiku::WebChromeClientHaiku(WebPage& page)
 {
 }
 
+RefPtr<WebCore::Page> WebChromeClientHaiku::createWindow(WebCore::LocalFrame&, const String&, const WebCore::WindowFeatures&, const WebCore::NavigationAction&)
+{
+    // FIXME: Implement. This should send a message to the UIProcess to create a new window.
+    return nullptr;
+}
+
+void WebChromeClientHaiku::runJavaScriptAlert(WebCore::LocalFrame&, const String& message)
+{
+    // FIXME: Implement. This should send a message to the UIProcess to show an alert.
+}
+
+bool WebChromeClientHaiku::runJavaScriptConfirm(WebCore::LocalFrame&, const String& message)
+{
+    // FIXME: Implement. This should send a synchronous message to the UIProcess to show a confirm dialog.
+    return false;
+}
+
+bool WebChromeClientHaiku::runJavaScriptPrompt(WebCore::LocalFrame&, const String&, const String&, String&)
+{
+    // FIXME: Implement. This should send a synchronous message to the UIProcess to show a prompt dialog.
+    return false;
+}
+
+void WebChromeClientHaiku::setToolbarsVisible(bool)
+{
+    // FIXME: Implement. This should send a message to the UIProcess.
+}
+
+void WebChromeClientHaiku::setStatusbarVisible(bool)
+{
+    // FIXME: Implement. This should send a message to the UIProcess.
+}
+
+void WebChromeClientHaiku::setScrollbarsVisible(bool)
+{
+    // FIXME: Implement. This should send a message to the UIProcess.
+}
+
+void WebChromeClientHaiku::setMenubarVisible(bool)
+{
+    // FIXME: Implement. This should send a message to the UIProcess.
+}
+
+void WebChromeClientHaiku::setResizable(bool)
+{
+    // FIXME: Implement. This should send a message to the UIProcess.
+}
+
+void WebChromeClientHaiku::addMessageToConsole(JSC::MessageSource, JSC::MessageLevel, const String&, unsigned, unsigned, const String&)
+{
+    // FIXME: Implement. This should send a message to the UIProcess to log to the console.
+}
+
+void WebChromeClientHaiku::runOpenPanel(WebCore::LocalFrame&, WebCore::FileChooser&)
+{
+    // FIXME: Implement. This should send a message to the UIProcess to show a file chooser.
+}
+
+void WebChromeClientHaiku::print(WebCore::LocalFrame&, const WebCore::StringWithDirection&)
+{
+    // FIXME: Implement. This should send a message to the UIProcess to handle printing.
+}
+
 } // namespace WebKit

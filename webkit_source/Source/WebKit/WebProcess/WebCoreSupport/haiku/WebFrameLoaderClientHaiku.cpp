@@ -47,6 +47,42 @@ Ref<WebCore::FrameNetworkingContext> WebFrameLoaderClientHaiku::createNetworking
     return WebLocalFrameLoaderClient::createNetworkingContext();
 }
 
+void WebFrameLoaderClientHaiku::dispatchDecidePolicyForNavigationAction(const WebCore::NavigationAction& navigationAction, const WebCore::ResourceRequest& request, const WebCore::ResourceResponse& redirectResponse, WebCore::FormState* formState, const String& clientRedirectSourceForHistory, std::optional<WebCore::NavigationIdentifier> navigationID, std::optional<WebCore::HitTestResult>&& hitTestResult, bool hasOpener, WebCore::IsPerformingHTTPFallback isPerformingHTTPFallback, WebCore::SandboxFlags sandboxFlags, WebCore::PolicyDecisionMode policyDecisionMode, WebCore::FramePolicyFunction&& function)
+{
+    // FIXME: Implement. This should send a message to the UIProcess to decide the policy.
+    WebLocalFrameLoaderClient::dispatchDecidePolicyForNavigationAction(navigationAction, request, redirectResponse, formState, clientRedirectSourceForHistory, navigationID, WTFMove(hitTestResult), hasOpener, isPerformingHTTPFallback, sandboxFlags, policyDecisionMode, WTFMove(function));
+}
+
+void WebFrameLoaderClientHaiku::dispatchWillSendRequest(WebCore::DocumentLoader* documentLoader, WebCore::ResourceLoaderIdentifier identifier, WebCore::ResourceRequest& request, const WebCore::ResourceResponse& redirectResponse)
+{
+    // FIXME: Implement. This should send a message to the UIProcess.
+    WebLocalFrameLoaderClient::dispatchWillSendRequest(documentLoader, identifier, request, redirectResponse);
+}
+
+void WebFrameLoaderClientHaiku::dispatchDidReceiveResponse(WebCore::DocumentLoader* documentLoader, WebCore::ResourceLoaderIdentifier identifier, const WebCore::ResourceResponse& response)
+{
+    // FIXME: Implement. This should send a message to the UIProcess.
+    WebLocalFrameLoaderClient::dispatchDidReceiveResponse(documentLoader, identifier, response);
+}
+
+void WebFrameLoaderClientHaiku::dispatchDidFinishLoading(WebCore::DocumentLoader* documentLoader, WebCore::IsMainResourceLoad isMainResourceLoad, WebCore::ResourceLoaderIdentifier identifier)
+{
+    // FIXME: Implement. This should send a message to the UIProcess.
+    WebLocalFrameLoaderClient::dispatchDidFinishLoading(documentLoader, isMainResourceLoad, identifier);
+}
+
+void WebFrameLoaderClientHaiku::dispatchDidFailLoading(WebCore::DocumentLoader* documentLoader, WebCore::IsMainResourceLoad isMainResourceLoad, WebCore::ResourceLoaderIdentifier identifier, const WebCore::ResourceError& error)
+{
+    // FIXME: Implement. This should send a message to the UIProcess.
+    WebLocalFrameLoaderClient::dispatchDidFailLoading(documentLoader, isMainResourceLoad, identifier, error);
+}
+
+void WebFrameLoaderClientHaiku::startDownload(const WebCore::ResourceRequest& request, const String& suggestedName, WebCore::FromDownloadAttribute fromDownloadAttribute)
+{
+    // FIXME: Implement. This should send a message to the UIProcess to start a download.
+    WebLocalFrameLoaderClient::startDownload(request, suggestedName, fromDownloadAttribute);
+}
+
 void WebFrameLoaderClientHaiku::applyWebsitePolicies(WebsitePoliciesData&&)
 {
     // FIXME: Implement.

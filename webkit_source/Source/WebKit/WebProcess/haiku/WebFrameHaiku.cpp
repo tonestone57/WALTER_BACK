@@ -30,6 +30,11 @@
 
 namespace WebKit {
 
+Ref<WebFrameHaiku> WebFrameHaiku::create(WebPage& page, WebCore::FrameIdentifier frameID)
+{
+    return adoptRef(*new WebFrameHaiku(page, frameID));
+}
+
 WebFrameHaiku::WebFrameHaiku(WebPage& page, WebCore::FrameIdentifier frameID)
     : WebFrame(page, frameID)
 {

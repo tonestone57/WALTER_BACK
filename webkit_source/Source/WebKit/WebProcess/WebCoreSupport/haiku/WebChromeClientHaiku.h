@@ -34,7 +34,18 @@ public:
     WebChromeClientHaiku(WebPage&);
 
 private:
-    // Platform-specific methods to be implemented here.
+    RefPtr<WebCore::Page> createWindow(WebCore::LocalFrame&, const String&, const WebCore::WindowFeatures&, const WebCore::NavigationAction&) final;
+    void runJavaScriptAlert(WebCore::LocalFrame&, const String&) final;
+    bool runJavaScriptConfirm(WebCore::LocalFrame&, const String&) final;
+    bool runJavaScriptPrompt(WebCore::LocalFrame&, const String&, const String&, String&) final;
+    void setToolbarsVisible(bool) final;
+    void setStatusbarVisible(bool) final;
+    void setScrollbarsVisible(bool) final;
+    void setMenubarVisible(bool) final;
+    void setResizable(bool) final;
+    void addMessageToConsole(JSC::MessageSource, JSC::MessageLevel, const String&, unsigned, unsigned, const String&) final;
+    void runOpenPanel(WebCore::LocalFrame&, WebCore::FileChooser&) final;
+    void print(WebCore::LocalFrame&, const WebCore::StringWithDirection&) final;
 };
 
 } // namespace WebKit
