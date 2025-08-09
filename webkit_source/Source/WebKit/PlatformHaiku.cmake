@@ -35,47 +35,21 @@ ENDIF ()
 add_definitions("-include WebKitPrefix.h")
 add_definitions("-D_DEFAULT_SOURCE")
 
-LIST(APPEND WebKit_SOURCES
-    haiku/WebCoreSupport/BackForwardList.cpp
-    haiku/WebCoreSupport/ChromeClientHaiku.cpp
-    haiku/WebCoreSupport/ContextMenuClientHaiku.cpp
-    haiku/WebCoreSupport/DragClientHaiku.cpp
-    haiku/WebCoreSupport/DumpRenderTreeSupportHaiku.cpp
-    haiku/WebCoreSupport/EditorClientHaiku.cpp
-    haiku/WebCoreSupport/FrameLoaderClientHaiku.cpp
-    haiku/WebCoreSupport/FrameNetworkingContextHaiku.cpp
-    haiku/WebCoreSupport/FullscreenVideoController.cpp
-    haiku/WebCoreSupport/IconDatabase.cpp
-    haiku/WebCoreSupport/IconDownloader.cpp
-    haiku/WebCoreSupport/InspectorClientHaiku.cpp
-    haiku/WebCoreSupport/LegacyHistoryItemClient.cpp
-    haiku/WebCoreSupport/NotificationClientHaiku.cpp
-    haiku/WebCoreSupport/PlatformStrategiesHaiku.cpp
-    haiku/WebCoreSupport/ProgressTrackerHaiku.cpp
-    haiku/WebCoreSupport/SocketStreamHandleHaiku.cpp
-    haiku/WebCoreSupport/WebApplicationCache.cpp
-    haiku/WebCoreSupport/WebCryptoClient.cpp
-    haiku/WebCoreSupport/WebDatabaseProvider.cpp
-    haiku/WebCoreSupport/WebDiagnosticLoggingClient.cpp
-    haiku/WebCoreSupport/WebKitLogging.cpp
-    haiku/WebCoreSupport/WebPreferencesDefaultValues.cpp
-    haiku/WebCoreSupport/WebResourceLoadScheduler.cpp
-    haiku/WebCoreSupport/WebVisitedLinkStore.cpp
-
-    haiku/API/WebDownload.cpp
-    haiku/API/WebDownloadPrivate.cpp
-    haiku/API/WebFrame.cpp
-    haiku/API/WebKitInfo.cpp
-    haiku/API/WebPage.cpp
-    haiku/API/WebSettings.cpp
-    haiku/API/WebSettingsPrivate.cpp
-    haiku/API/WebView.cpp
-    haiku/API/WebWindow.cpp
+list(APPEND WebKit_UNIFIED_SOURCE_LIST_FILES
+    "SourcesHaiku.txt"
 )
 
-# FIXME there is something not working right: WebCore should already depend on PAL and WTF, but
-# it doesn't depend on WTF currently. So we have to add both explicitly here, in the right order
-# since they are static libraries.
+# FIXME: WebCore should already have a dependency on PAL and WTF, but it seems
+# this is not the case for the Haiku port. We explicitly add them here as a
+# workaround. This should be investigated further.
+#
+# NOTE: This is currently disabled as it might cause build issues. If you
+# are experiencing linking errors with PAL or WTF, you can try re-enabling
+# this section.
+#
+# LIST(APPEND WebKit_LIBRARIES
+#     WebCore PAL WTF
+# )
 LIST(APPEND WebKit_LIBRARIES
     ${LIBXML2_LIBRARIES}
     ${SQLITE_LIBRARIES}
@@ -83,7 +57,6 @@ LIST(APPEND WebKit_LIBRARIES
     ${JPEG_LIBRARY}
     ${CMAKE_DL_LIBS}
     be bnetapi GL shared translation tracker
-    WebCore PAL WTF
 )
 
 INSTALL(FILES
