@@ -81,3 +81,6 @@ haiku/WebProcess/WebProcessHaiku.cpp
 haiku/WebProcess/WebChromeClientHaiku.cpp
 haiku/WebProcess/WebFrameLoaderClientHaiku.cpp
 haiku/WebProcess/DrawingAreaHaiku.cpp
+haiku/UIProcess/WebPageProxyHaiku.cpp
+haiku/UIProcess/WebFrameProxyHaiku.cpp
+haiku/UIProcess/DrawingAreaProxyHaiku.cpp
