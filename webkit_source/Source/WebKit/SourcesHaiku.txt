@@ -36,3 +36,7 @@ UIProcess/Launcher/haiku/ProcessLauncherHaiku.cpp
 WebProcess/EntryPoint/haiku/WebProcessMainHaiku.cpp
 Platform/IPC/haiku/ConnectionHaiku.cpp
 Platform/IPC/haiku/ArgumentCodersHaiku.cpp
+WebProcess/haiku/WebPageHaiku.cpp
+WebProcess/haiku/WebFrameHaiku.cpp
+WebProcess/WebCoreSupport/haiku/WebChromeClientHaiku.cpp
+WebProcess/WebCoreSupport/haiku/WebFrameLoaderClientHaiku.cpp
