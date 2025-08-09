@@ -195,5 +195,25 @@ MenuManager::~MenuManager()
 BMenu*
 MenuManager::HistoryMenu()
 {
-	return fHistoryMenu;
+    if (fHistoryMenu != nullptr)
+        return fHistoryMenu;
+
+    // Create the History menu
+    fHistoryMenu = new BMenu(B_TRANSLATE("History"));
+
+    // Add Back and Forward items with keyboard shortcuts
+    fBackMenuItem = new BMenuItem(B_TRANSLATE("Back"), new BMessage(MSG_GO_BACK), B_LEFT_ARROW);
+    fForwardMenuItem = new BMenuItem(B_TRANSLATE("Forward"), new BMessage(MSG_GO_FORWARD), B_RIGHT_ARROW);
+
+    fHistoryMenu->AddItem(fBackMenuItem);
+    fHistoryMenu->AddItem(fForwardMenuItem);
+    fHistoryMenu->AddSeparatorItem();
+
+    // Store the count of fixed items
+    fHistoryMenuFixedItemCount = fHistoryMenu->CountItems();
+
+    // Add the History menu to the menu bar
+    fMenuBar->AddItem(fHistoryMenu);
+
+    return fHistoryMenu;
 }
