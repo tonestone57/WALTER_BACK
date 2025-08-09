@@ -19,7 +19,8 @@ haiku/UIProcess/API/C/WKPreferences.cpp
 haiku/UIProcess/API/C/WKString.cpp
 haiku/UIProcess/API/C/WKURL.cpp
 haiku/UIProcess/API/C/WKView.cpp
-haiku/UIProcess/API/haiku/PageClient.cpp
+haiku/UIProcess/API/haiku/PageClientImpl.cpp
+haiku/UIProcess/API/haiku/HaikuNavigationClient.cpp
 haiku/UIProcess/API/haiku/Settings.cpp
 haiku/UIProcess/API/haiku/View.cpp
 haiku/UIProcess/API/haiku/Window.cpp
