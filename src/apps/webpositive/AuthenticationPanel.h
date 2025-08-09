@@ -38,6 +38,10 @@ private:
 	bool m_cancelled;
 
 	sem_id m_exitSemaphore;
+
+	BString fUser;
+	BString fPass;
+	bool fRememberCredentials;
 };
 
 #endif // AuthenticationPanel_h

@@ -143,6 +143,7 @@ BrowserApp::~BrowserApp()
 			status_t status;
 			wait_for_thread(thread, &status);
 		}
+		delete fSessionManager;
 	}
 }
 
@@ -513,6 +514,15 @@ BrowserApp::QuitRequested()
 		fSettings->SetValue("cookie window frame", fCookieWindow->Frame());
 		fCookieWindow->Unlock();
 	}
+
+	if (fDownloadWindow)
+		fDownloadWindow->PostMessage(B_QUIT_REQUESTED);
+	if (fSettingsWindow)
+		fSettingsWindow->PostMessage(B_QUIT_REQUESTED);
+	if (fConsoleWindow)
+		fConsoleWindow->PostMessage(B_QUIT_REQUESTED);
+	if (fCookieWindow)
+		fCookieWindow->PostMessage(B_QUIT_REQUESTED);
 
 	BrowsingHistory::DefaultInstance()->Save();
 

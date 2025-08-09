@@ -271,6 +271,7 @@ private:
 			std::unique_ptr<BookmarkBar>		fBookmarkBar;
 			std::unique_ptr<BookmarkManager>	fBookmarkManager;
 			std::unique_ptr<SettingsMessage>	fProtocolHandlers;
+			BString				fSearchPageURL;
 			std::unique_ptr<URLHandler>			fURLHandler;
 			std::unique_ptr<DataLoader>			fDataLoader;
 

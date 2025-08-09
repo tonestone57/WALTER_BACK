@@ -62,8 +62,8 @@ bool
 AuthenticationPanel::QuitRequested()
 {
 	m_cancelled = true;
-	release_sem(m_exitSemaphore);
-	return false;
+	release_sem_etc(m_exitSemaphore, 1, B_DO_NOT_RESCHEDULE);
+	return true;
 }
 
 
@@ -72,6 +72,10 @@ AuthenticationPanel::MessageReceived(BMessage* message)
 {
 	switch (message->what) {
 	case kMsgPanelOK:
+		fUser = m_usernameTextControl->Text();
+		fPass = m_passwordTextControl->Text();
+		fRememberCredentials = m_rememberCredentialsCheckBox->Value()
+			== B_CONTROL_ON;
 		release_sem(m_exitSemaphore);
 		break;
 	case kHidePassword: {
@@ -197,20 +201,18 @@ bool AuthenticationPanel::getAuthentication(const BString& text,
 		}
 	}
 
-	// AuthenticationPanel wants to quit.
-	Lock();
-
+	// The window is now closing, but may not be deleted yet.
+	// The members can still be accessed.
 	if (!m_cancelled) {
-		user = m_usernameTextControl->Text();
-		pass = m_passwordTextControl->Text();
+		user = fUser;
+		pass = fPass;
 		if (rememberCredentials)
-			*rememberCredentials = m_rememberCredentialsCheckBox->Value()
-				== B_CONTROL_ON;
+			*rememberCredentials = fRememberCredentials;
 	}
-	m_passwordTextControl->SetText("");
 
-	bool canceled = m_cancelled;
-	Quit();
-	// AuthenticationPanel object is TOAST here.
-	return !canceled;
+	// Now we just have to wait for the window to be really gone.
+	while (find_thread(Name()) > 0)
+		snooze(10000);
+
+	return !m_cancelled;
 }

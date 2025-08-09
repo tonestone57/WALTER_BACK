@@ -229,6 +229,7 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 	fBookmarkManager(std::make_unique<BookmarkManager>()),
 	fProtocolHandlers(std::make_unique<SettingsMessage>(B_USER_SETTINGS_DIRECTORY,
 		"WebPositive/ProtocolHandlers")),
+	fSearchPageURL(appSettings->GetValue(kSettingsKeySearchPageURL, kDefaultSearchPageURL)),
 	fURLHandler(std::make_unique<URLHandler>(fProtocolHandlers.get(), fSearchPageURL)),
 	fDataLoader(std::make_unique<DataLoader>(BMessenger(this)))
 {
@@ -248,8 +249,6 @@ BrowserWindow::BrowserWindow(BRect frame, SettingsMessage* appSettings, const BS
 		(uint32)OpenBlankPage);
 	fStartPageURL = fAppSettings->GetValue(kSettingsKeyStartPageURL,
 		kDefaultStartPageURL);
-	fSearchPageURL = fAppSettings->GetValue(kSettingsKeySearchPageURL,
-		kDefaultSearchPageURL);
 
 	// Create the interface elements
 	BMessage* newTabMessage = new BMessage(NEW_TAB);

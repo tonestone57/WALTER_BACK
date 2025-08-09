@@ -618,11 +618,11 @@ status_t BWebPage::GetContentsAsMHTML(BDataIO& output)
     WTF::Function<void(std::span<const uint8_t>)> write = [&size, &output](const std::span<const uint8_t>& span) {
         if (size < 0)
             return;
-        ssize_t tmpSize;
-        tmpSize += output.Write(span.data(), span.size());
+        ssize_t tmpSize = 0;
+        tmpSize = output.Write(span.data(), span.size());
         if (tmpSize < 0)
             size = tmpSize;
-        else if (tmpSize == span.size())
+        else if (tmpSize == (ssize_t)span.size())
             size += tmpSize;
         else
             size = -1;
