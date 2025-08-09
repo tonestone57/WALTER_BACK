@@ -23,51 +23,22 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-#include "WebPageProxy.h"
+#pragma once
 
 #include "APIView.h"
-#include "DrawingAreaProxy.h"
-#include "NativeWebMouseEvent.h"
-#include "WebPageCreationParameters.h"
-#include "WebPageProxyHaiku.h"
-#include <WebCore/NotImplemented.h>
+#include <WebCore/FloatRect.h>
 
 namespace WebKit {
 
-void WebPageProxy::platformInitialize()
-{
-    // Haiku-specific initialization.
-}
+class DrawingAreaProxy;
+class NativeWebMouseEvent;
+class WebPageProxy;
 
-void WebPageProxy::getPlatformEditorState(WebCore::EditorState& state) const
-{
-    notImplemented();
-}
-
-Ref<API::View> WebPageProxy::createView()
-{
-    return API::View::create(*this);
-}
-
-void WebPageProxy::setView(API::View* view)
-{
-    m_view = view;
-    if (m_view)
-        m_view->setClient(makeUnique<ViewClient>());
-}
-
-void WebPageProxy::makeViewBlank()
-{
-    if (m_view)
-        m_view->makeBlank();
-}
-
-void WebPageProxy::setDrawingArea(std::unique_ptr<DrawingAreaProxy>&& drawingArea)
-{
-    if (drawingArea)
-        drawingArea->setShouldScaleViewToFitDocument(true);
-    m_drawingArea = WTFMove(drawingArea);
-}
+class ViewClient {
+public:
+    virtual ~ViewClient() = default;
+    virtual void setViewNeedsDisplay(const WebCore::FloatRect&) = 0;
+    virtual void requestScroll(const WebCore::FloatPoint&, const WebCore::IntPoint&) = 0;
+};
 
 } // namespace WebKit

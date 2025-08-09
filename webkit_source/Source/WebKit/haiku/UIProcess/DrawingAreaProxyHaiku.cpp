@@ -19,12 +19,12 @@
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * ARISING IN ANY WAY OUT of THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "config.h"
-#include "DrawingAreaProxy.h"
+#include "DrawingAreaProxyHaiku.h"
 
 #include "WebPageProxy.h"
 #include <WebCore/NotImplemented.h>
@@ -33,9 +33,23 @@ namespace WebKit {
 
 std::unique_ptr<DrawingAreaProxy> DrawingAreaProxy::create(WebPageProxy& webPage)
 {
-    // On Haiku, we will likely use a platform-specific DrawingAreaProxy implementation.
-    // This is a placeholder for that implementation.
-    return nullptr;
+    return makeUnique<DrawingAreaProxyHaiku>(webPage);
+}
+
+DrawingAreaProxyHaiku::DrawingAreaProxyHaiku(WebPageProxy& webPage)
+    : DrawingAreaProxy(DrawingAreaType::Haiku, webPage)
+{
+}
+
+DrawingAreaProxyHaiku::~DrawingAreaProxyHaiku()
+{
+}
+
+void DrawingAreaProxyHaiku::sizeDidChange()
+{
+    // This method is called when the size of the view changes.
+    // We will need to inform the WebProcess of the new size.
+    notImplemented();
 }
 
 } // namespace WebKit

@@ -23,51 +23,20 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-#include "WebPageProxy.h"
+#pragma once
 
-#include "APIView.h"
 #include "DrawingAreaProxy.h"
-#include "NativeWebMouseEvent.h"
-#include "WebPageCreationParameters.h"
-#include "WebPageProxyHaiku.h"
-#include <WebCore/NotImplemented.h>
 
 namespace WebKit {
 
-void WebPageProxy::platformInitialize()
-{
-    // Haiku-specific initialization.
-}
+class DrawingAreaProxyHaiku final : public DrawingAreaProxy {
+public:
+    DrawingAreaProxyHaiku(WebPageProxy&);
+    virtual ~DrawingAreaProxyHaiku();
 
-void WebPageProxy::getPlatformEditorState(WebCore::EditorState& state) const
-{
-    notImplemented();
-}
-
-Ref<API::View> WebPageProxy::createView()
-{
-    return API::View::create(*this);
-}
-
-void WebPageProxy::setView(API::View* view)
-{
-    m_view = view;
-    if (m_view)
-        m_view->setClient(makeUnique<ViewClient>());
-}
-
-void WebPageProxy::makeViewBlank()
-{
-    if (m_view)
-        m_view->makeBlank();
-}
-
-void WebPageProxy::setDrawingArea(std::unique_ptr<DrawingAreaProxy>&& drawingArea)
-{
-    if (drawingArea)
-        drawingArea->setShouldScaleViewToFitDocument(true);
-    m_drawingArea = WTFMove(drawingArea);
-}
+private:
+    // DrawingAreaProxy
+    void sizeDidChange() override;
+};
 
 } // namespace WebKit
