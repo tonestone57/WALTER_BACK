@@ -34,3 +34,5 @@ haiku/API/WebView.cpp
 haiku/API/WebWindow.cpp
 UIProcess/Launcher/haiku/ProcessLauncherHaiku.cpp
 WebProcess/EntryPoint/haiku/WebProcessMainHaiku.cpp
+Platform/IPC/haiku/ConnectionHaiku.cpp
+Platform/IPC/haiku/ArgumentCodersHaiku.cpp
