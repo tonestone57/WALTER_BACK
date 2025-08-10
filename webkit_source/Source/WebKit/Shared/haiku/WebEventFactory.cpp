@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Haiku, Inc. All rights reserved.
+ * Copyright (C) 2019 Haiku Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,38 +23,29 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include "config.h"
+#include "WebEventFactory.h"
 
-#include "DrawingArea.h"
+#include <WebCore/NotImplemented.h>
 
 namespace WebKit {
 
-#include <WebCore/Region.h>
-#include <wtf/RunLoop.h>
+WebMouseEvent WebEventFactory::createWebMouseEvent(const BMessage* message, int clickCount)
+{
+    notImplemented();
+    return WebMouseEvent();
+}
 
-class DrawingAreaHaiku final : public DrawingArea {
-public:
-    DrawingAreaHaiku(WebPage&, const WebPageCreationParameters&);
-    virtual ~DrawingAreaHaiku();
+WebWheelEvent WebEventFactory::createWebWheelEvent(const BMessage* message)
+{
+    notImplemented();
+    return WebWheelEvent();
+}
 
-private:
-    void display();
-    void displayTimerFired();
-    void scheduleDisplay();
-
-    // DrawingArea
-    void setNeedsDisplay() override;
-    void setNeedsDisplayInRect(const WebCore::IntRect&) override;
-    void scroll(const WebCore::IntRect&, const WebCore::IntSize&) override;
-
-    void updateRenderingWithForcedRepaintAsync(WebPage&, CompletionHandler<void()>&&) override;
-
-    void setRootCompositingLayer(WebCore::Frame&, WebCore::GraphicsLayer*) override;
-    void triggerRenderingUpdate() override;
-
-    WebCore::Region m_dirtyRegion;
-    RunLoop::Timer m_displayTimer;
-    bool m_isWaitingForDidUpdate { false };
-};
+WebKeyboardEvent WebEventFactory::createWebKeyboardEvent(const BMessage* message)
+{
+    notImplemented();
+    return WebKeyboardEvent();
+}
 
 } // namespace WebKit

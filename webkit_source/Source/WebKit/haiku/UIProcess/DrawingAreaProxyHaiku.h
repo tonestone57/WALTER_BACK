@@ -29,14 +29,31 @@
 
 namespace WebKit {
 
+#include <memory>
+
+class BView;
+
+namespace WebCore {
+class IntRect;
+}
+
 class DrawingAreaProxyHaiku final : public DrawingAreaProxy {
 public:
-    DrawingAreaProxyHaiku(WebPageProxy&);
+    DrawingAreaProxyHaiku(WebPageProxy&, WebProcessProxy&);
     virtual ~DrawingAreaProxyHaiku();
 
+    void paint(BView*, const WebCore::IntRect&);
+
 private:
+    class BackingStore;
+
     // DrawingAreaProxy
     void sizeDidChange() override;
+
+    // IPC messages
+    void update(uint64_t, UpdateInfo&&);
+
+    std::unique_ptr<BackingStore> m_backingStore;
 };
 
 } // namespace WebKit

@@ -102,6 +102,8 @@ private:
     void refView() override;
     void derefView() override;
 
+    void handleMouseEvent(const BMessage*);
+
     BView* m_viewWidget;
 };
 

@@ -26,18 +26,46 @@
 #include "config.h"
 #include "DrawingAreaProxyHaiku.h"
 
+#include "UpdateInfo.h"
 #include "WebPageProxy.h"
 #include <WebCore/NotImplemented.h>
+#include <WebCore/ShareableBitmap.h>
 
 namespace WebKit {
 
-std::unique_ptr<DrawingAreaProxy> DrawingAreaProxy::create(WebPageProxy& webPage)
+class DrawingAreaProxyHaiku::BackingStore {
+public:
+    BackingStore(const WebCore::IntSize& size, float deviceScaleFactor)
+        : m_size(size)
+        , m_deviceScaleFactor(deviceScaleFactor)
+    {
+    }
+
+    void incorporateUpdate(UpdateInfo& updateInfo)
+    {
+        // For now, just replace the whole bitmap.
+        m_bitmap = WebCore::ShareableBitmap::create(updateInfo.bitmapHandle);
+    }
+
+    void paint(BView* view, const WebCore::IntRect& rect)
+    {
+        if (m_bitmap)
+            view->DrawBitmap(static_cast<BBitmap*>(m_bitmap->nativeImage()), rect);
+    }
+
+private:
+    WebCore::IntSize m_size;
+    float m_deviceScaleFactor;
+    RefPtr<WebCore::ShareableBitmap> m_bitmap;
+};
+
+Ref<DrawingAreaProxy> DrawingAreaProxy::create(WebPageProxy& webPage, WebProcessProxy& webProcessProxy)
 {
-    return makeUnique<DrawingAreaProxyHaiku>(webPage);
+    return adoptRef(*new DrawingAreaProxyHaiku(webPage, webProcessProxy));
 }
 
-DrawingAreaProxyHaiku::DrawingAreaProxyHaiku(WebPageProxy& webPage)
-    : DrawingAreaProxy(DrawingAreaType::Haiku, webPage)
+DrawingAreaProxyHaiku::DrawingAreaProxyHaiku(WebPageProxy& webPage, WebProcessProxy& webProcessProxy)
+    : DrawingAreaProxy(DrawingAreaType::Haiku, webPage, webProcessProxy)
 {
 }
 
@@ -45,11 +73,28 @@ DrawingAreaProxyHaiku::~DrawingAreaProxyHaiku()
 {
 }
 
+void DrawingAreaProxyHaiku::paint(BView* view, const WebCore::IntRect& rect)
+{
+    if (m_backingStore)
+        m_backingStore->paint(view, rect);
+}
+
 void DrawingAreaProxyHaiku::sizeDidChange()
 {
     // This method is called when the size of the view changes.
     // We will need to inform the WebProcess of the new size.
     notImplemented();
+}
+
+void DrawingAreaProxyHaiku::update(uint64_t, UpdateInfo&& updateInfo)
+{
+    if (!m_backingStore || m_backingStore->size() != updateInfo.viewSize || m_backingStore->deviceScaleFactor() != updateInfo.deviceScaleFactor)
+        m_backingStore = makeUnique<BackingStore>(updateInfo.viewSize, updateInfo.deviceScaleFactor);
+
+    m_backingStore->incorporateUpdate(updateInfo);
+
+    if (auto* page = page())
+        page->setViewNeedsDisplay(updateInfo.updateRectBounds);
 }
 
 } // namespace WebKit

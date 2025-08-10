@@ -27,6 +27,7 @@
 #include "PageClientImpl.h"
 
 #include "DrawingAreaProxyCoordinatedGraphics.h"
+#include "WebEventFactory.h"
 #include "WebPageProxy.h"
 #include <WebCore/NotImplemented.h>
 #include <wtf/TZoneMallocInlines.h>
@@ -50,16 +51,25 @@ UniqueRef<API::NavigationClient> PageClientImpl::navigationClient()
     return makeUniqueRef<HaikuNavigationClient>();
 }
 
+#include "DrawingAreaProxyHaiku.h"
+
 Ref<DrawingAreaProxy> PageClientImpl::createDrawingAreaProxy(WebProcessProxy& webProcessProxy)
 {
-    // FIXME: Implement this.
-    notImplemented();
-    return DrawingAreaProxyCoordinatedGraphics::create(WebPageProxy::create(*this, webProcessProxy, API::PageConfiguration::create()), webProcessProxy);
+    return DrawingAreaProxyHaiku::create(*webkitWebViewBaseGetPage(WEBKIT_WEB_VIEW_BASE(m_viewWidget)), webProcessProxy);
 }
 
-void PageClientImpl::setViewNeedsDisplay(const WebCore::Region&)
+void PageClientImpl::setViewNeedsDisplay(const WebCore::Region& region)
 {
-    notImplemented();
+    WebPageProxy* pageProxy = webkitWebViewBaseGetPage(WEBKIT_WEB_VIEW_BASE(m_viewWidget));
+    if (!pageProxy)
+        return;
+
+    auto* drawingArea = static_cast<DrawingAreaProxyHaiku*>(pageProxy->drawingArea());
+    if (!drawingArea)
+        return;
+
+    for (const auto& rect : region.rects())
+        drawingArea->paint(m_viewWidget, rect);
 }
 
 void PageClientImpl::requestScroll(const WebCore::FloatPoint&, const WebCore::IntPoint&, WebCore::ScrollIsAnimated)
@@ -309,6 +319,15 @@ void PageClientImpl::refView()
 
 void PageClientImpl::derefView()
 {
+}
+
+void PageClientImpl::handleMouseEvent(const BMessage* message)
+{
+    WebPageProxy* pageProxy = webkitWebViewBaseGetPage(WEBKIT_WEB_VIEW_BASE(m_viewWidget));
+    if (!pageProxy)
+        return;
+
+    pageProxy->handleMouseEvent(WebEventFactory::createWebMouseEvent(message, 1));
 }
 
 } // namespace WebKit

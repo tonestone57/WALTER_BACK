@@ -26,18 +26,24 @@
 #include "config.h"
 #include "DrawingAreaHaiku.h"
 
+#include "DrawingAreaProxyMessages.h"
+#include "UpdateInfo.h"
 #include "WebPage.h"
+#include "WebPageInlines.h"
+#include <WebCore/GraphicsContext.h>
 #include <WebCore/NotImplemented.h>
+#include <WebCore/ShareableBitmap.h>
 
 namespace WebKit {
 
-std::unique_ptr<DrawingArea> DrawingArea::create(WebPage& webPage, const WebPageCreationParameters& parameters)
+Ref<DrawingArea> DrawingArea::create(WebPage& webPage, const WebPageCreationParameters& parameters)
 {
-    return makeUnique<DrawingAreaHaiku>(webPage, parameters);
+    return adoptRef(*new DrawingAreaHaiku(webPage, parameters));
 }
 
 DrawingAreaHaiku::DrawingAreaHaiku(WebPage& webPage, const WebPageCreationParameters& parameters)
-    : DrawingArea(DrawingAreaType::Haiku, webPage, parameters)
+    : DrawingArea(DrawingAreaType::Haiku, parameters.drawingAreaIdentifier, webPage)
+    , m_displayTimer(RunLoop::main(), this, &DrawingAreaHaiku::displayTimerFired)
 {
 }
 
@@ -47,20 +53,92 @@ DrawingAreaHaiku::~DrawingAreaHaiku()
 
 void DrawingAreaHaiku::setNeedsDisplay()
 {
-    notImplemented();
+    setNeedsDisplayInRect(m_webPage->bounds());
 }
 
-void DrawingAreaHaiku::setNeedsDisplayInRect(const WebCore::IntRect&)
+void DrawingAreaHaiku::setNeedsDisplayInRect(const WebCore::IntRect& rect)
 {
-    notImplemented();
+    m_dirtyRegion.unite(rect);
+    scheduleDisplay();
 }
 
 void DrawingAreaHaiku::scroll(const WebCore::IntRect&, const WebCore::IntSize&)
 {
+    // FIXME: Implement this.
+    setNeedsDisplay();
+}
+
+void DrawingAreaHaiku::display()
+{
+    if (m_isWaitingForDidUpdate)
+        return;
+
+    // The layout may have put the page into accelerated compositing mode.
+    // If the LayerTreeHost is in charge of displaying, we have nothing more to do.
+    if (m_layerTreeHost)
+        return;
+
+    if (m_dirtyRegion.isEmpty())
+        return;
+
+    UpdateInfo updateInfo;
+    updateInfo.viewSize = m_webPage->size();
+    updateInfo.deviceScaleFactor = m_webPage->corePage()->deviceScaleFactor();
+
+    WebCore::IntRect bounds = m_dirtyRegion.bounds();
+    updateInfo.updateRectBounds = bounds;
+
+    WebCore::IntSize bitmapSize = bounds.size();
+    bitmapSize.scale(updateInfo.deviceScaleFactor);
+    auto bitmap = WebCore::ShareableBitmap::create({ bitmapSize });
+    if (!bitmap)
+        return;
+
+    if (auto handle = bitmap->createHandle())
+        updateInfo.bitmapHandle = WTFMove(*handle);
+    else
+        return;
+
+    auto graphicsContext = bitmap->createGraphicsContext();
+    if (graphicsContext) {
+        graphicsContext->applyDeviceScaleFactor(updateInfo.deviceScaleFactor);
+        graphicsContext->translate(-bounds.x(), -bounds.y());
+        for (const auto& rect : m_dirtyRegion.rects()) {
+            updateInfo.updateRects.append(rect);
+            m_webPage->drawRect(*graphicsContext, rect);
+        }
+    }
+
+    send(Messages::DrawingAreaProxy::Update(0, WTFMove(updateInfo)));
+
+    m_dirtyRegion.clear();
+    m_isWaitingForDidUpdate = true;
+}
+
+void DrawingAreaHaiku::displayTimerFired()
+{
+    display();
+}
+
+void DrawingAreaHaiku::scheduleDisplay()
+{
+    if (m_displayTimer.isActive())
+        return;
+    m_displayTimer.startOneShot(0_s);
+}
+
+void DrawingAreaHaiku::updateRenderingWithForcedRepaintAsync(WebPage&, CompletionHandler<void()>&& completionHandler)
+{
+    notImplemented();
+    completionHandler();
+}
+
+void DrawingAreaHaiku::setRootCompositingLayer(WebCore::Frame&, WebCore::GraphicsLayer*)
+{
     notImplemented();
 }
 
-void DrawingAreaHaiku::updateGeometry(const WebCore::IntSize&)
+void DrawingAreaHaiku::triggerRenderingUpdate()
 {
     notImplemented();
 }
