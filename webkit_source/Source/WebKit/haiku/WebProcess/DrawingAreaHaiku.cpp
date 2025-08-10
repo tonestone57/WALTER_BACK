@@ -27,7 +27,6 @@
 #include "DrawingAreaHaiku.h"
 
 #include "DrawingAreaProxyMessages.h"
-#include "UpdateInfo.h"
 #include "WebPage.h"
 #include "WebPageInlines.h"
 #include <WebCore/GraphicsContext.h>
@@ -81,35 +80,28 @@ void DrawingAreaHaiku::display()
     if (m_dirtyRegion.isEmpty())
         return;
 
-    UpdateInfo updateInfo;
-    updateInfo.viewSize = m_webPage->size();
-    updateInfo.deviceScaleFactor = m_webPage->corePage()->deviceScaleFactor();
-
     WebCore::IntRect bounds = m_dirtyRegion.bounds();
-    updateInfo.updateRectBounds = bounds;
+    float deviceScaleFactor = m_webPage->corePage()->deviceScaleFactor();
 
     WebCore::IntSize bitmapSize = bounds.size();
-    bitmapSize.scale(updateInfo.deviceScaleFactor);
+    bitmapSize.scale(deviceScaleFactor);
     auto bitmap = WebCore::ShareableBitmap::create({ bitmapSize });
     if (!bitmap)
         return;
 
-    if (auto handle = bitmap->createHandle())
-        updateInfo.bitmapHandle = WTFMove(*handle);
-    else
+    auto handle = bitmap->createHandle();
+    if (!handle)
         return;
 
     auto graphicsContext = bitmap->createGraphicsContext();
     if (graphicsContext) {
-        graphicsContext->applyDeviceScaleFactor(updateInfo.deviceScaleFactor);
+        graphicsContext->applyDeviceScaleFactor(deviceScaleFactor);
         graphicsContext->translate(-bounds.x(), -bounds.y());
-        for (const auto& rect : m_dirtyRegion.rects()) {
-            updateInfo.updateRects.append(rect);
+        for (const auto& rect : m_dirtyRegion.rects())
             m_webPage->drawRect(*graphicsContext, rect);
-        }
     }
 
-    send(Messages::DrawingAreaProxy::Update(0, WTFMove(updateInfo)));
+    send(Messages::DrawingAreaProxy::Update(WTFMove(*handle), bounds));
 
     m_dirtyRegion.clear();
     m_isWaitingForDidUpdate = true;

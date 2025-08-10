@@ -19,45 +19,17 @@
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT of THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "config.h"
 #include "DrawingAreaProxyHaiku.h"
 
-#include "UpdateInfo.h"
 #include "WebPageProxy.h"
 #include <WebCore/NotImplemented.h>
-#include <WebCore/ShareableBitmap.h>
 
 namespace WebKit {
-
-class DrawingAreaProxyHaiku::BackingStore {
-public:
-    BackingStore(const WebCore::IntSize& size, float deviceScaleFactor)
-        : m_size(size)
-        , m_deviceScaleFactor(deviceScaleFactor)
-    {
-    }
-
-    void incorporateUpdate(UpdateInfo& updateInfo)
-    {
-        // For now, just replace the whole bitmap.
-        m_bitmap = WebCore::ShareableBitmap::create(updateInfo.bitmapHandle);
-    }
-
-    void paint(BView* view, const WebCore::IntRect& rect)
-    {
-        if (m_bitmap)
-            view->DrawBitmap(static_cast<BBitmap*>(m_bitmap->nativeImage()), rect);
-    }
-
-private:
-    WebCore::IntSize m_size;
-    float m_deviceScaleFactor;
-    RefPtr<WebCore::ShareableBitmap> m_bitmap;
-};
 
 Ref<DrawingAreaProxy> DrawingAreaProxy::create(WebPageProxy& webPage, WebProcessProxy& webProcessProxy)
 {
@@ -73,28 +45,32 @@ DrawingAreaProxyHaiku::~DrawingAreaProxyHaiku()
 {
 }
 
+void DrawingAreaProxyHaiku::sizeDidChange()
+{
+    notImplemented();
+}
+
+void DrawingAreaProxyHaiku::deviceScaleFactorDidChange(CompletionHandler<void()>&& completionHandler)
+{
+    notImplemented();
+    completionHandler();
+}
+
 void DrawingAreaProxyHaiku::paint(BView* view, const WebCore::IntRect& rect)
 {
     if (m_backingStore)
         m_backingStore->paint(view, rect);
 }
 
-void DrawingAreaProxyHaiku::sizeDidChange()
+void DrawingAreaProxyHaiku::update(const ShareableBitmap::Handle& handle, const WebCore::IntRect& rect)
 {
-    // This method is called when the size of the view changes.
-    // We will need to inform the WebProcess of the new size.
-    notImplemented();
-}
+    if (!m_backingStore)
+        m_backingStore = std::make_unique<BackingStore>(size(), page()->deviceScaleFactor());
 
-void DrawingAreaProxyHaiku::update(uint64_t, UpdateInfo&& updateInfo)
-{
-    if (!m_backingStore || m_backingStore->size() != updateInfo.viewSize || m_backingStore->deviceScaleFactor() != updateInfo.deviceScaleFactor)
-        m_backingStore = makeUnique<BackingStore>(updateInfo.viewSize, updateInfo.deviceScaleFactor);
-
-    m_backingStore->incorporateUpdate(updateInfo);
+    m_backingStore->incorporateUpdate(ShareableBitmap::Handle(handle), rect);
 
     if (auto* page = page())
-        page->setViewNeedsDisplay(updateInfo.updateRectBounds);
+        page->setViewNeedsDisplay(rect);
 }
 
 } // namespace WebKit

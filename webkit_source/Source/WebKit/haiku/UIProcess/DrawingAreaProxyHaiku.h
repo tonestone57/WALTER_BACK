@@ -26,16 +26,13 @@
 #pragma once
 
 #include "DrawingAreaProxy.h"
-
-namespace WebKit {
-
+#include "ShareableBitmap.h"
+#include "BackingStore.h"
 #include <memory>
 
 class BView;
 
-namespace WebCore {
-class IntRect;
-}
+namespace WebKit {
 
 class DrawingAreaProxyHaiku final : public DrawingAreaProxy {
 public:
@@ -43,15 +40,13 @@ public:
     virtual ~DrawingAreaProxyHaiku();
 
     void paint(BView*, const WebCore::IntRect&);
-
 private:
-    class BackingStore;
-
     // DrawingAreaProxy
     void sizeDidChange() override;
+    void deviceScaleFactorDidChange(CompletionHandler<void()>&&) override;
 
     // IPC messages
-    void update(uint64_t, UpdateInfo&&);
+    void update(const ShareableBitmap::Handle&, const WebCore::IntRect&);
 
     std::unique_ptr<BackingStore> m_backingStore;
 };

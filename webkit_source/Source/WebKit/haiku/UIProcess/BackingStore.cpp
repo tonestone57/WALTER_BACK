@@ -23,30 +23,33 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include "config.h"
+#include "BackingStore.h"
 
-#include "WebPageProxy.h"
-#include <memory>
+#include <View.h>
+#include <Bitmap.h>
 
 namespace WebKit {
 
-class WebView;
+BackingStore::BackingStore(const WebCore::IntSize& size, float deviceScaleFactor)
+    : m_size(size)
+    , m_deviceScaleFactor(deviceScaleFactor)
+{
+}
 
-#include "PageConfiguration.h"
+void BackingStore::incorporateUpdate(ShareableBitmap::Handle&& handle, const WebCore::IntRect& rect)
+{
+    m_bitmap = ShareableBitmap::create(WTFMove(handle));
+}
 
-class WebPageProxyHaiku final : public WebPageProxy {
-public:
-    static Ref<WebPageProxy> create(PageConfiguration&);
-    ~WebPageProxyHaiku();
-
-    WebView* view() const;
-
-    void setViewNeedsDisplay(const WebCore::Region&);
-
-private:
-    void createView();
-
-    std::unique_ptr<WebView> m_view;
-};
+void BackingStore::paint(BView* view, const WebCore::IntRect& rect)
+{
+    if (m_bitmap) {
+        // FIXME: This is not correct. We need to handle the rect.
+        BBitmap* bitmap = m_bitmap->haikuBitmap();
+        if (bitmap)
+            view->DrawBitmap(bitmap);
+    }
+}
 
 } // namespace WebKit

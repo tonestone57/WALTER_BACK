@@ -25,28 +25,21 @@
 
 #pragma once
 
-#include "WebPageProxy.h"
-#include <memory>
+#include <View.h>
 
 namespace WebKit {
 
-class WebView;
+class WebPageProxy;
 
-#include "PageConfiguration.h"
-
-class WebPageProxyHaiku final : public WebPageProxy {
+class WebView : public BView {
 public:
-    static Ref<WebPageProxy> create(PageConfiguration&);
-    ~WebPageProxyHaiku();
+    WebView(WebPageProxy&);
+    virtual ~WebView() = default;
 
-    WebView* view() const;
-
-    void setViewNeedsDisplay(const WebCore::Region&);
+    void Draw(BRect updateRect) override;
 
 private:
-    void createView();
-
-    std::unique_ptr<WebView> m_view;
+    WebPageProxy& m_page;
 };
 
 } // namespace WebKit

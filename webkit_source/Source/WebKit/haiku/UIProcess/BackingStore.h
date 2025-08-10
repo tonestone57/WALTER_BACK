@@ -25,28 +25,28 @@
 
 #pragma once
 
-#include "WebPageProxy.h"
-#include <memory>
+#include "ShareableBitmap.h"
+#include <WebCore/IntSize.h>
+#include <WebCore/IntRect.h>
+
+class BView;
 
 namespace WebKit {
 
-class WebView;
-
-#include "PageConfiguration.h"
-
-class WebPageProxyHaiku final : public WebPageProxy {
+class BackingStore {
 public:
-    static Ref<WebPageProxy> create(PageConfiguration&);
-    ~WebPageProxyHaiku();
+    BackingStore(const WebCore::IntSize&, float deviceScaleFactor);
 
-    WebView* view() const;
+    const WebCore::IntSize& size() const { return m_size; }
+    float deviceScaleFactor() const { return m_deviceScaleFactor; }
 
-    void setViewNeedsDisplay(const WebCore::Region&);
+    void incorporateUpdate(ShareableBitmap::Handle&&, const WebCore::IntRect&);
+    void paint(BView*, const WebCore::IntRect&);
 
 private:
-    void createView();
-
-    std::unique_ptr<WebView> m_view;
+    WebCore::IntSize m_size;
+    float m_deviceScaleFactor;
+    RefPtr<ShareableBitmap> m_bitmap;
 };
 
 } // namespace WebKit

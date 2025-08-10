@@ -23,30 +23,25 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include "config.h"
+#include "WebView.h"
 
 #include "WebPageProxy.h"
-#include <memory>
+#include "DrawingAreaProxyHaiku.h"
+#include <WebCore/IntRect.h>
 
 namespace WebKit {
 
-class WebView;
+WebView::WebView(WebPageProxy& page)
+    : BView("WebKit WebView", B_WILL_DRAW | B_FRAME_EVENTS)
+    , m_page(page)
+{
+}
 
-#include "PageConfiguration.h"
-
-class WebPageProxyHaiku final : public WebPageProxy {
-public:
-    static Ref<WebPageProxy> create(PageConfiguration&);
-    ~WebPageProxyHaiku();
-
-    WebView* view() const;
-
-    void setViewNeedsDisplay(const WebCore::Region&);
-
-private:
-    void createView();
-
-    std::unique_ptr<WebView> m_view;
-};
+void WebView::Draw(BRect updateRect)
+{
+    if (auto* drawingArea = static_cast<DrawingAreaProxyHaiku*>(m_page.drawingArea()))
+        drawingArea->paint(this, WebCore::IntRect(updateRect));
+}
 
 } // namespace WebKit

@@ -97,3 +97,5 @@ GPUProcess/haiku/GPUProcessHaiku.cpp
 GPUProcess/haiku/GPUProcessMainHaiku.cpp
 haiku/UIProcess/WebTextCheckerClientHaiku.cpp
 haiku/UIProcess/PointerLockManagerHaiku.cpp
+haiku/UIProcess/WebView.cpp
+haiku/UIProcess/BackingStore.cpp

@@ -35,4 +35,8 @@ messages -> DrawingAreaProxy {
     Update(uint64_t stateID, struct WebKit::UpdateInfo updateInfo) CanDispatchOutOfOrder
     ExitAcceleratedCompositingMode(uint64_t backingStoreStateID, struct WebKit::UpdateInfo updateInfo)
 #endif
+
+#if PLATFORM(HAIKU)
+    Update(WebKit::ShareableBitmap::Handle handle, WebCore::IntRect rect)
+#endif
 }

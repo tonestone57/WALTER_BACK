@@ -26,13 +26,7 @@
 #include "config.h"
 #include "WebPageProxyHaiku.h"
 
-#include "APIView.h"
-#include "DrawingAreaProxy.h"
-#include "NativeWebMouseEvent.h"
-#include "WebPageCreationParameters.h"
-#include <WebCore/NotImplemented.h>
-
-#include <Message.h>
+#include "WebView.h"
 
 namespace WebKit {
 
@@ -44,76 +38,29 @@ Ref<WebPageProxy> WebPageProxyHaiku::create(PageConfiguration& configuration)
 WebPageProxyHaiku::WebPageProxyHaiku(PageConfiguration& configuration)
     : WebPageProxy(configuration)
 {
+    createView();
 }
 
 WebPageProxyHaiku::~WebPageProxyHaiku()
 {
 }
 
-void WebPageProxyHaiku::setView(API::View* view)
+WebView* WebPageProxyHaiku::view() const
 {
-    m_view = view;
+    return m_view.get();
 }
 
-void WebPageProxyHaiku::loadURL(const String& url)
+#include <WebCore/Region.h>
+
+void WebPageProxyHaiku::createView()
 {
-    notImplemented();
+    m_view = std::make_unique<WebView>(*this);
 }
 
-void WebPageProxyHaiku::reload()
+void WebPageProxyHaiku::setViewNeedsDisplay(const WebCore::Region& region)
 {
-    notImplemented();
-}
-
-void WebPageProxyHaiku::goBack()
-{
-    notImplemented();
-}
-
-void WebPageProxyHaiku::goForward()
-{
-    notImplemented();
-}
-
-void WebPageProxyHaiku::stopLoading()
-{
-    notImplemented();
-}
-
-const String& WebPageProxyHaiku::mainFrameTitle() const
-{
-    notImplemented();
-    static String title;
-    return title;
-}
-
-const String& WebPageProxyHaiku::mainFrameRequestedURL() const
-{
-    notImplemented();
-    static String url;
-    return url;
-}
-
-const String& WebPageProxyHaiku::mainFrameURL() const
-{
-    notImplemented();
-    static String url;
-    return url;
-}
-
-void WebPageProxyHaiku::setDeveloperExtrasEnabled(bool enabled)
-{
-    notImplemented();
-}
-
-void WebPageProxyHaiku::didReceiveMessage(IPC::Connection& connection, IPC::Decoder& decoder)
-{
-    WebPageProxy::didReceiveMessage(connection, decoder);
-}
-
-void WebPageProxyHaiku::MessageReceived(BMessage* message)
-{
-    notImplemented();
+    if (m_view)
+        m_view->Invalidate(region.bounds());
 }
 
 } // namespace WebKit

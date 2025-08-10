@@ -26,6 +26,7 @@
 #pragma once
 
 #include "DrawingArea.h"
+#include "ShareableBitmap.h"
 
 namespace WebKit {
 
@@ -51,6 +52,8 @@ private:
 
     void setRootCompositingLayer(WebCore::Frame&, WebCore::GraphicsLayer*) override;
     void triggerRenderingUpdate() override;
+
+    void sendUpdate(const WebCore::IntRect&);
 
     WebCore::Region m_dirtyRegion;
     RunLoop::Timer m_displayTimer;
