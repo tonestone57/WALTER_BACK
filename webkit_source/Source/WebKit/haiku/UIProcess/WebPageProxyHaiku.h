@@ -33,6 +33,7 @@ namespace WebKit {
 class WebView;
 
 #include "PageConfiguration.h"
+#include "IconLoadingClientHaiku.h"
 
 class WebPageProxyHaiku final : public WebPageProxy {
 public:
@@ -50,6 +51,9 @@ public:
     void setViewNeedsDisplay(const WebCore::Region&);
 
     const String& mainFrameTitle() const;
+    const String& mainFrameURL() const;
+    double estimatedProgress() const;
+    WebCore::Image* favicon() const;
 
 private:
     void createView();
@@ -59,9 +63,16 @@ private:
 
     // WebPageProxy
     void didReceiveTitleForFrame(WebCore::FrameIdentifier, const String&, const UserData&) override;
+    void didCommitLoadForFrame(WebCore::FrameIdentifier, FrameInfoData&&, WebCore::ResourceRequest&&, std::optional<WebCore::NavigationIdentifier>, String&&, bool, WebCore::FrameLoadType, const WebCore::CertificateInfo&, bool, String&&, WebCore::ResourceResponseSource, bool, WebCore::HasInsecureContent, WebCore::MouseEventPolicy, const UserData&) override;
+    void didStartProgress() override;
+    void didChangeProgress(double) override;
+    void didFinishProgress() override;
 
     std::unique_ptr<WebView> m_view;
     String m_mainFrameTitle;
+    String m_mainFrameURL;
+    double m_estimatedProgress;
+    std::unique_ptr<IconLoadingClientHaiku> m_iconLoadingClient;
 };
 
 } // namespace WebKit

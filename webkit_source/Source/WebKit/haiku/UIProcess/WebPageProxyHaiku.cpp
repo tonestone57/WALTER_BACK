@@ -37,8 +37,10 @@ Ref<WebPageProxy> WebPageProxyHaiku::create(PageConfiguration& configuration)
 
 WebPageProxyHaiku::WebPageProxyHaiku(PageConfiguration& configuration)
     : WebPageProxy(configuration)
+    , m_iconLoadingClient(std::make_unique<IconLoadingClientHaiku>())
 {
     createView();
+    setIconLoadingClient(m_iconLoadingClient.get());
 }
 
 WebPageProxyHaiku::~WebPageProxyHaiku()
@@ -75,10 +77,45 @@ void WebPageProxyHaiku::didReceiveMessage(IPC::Connection& connection, IPC::Deco
     WebPageProxy::didReceiveMessage(connection, decoder);
 }
 
+#include "FrameInfoData.h"
+
 void WebPageProxyHaiku::didReceiveTitleForFrame(WebCore::FrameIdentifier frameID, const String& title, const UserData&)
 {
     if (mainFrame() && mainFrame()->frameID() == frameID)
         m_mainFrameTitle = title;
+}
+
+const String& WebPageProxyHaiku::mainFrameURL() const
+{
+    return m_mainFrameURL;
+}
+
+void WebPageProxyHaiku::didCommitLoadForFrame(WebCore::FrameIdentifier frameID, FrameInfoData&& frameInfo, WebCore::ResourceRequest&& request, std::optional<WebCore::NavigationIdentifier> navigationID, String&& mimeType, bool frameHasCustomContentProvider, WebCore::FrameLoadType frameLoadType, const WebCore::CertificateInfo& certificateInfo, bool usedLegacyTLS, String&& proxyName, WebCore::ResourceResponseSource source, bool containsPluginDocument, WebCore::HasInsecureContent hasInsecureContent, WebCore::MouseEventPolicy mouseEventPolicy, const UserData& userData)
+{
+    WebPageProxy::didCommitLoadForFrame(frameID, WTFMove(frameInfo), WTFMove(request), navigationID, WTFMove(mimeType), frameHasCustomContentProvider, frameLoadType, certificateInfo, usedLegacyTLS, WTFMove(proxyName), source, containsPluginDocument, hasInsecureContent, mouseEventPolicy, userData);
+
+    if (mainFrame() && mainFrame()->frameID() == frameID)
+        m_mainFrameURL = frameInfo.url;
+}
+
+double WebPageProxyHaiku::estimatedProgress() const
+{
+    return m_estimatedProgress;
+}
+
+void WebPageProxyHaiku::didStartProgress()
+{
+    m_estimatedProgress = 0.0;
+}
+
+void WebPageProxyHaiku::didChangeProgress(double value)
+{
+    m_estimatedProgress = value;
+}
+
+void WebPageProxyHaiku::didFinishProgress()
+{
+    m_estimatedProgress = 1.0;
 }
 
 void WebPageProxyHaiku::loadURL(const String& url)
@@ -104,6 +141,11 @@ void WebPageProxyHaiku::goForward()
 void WebPageProxyHaiku::stopLoading()
 {
     WebPageProxy::stopLoading();
+}
+
+WebCore::Image* WebPageProxyHaiku::favicon() const
+{
+    return m_iconLoadingClient->favicon();
 }
 
 } // namespace WebKit
