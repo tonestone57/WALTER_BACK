@@ -1,5 +1,7 @@
 /*
- * Copyright (C) 2024 Haiku, Inc. All rights reserved.
+ * Copyright (C) 2024 Your Name <your@email.com>
+ *
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,46 +25,26 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include "config.h"
+#include "WebPreferencesHaiku.h"
 
-#include "WebPageProxy.h"
-#include <Handler.h>
-
-class BWebFrame;
-class BWebSettings;
+#include "WebPreferencesStore.h"
 
 namespace WebKit {
 
-class WebPageProxyHaiku : public WebPageProxy, public BHandler {
-public:
-    static Ref<WebPageProxy> create(PageConfiguration&);
-    virtual ~WebPageProxyHaiku();
+Ref<WebPreferencesHaiku> WebPreferencesHaiku::create(const String& identifier, const String& keyPrefix, const String& globalDebugKeyPrefix)
+{
+    return adoptRef(*new WebPreferencesHaiku(identifier, keyPrefix, globalDebugKeyPrefix));
+}
 
-    void setView(API::View*);
+WebPreferencesHaiku::WebPreferencesHaiku(const String& identifier, const String& keyPrefix, const String& globalDebugKeyPrefix)
+    : WebPreferences(identifier, keyPrefix, globalDebugKeyPrefix)
+{
+}
 
-    void loadURL(const String&);
-    void reload();
-    void goBack();
-    void goForward();
-    void stopLoading();
-
-    const String& mainFrameTitle() const;
-    const String& mainFrameRequestedURL() const;
-    const String& mainFrameURL() const;
-
-    void setDeveloperExtrasEnabled(bool);
-
-private:
-    WebPageProxyHaiku(PageConfiguration&);
-
-    // IPC::MessageReceiver
-    void didReceiveMessage(IPC::Connection&, IPC::Decoder&) override;
-
-    // BHandler
-    void MessageReceived(BMessage* message) override;
-
-    BWebFrame* fMainFrame;
-    BWebSettings* fSettings;
-};
+void WebPreferencesHaiku::platformInitializeStore()
+{
+    // FIXME: Implement this.
+}
 
 } // namespace WebKit

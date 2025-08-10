@@ -25,44 +25,78 @@
 
 #pragma once
 
-#include "WebPageProxy.h"
-#include <Handler.h>
+#include "WebFrameProxy.h"
 
-class BWebFrame;
-class BWebSettings;
+#include <Point.h>
+#include <String.h>
+
+#include <JavaScriptCore/JSExportMacros.h>
 
 namespace WebKit {
 
-class WebPageProxyHaiku : public WebPageProxy, public BHandler {
+class WebFrameProxyHaiku : public WebFrameProxy {
 public:
-    static Ref<WebPageProxy> create(PageConfiguration&);
-    virtual ~WebPageProxyHaiku();
-
-    void setView(API::View*);
+    static Ref<WebFrameProxy> create(WebPageProxy&, WebCore::FrameIdentifier);
+    virtual ~WebFrameProxyHaiku();
 
     void loadURL(const String&);
-    void reload();
-    void goBack();
-    void goForward();
     void stopLoading();
+    void reload();
 
-    const String& mainFrameTitle() const;
-    const String& mainFrameRequestedURL() const;
-    const String& mainFrameURL() const;
+    String requestedURL() const;
+    String url() const;
+    String mimeType() const;
 
-    void setDeveloperExtrasEnabled(bool);
+    bool canCopy() const;
+    bool canCut() const;
+    bool canPaste() const;
+
+    void copy();
+    void cut();
+    void paste();
+
+    bool canUndo() const;
+    bool canRedo() const;
+
+    void undo();
+    void redo();
+
+    bool allowsScrolling() const;
+    void setAllowsScrolling(bool);
+    BPoint scrollPosition();
+
+    String frameSource() const;
+    void setFrameSource(const String&);
+
+    void setTransparent(bool);
+    bool isTransparent() const;
+
+    String innerText() const;
+    String asMarkup() const;
+    String externalRepresentation() const;
+
+    bool findString(const String&, uint32_t);
+
+    bool canIncreaseZoomFactor() const;
+    bool canDecreaseZoomFactor() const;
+
+    void increaseZoomFactor(bool textOnly);
+    void decreaseZoomFactor(bool textOnly);
+
+    void resetZoomFactor();
+
+    void setEditable(bool);
+    bool isEditable() const;
+
+    void setTitle(const String&);
+    const String& title() const;
+
+    const char* name() const;
+
+    JSGlobalContextRef globalContext() const;
 
 private:
-    WebPageProxyHaiku(PageConfiguration&);
-
-    // IPC::MessageReceiver
-    void didReceiveMessage(IPC::Connection&, IPC::Decoder&) override;
-
-    // BHandler
-    void MessageReceived(BMessage* message) override;
-
-    BWebFrame* fMainFrame;
-    BWebSettings* fSettings;
+    WebFrameProxyHaiku(WebPageProxy&, WebCore::FrameIdentifier);
 };
 
 } // namespace WebKit

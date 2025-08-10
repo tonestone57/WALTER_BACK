@@ -126,6 +126,8 @@ void DownloadProxy::didStart(const ResourceRequest& request, const String& sugge
     if (m_didStartCallback)
         m_didStartCallback(this);
     protectedClient()->legacyDidStart(*this);
+
+    platformDidStart();
 }
 
 void DownloadProxy::didReceiveAuthenticationChallenge(AuthenticationChallenge&& authenticationChallenge, AuthenticationChallengeIdentifier challengeID)
@@ -149,6 +151,7 @@ void DownloadProxy::willSendRequest(ResourceRequest&& proposedRequest, const Res
 void DownloadProxy::didReceiveData(uint64_t bytesWritten, uint64_t totalBytesWritten, uint64_t totalBytesExpectedToWrite)
 {
     protectedClient()->didReceiveData(*this, bytesWritten, totalBytesWritten, totalBytesExpectedToWrite);
+    platformDidReceiveData(bytesWritten, totalBytesWritten, totalBytesExpectedToWrite);
 }
 
 void DownloadProxy::decideDestinationWithSuggestedFilename(const WebCore::ResourceResponse& response, String&& suggestedFilename, DecideDestinationCallback&& completionHandler)
@@ -228,6 +231,8 @@ void DownloadProxy::didFinish()
     if (m_downloadIsCancelled)
         return;
 
+    platformDidFinish();
+
     // This can cause the DownloadProxy object to be deleted.
     if (RefPtr downloadProxyMap = m_downloadProxyMap.get())
         downloadProxyMap->downloadFinished(*this);
@@ -241,6 +246,8 @@ void DownloadProxy::didFail(const ResourceError& error, std::span<const uint8_t>
     m_legacyResumeData = createData(resumeData);
 
     protectedClient()->didFail(*this, error, m_legacyResumeData.get());
+
+    platformDidFail(error);
 
     // This can cause the DownloadProxy object to be deleted.
     if (RefPtr downloadProxyMap = m_downloadProxyMap.get())

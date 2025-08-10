@@ -1,5 +1,7 @@
 /*
- * Copyright (C) 2024 Haiku, Inc. All rights reserved.
+ * Copyright (C) 2024 Your Name <your@email.com>
+ *
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -25,44 +27,25 @@
 
 #pragma once
 
-#include "WebPageProxy.h"
-#include <Handler.h>
+#include "DownloadProxy.h"
+#include <wtf/RefPtr.h>
 
-class BWebFrame;
-class BWebSettings;
+class BWebDownload;
 
-namespace WebKit {
+namespace BPrivate {
 
-class WebPageProxyHaiku : public WebPageProxy, public BHandler {
+class WebDownloadPrivate {
 public:
-    static Ref<WebPageProxy> create(PageConfiguration&);
-    virtual ~WebPageProxyHaiku();
+    WebDownloadPrivate(WebKit::DownloadProxy& download)
+        : m_download(download)
+    {
+    }
 
-    void setView(API::View*);
-
-    void loadURL(const String&);
-    void reload();
-    void goBack();
-    void goForward();
-    void stopLoading();
-
-    const String& mainFrameTitle() const;
-    const String& mainFrameRequestedURL() const;
-    const String& mainFrameURL() const;
-
-    void setDeveloperExtrasEnabled(bool);
+    void setDownload(BWebDownload* download) { m_bWebDownload = download; }
 
 private:
-    WebPageProxyHaiku(PageConfiguration&);
-
-    // IPC::MessageReceiver
-    void didReceiveMessage(IPC::Connection&, IPC::Decoder&) override;
-
-    // BHandler
-    void MessageReceived(BMessage* message) override;
-
-    BWebFrame* fMainFrame;
-    BWebSettings* fSettings;
+    WebKit::DownloadProxy& m_download;
+    BWebDownload* m_bWebDownload;
 };
 
-} // namespace WebKit
+} // namespace BPrivate

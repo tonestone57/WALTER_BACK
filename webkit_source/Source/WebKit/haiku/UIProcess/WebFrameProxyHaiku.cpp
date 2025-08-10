@@ -24,237 +24,237 @@
  */
 
 #include "config.h"
-#include "WebFrameProxy.h"
 #include "WebFrameProxyHaiku.h"
 
 #include <WebCore/NotImplemented.h>
 
 namespace WebKit {
 
-void WebFrameProxy::platformInvalidate()
+Ref<WebFrameProxy> WebFrameProxyHaiku::create(WebPageProxy& page, WebCore::FrameIdentifier frameID)
 {
-    // Haiku-specific invalidation of the WebFrameProxy.
-    // This is where you would tear down any platform-specific resources associated with the frame proxy.
+    return adoptRef(*new WebFrameProxyHaiku(page, frameID));
 }
 
-void BWebFrame::SetListener(const BMessenger& listener)
+WebFrameProxyHaiku::WebFrameProxyHaiku(WebPageProxy& page, WebCore::FrameIdentifier frameID)
+    : WebFrameProxy(page, frameID)
 {
-    notImplemented();
 }
 
-void BWebFrame::LoadURL(BString url)
+WebFrameProxyHaiku::~WebFrameProxyHaiku()
 {
-    notImplemented();
 }
 
-void BWebFrame::StopLoading()
+void WebFrameProxyHaiku::loadURL(const String& url)
 {
     notImplemented();
 }
 
-void BWebFrame::Reload()
+void WebFrameProxyHaiku::stopLoading()
 {
     notImplemented();
 }
 
-BString BWebFrame::RequestedURL() const
+void WebFrameProxyHaiku::reload()
 {
     notImplemented();
-    return BString();
 }
 
-BString BWebFrame::URL() const
+String WebFrameProxyHaiku::requestedURL() const
 {
     notImplemented();
-    return BString();
+    return String();
 }
 
-BString BWebFrame::MIMEType() const
+String WebFrameProxyHaiku::url() const
 {
     notImplemented();
-    return BString();
+    return String();
 }
 
-bool BWebFrame::CanCopy() const
+String WebFrameProxyHaiku::mimeType() const
 {
     notImplemented();
-    return false;
+    return String();
 }
 
-bool BWebFrame::CanCut() const
+bool WebFrameProxyHaiku::canCopy() const
 {
     notImplemented();
     return false;
 }
 
-bool BWebFrame::CanPaste() const
+bool WebFrameProxyHaiku::canCut() const
 {
     notImplemented();
     return false;
 }
 
-void BWebFrame::Copy()
-{
-    notImplemented();
-}
-
-void BWebFrame::Cut()
-{
-    notImplemented();
-}
-
-void BWebFrame::Paste()
-{
-    notImplemented();
-}
-
-bool BWebFrame::CanUndo() const
+bool WebFrameProxyHaiku::canPaste() const
 {
     notImplemented();
     return false;
 }
 
-bool BWebFrame::CanRedo() const
+void WebFrameProxyHaiku::copy()
+{
+    notImplemented();
+}
+
+void WebFrameProxyHaiku::cut()
+{
+    notImplemented();
+}
+
+void WebFrameProxyHaiku::paste()
+{
+    notImplemented();
+}
+
+bool WebFrameProxyHaiku::canUndo() const
 {
     notImplemented();
     return false;
 }
 
-void BWebFrame::Undo()
-{
-    notImplemented();
-}
-
-void BWebFrame::Redo()
-{
-    notImplemented();
-}
-
-bool BWebFrame::AllowsScrolling() const
+bool WebFrameProxyHaiku::canRedo() const
 {
     notImplemented();
     return false;
 }
 
-void BWebFrame::SetAllowsScrolling(bool enable)
+void WebFrameProxyHaiku::undo()
 {
     notImplemented();
 }
 
-BPoint BWebFrame::ScrollPosition()
+void WebFrameProxyHaiku::redo()
+{
+    notImplemented();
+}
+
+bool WebFrameProxyHaiku::allowsScrolling() const
+{
+    notImplemented();
+    return false;
+}
+
+void WebFrameProxyHaiku::setAllowsScrolling(bool)
+{
+    notImplemented();
+}
+
+BPoint WebFrameProxyHaiku::scrollPosition()
 {
     notImplemented();
     return BPoint();
 }
 
-BString BWebFrame::FrameSource() const
+String WebFrameProxyHaiku::frameSource() const
 {
     notImplemented();
-    return BString();
+    return String();
 }
 
-void BWebFrame::SetFrameSource(const BString& source)
-{
-    notImplemented();
-}
-
-void BWebFrame::SetTransparent(bool transparent)
+void WebFrameProxyHaiku::setFrameSource(const String&)
 {
     notImplemented();
 }
 
-bool BWebFrame::IsTransparent() const
+void WebFrameProxyHaiku::setTransparent(bool)
+{
+    notImplemented();
+}
+
+bool WebFrameProxyHaiku::isTransparent() const
 {
     notImplemented();
     return false;
 }
 
-BString BWebFrame::InnerText() const
+String WebFrameProxyHaiku::innerText() const
 {
     notImplemented();
-    return BString();
+    return String();
 }
 
-BString BWebFrame::AsMarkup() const
+String WebFrameProxyHaiku::asMarkup() const
 {
     notImplemented();
-    return BString();
+    return String();
 }
 
-BString BWebFrame::ExternalRepresentation() const
+String WebFrameProxyHaiku::externalRepresentation() const
 {
     notImplemented();
-    return BString();
+    return String();
 }
 
-bool BWebFrame::FindString(const BString& string,
-                                    WebCore::FindOptions options)
+bool WebFrameProxyHaiku::findString(const String&, uint32_t)
 {
     notImplemented();
     return false;
 }
 
-bool BWebFrame::CanIncreaseZoomFactor() const
+bool WebFrameProxyHaiku::canIncreaseZoomFactor() const
 {
     notImplemented();
     return false;
 }
 
-bool BWebFrame::CanDecreaseZoomFactor() const
+bool WebFrameProxyHaiku::canDecreaseZoomFactor() const
 {
     notImplemented();
     return false;
 }
 
-void BWebFrame::IncreaseZoomFactor(bool textOnly)
+void WebFrameProxyHaiku::increaseZoomFactor(bool)
 {
     notImplemented();
 }
 
-void BWebFrame::DecreaseZoomFactor(bool textOnly)
+void WebFrameProxyHaiku::decreaseZoomFactor(bool)
 {
     notImplemented();
 }
 
-void BWebFrame::ResetZoomFactor()
+void WebFrameProxyHaiku::resetZoomFactor()
 {
     notImplemented();
 }
 
-void BWebFrame::SetEditable(bool editable)
+void WebFrameProxyHaiku::setEditable(bool)
 {
     notImplemented();
 }
 
-bool BWebFrame::IsEditable() const
+bool WebFrameProxyHaiku::isEditable() const
 {
     notImplemented();
     return false;
 }
 
-void BWebFrame::SetTitle(const BString& title)
+void WebFrameProxyHaiku::setTitle(const String&)
 {
     notImplemented();
 }
 
-const BString& BWebFrame::Title() const
+const String& WebFrameProxyHaiku::title() const
 {
     notImplemented();
-    static BString title;
+    static String title;
     return title;
 }
 
-const char* BWebFrame::Name() const
+const char* WebFrameProxyHaiku::name() const
 {
     notImplemented();
     return nullptr;
 }
 
-JSGlobalContextRef BWebFrame::GlobalContext() const
+JSGlobalContextRef WebFrameProxyHaiku::globalContext() const
 {
     notImplemented();
     return nullptr;
 }
-
 
 } // namespace WebKit

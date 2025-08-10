@@ -24,50 +24,96 @@
  */
 
 #include "config.h"
-#include "WebPageProxy.h"
+#include "WebPageProxyHaiku.h"
 
 #include "APIView.h"
 #include "DrawingAreaProxy.h"
 #include "NativeWebMouseEvent.h"
 #include "WebPageCreationParameters.h"
-#include "WebPageProxyHaiku.h"
 #include <WebCore/NotImplemented.h>
+
+#include <Message.h>
 
 namespace WebKit {
 
-void WebPageProxy::platformInitialize()
+Ref<WebPageProxy> WebPageProxyHaiku::create(PageConfiguration& configuration)
 {
-    // Haiku-specific initialization.
+    return adoptRef(*new WebPageProxyHaiku(configuration));
 }
 
-void WebPageProxy::getPlatformEditorState(WebCore::EditorState& state) const
+WebPageProxyHaiku::WebPageProxyHaiku(PageConfiguration& configuration)
+    : WebPageProxy(configuration)
+{
+}
+
+WebPageProxyHaiku::~WebPageProxyHaiku()
+{
+}
+
+void WebPageProxyHaiku::setView(API::View* view)
+{
+    m_view = view;
+}
+
+void WebPageProxyHaiku::loadURL(const String& url)
 {
     notImplemented();
 }
 
-Ref<API::View> WebPageProxy::createView()
+void WebPageProxyHaiku::reload()
 {
-    return API::View::create(*this);
+    notImplemented();
 }
 
-void WebPageProxy::setView(API::View* view)
+void WebPageProxyHaiku::goBack()
 {
-    m_view = view;
-    if (m_view)
-        m_view->setClient(makeUnique<ViewClient>());
+    notImplemented();
 }
 
-void WebPageProxy::makeViewBlank()
+void WebPageProxyHaiku::goForward()
 {
-    if (m_view)
-        m_view->makeBlank();
+    notImplemented();
 }
 
-void WebPageProxy::setDrawingArea(std::unique_ptr<DrawingAreaProxy>&& drawingArea)
+void WebPageProxyHaiku::stopLoading()
 {
-    if (drawingArea)
-        drawingArea->setShouldScaleViewToFitDocument(true);
-    m_drawingArea = WTFMove(drawingArea);
+    notImplemented();
+}
+
+const String& WebPageProxyHaiku::mainFrameTitle() const
+{
+    notImplemented();
+    static String title;
+    return title;
+}
+
+const String& WebPageProxyHaiku::mainFrameRequestedURL() const
+{
+    notImplemented();
+    static String url;
+    return url;
+}
+
+const String& WebPageProxyHaiku::mainFrameURL() const
+{
+    notImplemented();
+    static String url;
+    return url;
+}
+
+void WebPageProxyHaiku::setDeveloperExtrasEnabled(bool enabled)
+{
+    notImplemented();
+}
+
+void WebPageProxyHaiku::didReceiveMessage(IPC::Connection& connection, IPC::Decoder& decoder)
+{
+    WebPageProxy::didReceiveMessage(connection, decoder);
+}
+
+void WebPageProxyHaiku::MessageReceived(BMessage* message)
+{
+    notImplemented();
 }
 
 } // namespace WebKit

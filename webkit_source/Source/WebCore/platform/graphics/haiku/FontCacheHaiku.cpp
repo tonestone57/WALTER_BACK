@@ -36,7 +36,8 @@
 #include "Font.h"
 #include "FontPlatformData.h"
 #include "NotImplemented.h"
-#include "Font.h"
+#include "WebCoreSystemInterface.h"
+#include "Settings.h"
 #include <Font.h>
 #include <String.h>
 #include <interface/Font.h>
@@ -47,31 +48,29 @@ void FontCache::platformInit()
 {
 }
 
-
 RefPtr<Font> FontCache::systemFallbackForCharacterCluster(const FontDescription& description,
 	const Font& /*originalFontData*/, WebCore::IsForPlatformFont,
 	WebCore::FontCache::PreferColoredFont, StringView)
 {
-    FontPlatformData data(description, AtomString::fromUTF8("Sans"));
-        // FIXME check that the requested characters are actually available,
-        // and try to use the other info in the arguments (should this be
-        // monospace, etc)
+    const auto& families = description.families();
+    for (const auto& family : families) {
+        if (family != "monospace" && family != "sans-serif" && family != "serif" && family != "fantasy" && family != "cursive")
+            return nullptr;
+    }
+
+    FontPlatformData data(description, defaultSettings().sansSerifFontFamily());
     return fontForPlatformData(data);
 }
 
 Vector<String> FontCache::systemFontFamilies()
 {
     Vector<String> fontFamilies;
-    font_family family;
-    font_style style;
-
-    be_plain_font->GetFamilyAndStyle(&family, &style);
-    fontFamilies.append(String::fromUTF8(family));
-    be_bold_font->GetFamilyAndStyle(&family, &style);
-    fontFamilies.append(String::fromUTF8(family));
-    be_fixed_font->GetFamilyAndStyle(&family, &style);
-    fontFamilies.append(String::fromUTF8(family));
-
+    fontFamilies.append(defaultSettings().standardFontFamily());
+    fontFamilies.append(defaultSettings().serifFontFamily());
+    fontFamilies.append(defaultSettings().sansSerifFontFamily());
+    fontFamilies.append(defaultSettings().fixedFontFamily());
+    fontFamilies.append(defaultSettings().cursiveFontFamily());
+    fontFamilies.append(defaultSettings().fantasyFontFamily());
     return fontFamilies;
 }
 
@@ -82,11 +81,7 @@ bool FontCache::isSystemFontForbiddenForEditing(const String&)
 
 Ref<Font> FontCache::lastResortFallbackFont(const FontDescription& fontDescription)
 {
-    font_family family;
-    font_style style;
-    be_plain_font->GetFamilyAndStyle(&family, &style);
-    AtomString plainFontFamily = AtomString::fromUTF8(family);
-    return *fontForFamily(fontDescription, plainFontFamily);
+    return *fontForFamily(fontDescription, defaultSettings().standardFontFamily());
 }
 
 std::unique_ptr<FontPlatformData> FontCache::createFontPlatformData(

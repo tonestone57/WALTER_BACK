@@ -1,5 +1,7 @@
 /*
- * Copyright (C) 2024 Haiku, Inc. All rights reserved.
+ * Copyright (C) 2024 Your Name <your@email.com>
+ *
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -19,50 +21,19 @@
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * ARISING IN ANY WAY OUT of THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #pragma once
 
-#include "WebPageProxy.h"
-#include <Handler.h>
+namespace WebCore {
 
-class BWebFrame;
-class BWebSettings;
+class Settings;
 
-namespace WebKit {
+// This function provides a way to get the default settings for WebCore.
+// It is intended to be used by platform-specific code that does not have
+// access to a Page object.
+Settings& defaultSettings();
 
-class WebPageProxyHaiku : public WebPageProxy, public BHandler {
-public:
-    static Ref<WebPageProxy> create(PageConfiguration&);
-    virtual ~WebPageProxyHaiku();
-
-    void setView(API::View*);
-
-    void loadURL(const String&);
-    void reload();
-    void goBack();
-    void goForward();
-    void stopLoading();
-
-    const String& mainFrameTitle() const;
-    const String& mainFrameRequestedURL() const;
-    const String& mainFrameURL() const;
-
-    void setDeveloperExtrasEnabled(bool);
-
-private:
-    WebPageProxyHaiku(PageConfiguration&);
-
-    // IPC::MessageReceiver
-    void didReceiveMessage(IPC::Connection&, IPC::Decoder&) override;
-
-    // BHandler
-    void MessageReceived(BMessage* message) override;
-
-    BWebFrame* fMainFrame;
-    BWebSettings* fSettings;
-};
-
-} // namespace WebKit
+} // namespace WebCore

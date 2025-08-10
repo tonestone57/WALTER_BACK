@@ -1,5 +1,7 @@
 /*
- * Copyright (C) 2024 Haiku, Inc. All rights reserved.
+ * Copyright (C) 2024 Your Name <your@email.com>
+ *
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,46 +25,28 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include "config.h"
+#include "WebCoreSystemInterface.h"
 
-#include "WebPageProxy.h"
-#include <Handler.h>
+#include "Page.h"
+#include "Settings.h"
 
-class BWebFrame;
-class BWebSettings;
+namespace WebCore {
 
-namespace WebKit {
+static Settings* s_defaultSettings;
 
-class WebPageProxyHaiku : public WebPageProxy, public BHandler {
-public:
-    static Ref<WebPageProxy> create(PageConfiguration&);
-    virtual ~WebPageProxyHaiku();
+void initializeDefaultSettings()
+{
+    auto page = Page::create(nullptr);
+    s_defaultSettings = &page->settings();
+    s_defaultSettings->ref();
+}
 
-    void setView(API::View*);
+Settings& defaultSettings()
+{
+    if (!s_defaultSettings)
+        initializeDefaultSettings();
+    return *s_defaultSettings;
+}
 
-    void loadURL(const String&);
-    void reload();
-    void goBack();
-    void goForward();
-    void stopLoading();
-
-    const String& mainFrameTitle() const;
-    const String& mainFrameRequestedURL() const;
-    const String& mainFrameURL() const;
-
-    void setDeveloperExtrasEnabled(bool);
-
-private:
-    WebPageProxyHaiku(PageConfiguration&);
-
-    // IPC::MessageReceiver
-    void didReceiveMessage(IPC::Connection&, IPC::Decoder&) override;
-
-    // BHandler
-    void MessageReceived(BMessage* message) override;
-
-    BWebFrame* fMainFrame;
-    BWebSettings* fSettings;
-};
-
-} // namespace WebKit
+} // namespace WebCore
