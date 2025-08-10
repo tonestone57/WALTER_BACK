@@ -95,3 +95,5 @@ NetworkProcess/haiku/NetworkProcessHaiku.cpp
 NetworkProcess/haiku/NetworkProcessMainHaiku.cpp
 GPUProcess/haiku/GPUProcessHaiku.cpp
 GPUProcess/haiku/GPUProcessMainHaiku.cpp
+haiku/UIProcess/WebTextCheckerClientHaiku.cpp
+haiku/UIProcess/PointerLockManagerHaiku.cpp
