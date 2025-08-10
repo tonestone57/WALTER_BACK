@@ -38,6 +38,13 @@ public:
 
     void Draw(BRect updateRect) override;
 
+    void MouseDown(BPoint where) override;
+    void MouseUp(BPoint where) override;
+    void MouseMoved(BPoint where, uint32 transit, const BMessage* dragMessage) override;
+
+    void KeyDown(const char* bytes, int32 numBytes) override;
+    void KeyUp(const char* bytes, int32 numBytes) override;
+
 private:
     WebPageProxy& m_page;
 };

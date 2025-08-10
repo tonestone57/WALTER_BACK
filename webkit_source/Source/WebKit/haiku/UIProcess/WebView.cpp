@@ -38,10 +38,51 @@ WebView::WebView(WebPageProxy& page)
 {
 }
 
+#include "NativeWebMouseEvent.h"
+#include <Window.h>
+
 void WebView::Draw(BRect updateRect)
 {
     if (auto* drawingArea = static_cast<DrawingAreaProxyHaiku*>(m_page.drawingArea()))
         drawingArea->paint(this, WebCore::IntRect(updateRect));
+}
+
+void WebView::MouseDown(BPoint where)
+{
+    MakeFocus(true);
+    BMessage* message = Window()->CurrentMessage();
+    if (message)
+        m_page.handleMouseEvent(NativeWebMouseEvent(message, this));
+}
+
+void WebView::MouseUp(BPoint where)
+{
+    BMessage* message = Window()->CurrentMessage();
+    if (message)
+        m_page.handleMouseEvent(NativeWebMouseEvent(message, this));
+}
+
+#include "NativeWebKeyboardEvent.h"
+
+void WebView::MouseMoved(BPoint where, uint32 transit, const BMessage* dragMessage)
+{
+    BMessage* message = Window()->CurrentMessage();
+    if (message)
+        m_page.handleMouseEvent(NativeWebMouseEvent(message, this));
+}
+
+void WebView::KeyDown(const char* bytes, int32 numBytes)
+{
+    BMessage* message = Window()->CurrentMessage();
+    if (message)
+        m_page.handleKeyboardEvent(NativeWebKeyboardEvent(message, this));
+}
+
+void WebView::KeyUp(const char* bytes, int32 numBytes)
+{
+    BMessage* message = Window()->CurrentMessage();
+    if (message)
+        m_page.handleKeyboardEvent(NativeWebKeyboardEvent(message, this));
 }
 
 } // namespace WebKit
