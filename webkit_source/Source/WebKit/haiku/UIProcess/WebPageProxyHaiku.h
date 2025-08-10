@@ -55,6 +55,10 @@ public:
     double estimatedProgress() const;
     WebCore::Image* favicon() const;
 
+    void increaseZoomFactor(bool textOnly);
+    void decreaseZoomFactor(bool textOnly);
+    void resetZoomFactor();
+
 private:
     void createView();
 

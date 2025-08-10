@@ -148,4 +148,26 @@ WebCore::Image* WebPageProxyHaiku::favicon() const
     return m_iconLoadingClient->favicon();
 }
 
+void WebPageProxyHaiku::increaseZoomFactor(bool textOnly)
+{
+    if (textOnly)
+        setTextZoomFactor(textZoomFactor() * 1.2);
+    else
+        setPageZoomFactor(pageZoomFactor() * 1.2);
+}
+
+void WebPageProxyHaiku::decreaseZoomFactor(bool textOnly)
+{
+    if (textOnly)
+        setTextZoomFactor(textZoomFactor() / 1.2);
+    else
+        setPageZoomFactor(pageZoomFactor() / 1.2);
+}
+
+void WebPageProxyHaiku::resetZoomFactor()
+{
+    setTextZoomFactor(1.0);
+    setPageZoomFactor(1.0);
+}
+
 } // namespace WebKit
