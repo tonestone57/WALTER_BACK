@@ -38,9 +38,11 @@ Ref<WebPageProxy> WebPageProxyHaiku::create(PageConfiguration& configuration)
 WebPageProxyHaiku::WebPageProxyHaiku(PageConfiguration& configuration)
     : WebPageProxy(configuration)
     , m_iconLoadingClient(std::make_unique<IconLoadingClientHaiku>())
+    , m_findClient(std::make_unique<FindClientHaiku>())
 {
     createView();
     setIconLoadingClient(m_iconLoadingClient.get());
+    setFindClient(m_findClient.get());
 }
 
 WebPageProxyHaiku::~WebPageProxyHaiku()
@@ -168,6 +170,11 @@ void WebPageProxyHaiku::resetZoomFactor()
 {
     setTextZoomFactor(1.0);
     setPageZoomFactor(1.0);
+}
+
+void WebPageProxyHaiku::findString(const String& string, OptionSet<FindOptions> options, unsigned maxMatchCount)
+{
+    WebPageProxy::findString(string, options, maxMatchCount);
 }
 
 } // namespace WebKit

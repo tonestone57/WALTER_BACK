@@ -34,6 +34,8 @@ class WebView;
 
 #include "PageConfiguration.h"
 #include "IconLoadingClientHaiku.h"
+#include "FindClientHaiku.h"
+#include "FindOptions.h"
 
 class WebPageProxyHaiku final : public WebPageProxy {
 public:
@@ -59,6 +61,8 @@ public:
     void decreaseZoomFactor(bool textOnly);
     void resetZoomFactor();
 
+    void findString(const String&, OptionSet<FindOptions>, unsigned maxMatchCount);
+
 private:
     void createView();
 
@@ -77,6 +81,7 @@ private:
     String m_mainFrameURL;
     double m_estimatedProgress;
     std::unique_ptr<IconLoadingClientHaiku> m_iconLoadingClient;
+    std::unique_ptr<FindClientHaiku> m_findClient;
 };
 
 } // namespace WebKit
