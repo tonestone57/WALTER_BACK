@@ -57,10 +57,53 @@ void WebPageProxyHaiku::createView()
     m_view = std::make_unique<WebView>(*this);
 }
 
+#include <WebCore/ResourceRequest.h>
+
 void WebPageProxyHaiku::setViewNeedsDisplay(const WebCore::Region& region)
 {
     if (m_view)
         m_view->Invalidate(region.bounds());
+}
+
+const String& WebPageProxyHaiku::mainFrameTitle() const
+{
+    return m_mainFrameTitle;
+}
+
+void WebPageProxyHaiku::didReceiveMessage(IPC::Connection& connection, IPC::Decoder& decoder)
+{
+    WebPageProxy::didReceiveMessage(connection, decoder);
+}
+
+void WebPageProxyHaiku::didReceiveTitleForFrame(WebCore::FrameIdentifier frameID, const String& title, const UserData&)
+{
+    if (mainFrame() && mainFrame()->frameID() == frameID)
+        m_mainFrameTitle = title;
+}
+
+void WebPageProxyHaiku::loadURL(const String& url)
+{
+    loadRequest(WebCore::ResourceRequest(URL(url)));
+}
+
+void WebPageProxyHaiku::reload()
+{
+    WebPageProxy::reload(false);
+}
+
+void WebPageProxyHaiku::goBack()
+{
+    WebPageProxy::goBack();
+}
+
+void WebPageProxyHaiku::goForward()
+{
+    WebPageProxy::goForward();
+}
+
+void WebPageProxyHaiku::stopLoading()
+{
+    WebPageProxy::stopLoading();
 }
 
 } // namespace WebKit

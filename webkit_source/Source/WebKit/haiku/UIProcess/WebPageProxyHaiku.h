@@ -41,12 +41,27 @@ public:
 
     WebView* view() const;
 
+    void loadURL(const String&);
+    void reload();
+    void goBack();
+    void goForward();
+    void stopLoading();
+
     void setViewNeedsDisplay(const WebCore::Region&);
+
+    const String& mainFrameTitle() const;
 
 private:
     void createView();
 
+    // IPC::MessageReceiver
+    void didReceiveMessage(IPC::Connection&, IPC::Decoder&) override;
+
+    // WebPageProxy
+    void didReceiveTitleForFrame(WebCore::FrameIdentifier, const String&, const UserData&) override;
+
     std::unique_ptr<WebView> m_view;
+    String m_mainFrameTitle;
 };
 
 } // namespace WebKit
