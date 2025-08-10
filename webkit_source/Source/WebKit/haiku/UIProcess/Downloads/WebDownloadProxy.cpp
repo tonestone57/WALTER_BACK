@@ -23,29 +23,83 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include "config.h"
+#include "WebDownloadProxy.h"
 
-#include "APIView.h"
-#include <WebCore/FloatRect.h>
-#include <Handler.h>
+#include <WebCore/NotImplemented.h>
 
-class BWebPage;
+BWebDownload::BWebDownload(BPrivate::WebDownloadPrivate* data)
+    : fData(data)
+{
+	notImplemented();
+}
 
-namespace WebKit {
+BWebDownload::~BWebDownload()
+{
+	notImplemented();
+}
 
-class DrawingAreaProxy;
-class NativeWebMouseEvent;
-class WebPageProxy;
+void BWebDownload::Start(const BPath& path)
+{
+	notImplemented();
+}
 
-class ViewClient : public BHandler {
-public:
-    virtual ~ViewClient() = default;
-    virtual void setViewNeedsDisplay(const WebCore::FloatRect&) = 0;
-    virtual void requestScroll(const WebCore::FloatPoint&, const WebCore::IntPoint&) = 0;
-    virtual void MessageReceived(BMessage* message);
+void BWebDownload::HasMovedTo(const BPath& path)
+{
+	notImplemented();
+}
 
-private:
-    BWebPage* fWebPage;
-};
+void BWebDownload::Cancel()
+{
+	notImplemented();
+}
 
-} // namespace WebKit
+void BWebDownload::SetProgressListener(const BMessenger& listener)
+{
+	notImplemented();
+}
+
+const BString& BWebDownload::URL() const
+{
+	notImplemented();
+	static BString url;
+	return url;
+}
+
+const BPath& BWebDownload::Path() const
+{
+	notImplemented();
+	static BPath path;
+	return path;
+}
+
+const BString& BWebDownload::Filename() const
+{
+	notImplemented();
+	static BString filename;
+	return filename;
+}
+
+off_t BWebDownload::CurrentSize() const
+{
+	notImplemented();
+	return 0;
+}
+
+off_t BWebDownload::ExpectedSize() const
+{
+	notImplemented();
+	return 0;
+}
+
+// #pragma mark - private
+
+void BWebDownload::MessageReceived(BMessage* message)
+{
+	notImplemented();
+}
+
+void BWebDownload::_HandleCancel()
+{
+	notImplemented();
+}

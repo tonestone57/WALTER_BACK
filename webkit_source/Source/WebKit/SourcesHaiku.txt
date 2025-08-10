@@ -87,3 +87,8 @@ haiku/UIProcess/WebFrameProxyHaiku.cpp
 haiku/UIProcess/DrawingAreaProxyHaiku.cpp
 haiku/UIProcess/WebPageProxyHaiku.h
 haiku/UIProcess/DrawingAreaProxyHaiku.h
+haiku/UIProcess/WebFrameProxyHaiku.h
+haiku/UIProcess/WebPreferencesHaiku.cpp
+haiku/UIProcess/WebPreferencesHaiku.h
+haiku/UIProcess/Downloads/WebDownloadProxy.cpp
+haiku/UIProcess/Downloads/WebDownloadProxy.h

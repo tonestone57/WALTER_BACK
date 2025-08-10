@@ -22,30 +22,66 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef _WEB_DOWNLOAD_PROXY_H_
+#define _WEB_DOWNLOAD_PROXY_H_
 
-#pragma once
-
-#include "APIView.h"
-#include <WebCore/FloatRect.h>
 #include <Handler.h>
 
+
+namespace BPrivate {
+class WebDownloadPrivate;
+}
+
+class BMessenger;
+class BPath;
+class BString;
 class BWebPage;
 
-namespace WebKit {
 
-class DrawingAreaProxy;
-class NativeWebMouseEvent;
-class WebPageProxy;
-
-class ViewClient : public BHandler {
-public:
-    virtual ~ViewClient() = default;
-    virtual void setViewNeedsDisplay(const WebCore::FloatRect&) = 0;
-    virtual void requestScroll(const WebCore::FloatPoint&, const WebCore::IntPoint&) = 0;
-    virtual void MessageReceived(BMessage* message);
-
-private:
-    BWebPage* fWebPage;
+enum {
+	B_DOWNLOAD_STARTED = 'dwns',
+    B_DOWNLOAD_PROGRESS = 'dwnp'
 };
 
-} // namespace WebKit
+enum {
+	B_DOWNLOAD_FINISHED = 0,
+	B_DOWNLOAD_FAILED,
+	B_DOWNLOAD_BLOCKED,
+	B_DOWNLOAD_CANNOT_SHOW_URL
+};
+
+
+class __attribute__ ((visibility ("default"))) BWebDownload : public BHandler {
+// TODO: Inherit from BReferenceable.
+public:
+			void				Start(const BPath& path);
+			void				Cancel();
+
+			void				HasMovedTo(const BPath& path);
+
+			void				SetProgressListener(const BMessenger& listener);
+
+			const BString&		URL() const;
+			const BPath&		Path() const;
+			const BString&		Filename() const;
+
+			off_t				CurrentSize() const;
+			off_t				ExpectedSize() const;
+
+private:
+			friend class BWebPage;
+			friend class BPrivate::WebDownloadPrivate;
+
+								BWebDownload(BPrivate::WebDownloadPrivate* data);
+								~BWebDownload();
+
+private:
+	virtual	void				MessageReceived(BMessage* message);
+
+			void				_HandleCancel();
+
+private:
+			BPrivate::WebDownloadPrivate* fData;
+};
+
+#endif // _WEB_DOWNLOAD_PROXY_H_

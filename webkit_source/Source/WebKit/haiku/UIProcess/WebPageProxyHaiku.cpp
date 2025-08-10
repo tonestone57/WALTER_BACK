@@ -33,6 +33,8 @@
 #include "WebPageProxyHaiku.h"
 #include <WebCore/NotImplemented.h>
 
+#include <Message.h>
+
 namespace WebKit {
 
 void WebPageProxy::platformInitialize()
@@ -69,5 +71,117 @@ void WebPageProxy::setDrawingArea(std::unique_ptr<DrawingAreaProxy>&& drawingAre
         drawingArea->setShouldScaleViewToFitDocument(true);
     m_drawingArea = WTFMove(drawingArea);
 }
+
+void ViewClient::MessageReceived(BMessage* message)
+{
+    switch (message->what) {
+    case 'wups': // HANDLE_SHUTDOWN
+        // NOTE: This message never arrives here when the BApplication is already
+        // processing B_QUIT_REQUESTED. Then the view will be detached and instruct
+        // the BWebPage handler to shut itself down, but BApplication will not
+        // process additional messages. That's why the windows containing WebViews
+        // are detaching the views already in their QuitRequested() hooks and
+        // LauncherApp calls these hooks already in its own QuitRequested() hook.
+        Looper()->RemoveHandler(this);
+        delete this;
+        // TOAST!
+        return;
+    case 'lurl': // HANDLE_LOAD_URL
+        notImplemented();
+        break;
+    case 'reld': // HANDLE_RELOAD:
+	notImplemented();
+	break;
+    case 'back': // HANDLE_GO_BACK:
+        notImplemented();
+        break;
+    case 'fwrd': // HANDLE_GO_FORWARD:
+        notImplemented();
+        break;
+    case 'stop': // HANDLE_STOP_LOADING:
+        notImplemented();
+        break;
+
+    case 'vsbl': // HANDLE_SET_VISIBLE:
+        notImplemented();
+        break;
+
+    case 'draw': // HANDLE_DRAW: {
+        notImplemented();
+        break;
+    }
+    case 'rszd': // HANDLE_FRAME_RESIZED:
+        notImplemented();
+        break;
+
+    case 'focs': // HANDLE_FOCUSED:
+        notImplemented();
+        break;
+    case 'actd': // HANDLE_ACTIVATED:
+        notImplemented();
+        break;
+
+    case B_MOUSE_MOVED:
+        // fall through
+    case B_MOUSE_DOWN:
+    case B_MOUSE_UP:
+        notImplemented();
+        break;
+    case B_MOUSE_WHEEL_CHANGED:
+        notImplemented();
+        break;
+    case B_KEY_DOWN:
+    case B_KEY_UP:
+        notImplemented();
+        break;
+
+	case 'zmfr': // HANDLE_CHANGE_ZOOM_FACTOR:
+		notImplemented();
+		break;
+    case 'find': // HANDLE_FIND_STRING:
+        notImplemented();
+        break;
+
+	case 'stsm': // HANDLE_SET_STATUS_MESSAGE: {
+		notImplemented();
+		break;
+	}
+
+    case 'rsnt': // HANDLE_RESEND_NOTIFICATIONS:
+        notImplemented();
+        break;
+    case 'sedc': // HANDLE_SEND_EDITING_CAPABILITIES:
+        notImplemented();
+        break;
+    case 'spsc': // HANDLE_SEND_PAGE_SOURCE:
+        notImplemented();
+        break;
+
+    case 'wupt': // HANDLE_WARM_UP_TILE:
+        notImplemented();
+        break;
+
+    case 'dkay': // HANDLE_DECAY_ACCESS_COUNT:
+        notImplemented();
+        break;
+
+    case 'ctup': // HANDLE_COMPRESSION_TIER_UP:
+        notImplemented();
+        break;
+
+    case B_REFS_RECEIVED: {
+        notImplemented();
+	break;
+    }
+    case B_CANCEL: {
+        notImplemented();
+	break;
+    }
+
+    default:
+        BHandler::MessageReceived(message);
+    }
+}
+
 
 } // namespace WebKit
