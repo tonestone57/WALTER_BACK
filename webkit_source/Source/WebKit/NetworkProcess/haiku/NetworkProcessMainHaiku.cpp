@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Haiku, Inc.
+ * Copyright (C) 2024 Haiku, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -10,7 +10,7 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS''
+ * THIS SOFTWARE IS PROVIDED BY APPLE INC. AND ITS CONTRIBUTORS ``AS IS''
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
  * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL APPLE INC. OR ITS CONTRIBUTORS
@@ -25,21 +25,9 @@
 
 #include "config.h"
 #include "NetworkProcessMain.h"
+#include "NetworkProcessHaiku.h"
 
-#include "AuxiliaryProcessMain.h"
-#include "NetworkProcess.h"
-
-namespace WebKit {
-
-template<>
-void initializeAuxiliaryProcess<NetworkProcess>(AuxiliaryProcessInitializationParameters&& parameters)
+int main(int argc, char** argv)
 {
-    static NeverDestroyed<NetworkProcess> networkProcess(WTFMove(parameters));
+    return WebKit::NetworkProcessMain(argc, argv, WebKit::NetworkProcessHaiku::singleton());
 }
-
-int NetworkProcessMain(int argc, char** argv)
-{
-    return AuxiliaryProcessMain<NetworkProcess, AuxiliaryProcessMainBase>(argc, argv);
-}
-
-} // namespace WebKit

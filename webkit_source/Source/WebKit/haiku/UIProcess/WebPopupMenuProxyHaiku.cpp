@@ -24,16 +24,23 @@
  */
 
 #include "config.h"
-#include "WebFrameHaiku.h"
+#include "WebPopupMenuProxyHaiku.h"
+
+#include "WebPageProxy.h"
 
 namespace WebKit {
 
-WebFrameHaiku::WebFrameHaiku(WebPage& page, WebCore::FrameIdentifier frameID, WebCore::Frame* frame)
-    : WebFrame(page, frameID, frame)
+WebPopupMenuProxyHaiku::WebPopupMenuProxyHaiku(WebPageProxy& page, WebPopupMenuProxy::Client& client)
+    : WebPopupMenuProxy(page, client)
 {
 }
 
-void WebFrameHaiku::platformInvalidate()
+void WebPopupMenuProxyHaiku::showPopupMenu(const WebCore::IntRect&, WebCore::TextDirection, double, const Vector<WebPopupItem>&, const PlatformMethod&, int32_t)
+{
+    // TODO: Implement
+}
+
+void WebPopupMenuProxyHaiku::hidePopupMenu()
 {
     // TODO: Implement
 }

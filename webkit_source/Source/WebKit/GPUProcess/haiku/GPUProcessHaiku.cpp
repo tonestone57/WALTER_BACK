@@ -24,16 +24,25 @@
  */
 
 #include "config.h"
-#include "WebFrameHaiku.h"
+#include "GPUProcessHaiku.h"
+
+#include "AuxiliaryProcessCreationParameters.h"
 
 namespace WebKit {
 
-WebFrameHaiku::WebFrameHaiku(WebPage& page, WebCore::FrameIdentifier frameID, WebCore::Frame* frame)
-    : WebFrame(page, frameID, frame)
+GPUProcessHaiku& GPUProcessHaiku::singleton()
 {
+    static GPUProcessHaiku* process = new GPUProcessHaiku;
+    return *process;
 }
 
-void WebFrameHaiku::platformInvalidate()
+GPUProcessHaiku::GPUProcessHaiku()
+{
+    // Set the singleton pointer.
+    GPUProcess::setSingleton(this);
+}
+
+void GPUProcessHaiku::platformInitialize(const AuxiliaryProcessCreationParameters& parameters)
 {
     // TODO: Implement
 }

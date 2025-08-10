@@ -24,16 +24,50 @@
  */
 
 #include "config.h"
-#include "WebFrameHaiku.h"
+#include "WebClipboardProxyHaiku.h"
+
+#include <WebCore/PasteboardCustomData.h>
+#include <WebCore/SharedBuffer.h>
 
 namespace WebKit {
 
-WebFrameHaiku::WebFrameHaiku(WebPage& page, WebCore::FrameIdentifier frameID, WebCore::Frame* frame)
-    : WebFrame(page, frameID, frame)
+void WebClipboardProxyHaiku::getTypes(CompletionHandler<void(Vector<String>&&)>&& completionHandler)
 {
+    // TODO: Implement
+    completionHandler({ });
 }
 
-void WebFrameHaiku::platformInvalidate()
+void WebClipboardProxyHaiku::write(const WebCore::PasteboardCustomData& customData, CompletionHandler<void(int64_t)>&& completionHandler)
+{
+    // TODO: Implement
+    completionHandler(0);
+}
+
+void WebClipboardProxyHaiku::read(const String& type, CompletionHandler<void(WebCore::PasteboardCustomData&&)>&& completionHandler)
+{
+    // TODO: Implement
+    completionHandler({ });
+}
+
+void WebClipboardProxyHaiku::files(CompletionHandler<void(Vector<String>&&)>&& completionHandler)
+{
+    // TODO: Implement
+    completionHandler({ });
+}
+
+void WebClipboardProxyHaiku::write(const WebCore::SharedBuffer& buffer, const String&, CompletionHandler<void(int64_t)>&& completionHandler)
+{
+    // TODO: Implement
+    completionHandler(0);
+}
+
+void WebClipboardProxyHaiku::read(const String&, CompletionHandler<void(std::optional<WebCore::SharedBuffer>&&)>&& completionHandler)
+{
+    // TODO: Implement
+    completionHandler(std::nullopt);
+}
+
+void WebClipboardProxyHaiku::clear(const String&)
 {
     // TODO: Implement
 }

@@ -24,18 +24,17 @@
  */
 
 #include "config.h"
-#include "WebFrameHaiku.h"
+#include "WebInspectorProxyHaiku.h"
+
+#include "WebPageProxy.h"
 
 namespace WebKit {
 
-WebFrameHaiku::WebFrameHaiku(WebPage& page, WebCore::FrameIdentifier frameID, WebCore::Frame* frame)
-    : WebFrame(page, frameID, frame)
+WebInspectorProxyHaiku::WebInspectorProxyHaiku(WebPageProxy& page)
+    : WebInspectorProxy(page)
 {
 }
 
-void WebFrameHaiku::platformInvalidate()
-{
-    // TODO: Implement
-}
+// Implement platform-specific WebInspectorProxy methods here.
 
 } // namespace WebKit

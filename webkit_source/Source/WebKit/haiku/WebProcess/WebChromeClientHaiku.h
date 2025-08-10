@@ -23,19 +23,32 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-#include "WebFrameHaiku.h"
+#pragma once
+
+#include "WebChromeClient.h"
 
 namespace WebKit {
 
-WebFrameHaiku::WebFrameHaiku(WebPage& page, WebCore::FrameIdentifier frameID, WebCore::Frame* frame)
-    : WebFrame(page, frameID, frame)
-{
-}
+class WebChromeClientHaiku final : public WebChromeClient {
+public:
+    WebChromeClientHaiku(WebPage&);
+    virtual ~WebChromeClientHaiku() = default;
 
-void WebFrameHaiku::platformInvalidate()
-{
-    // TODO: Implement
-}
+private:
+    void setWindowRect(const WebCore::FloatRect&) final;
+    WebCore::FloatRect windowRect() const final;
+    void focus() final;
+    void unfocus() final;
+    void runJavaScriptAlert(WebCore::LocalFrame&, const String&) final;
+    bool runJavaScriptConfirm(WebCore::LocalFrame&, const String&) final;
+    bool runJavaScriptPrompt(WebCore::LocalFrame&, const String&, const String&, String&) final;
+    void setStatusbarVisible(bool) final;
+    void setToolbarsVisible(bool) final;
+    void setMenubarVisible(bool) final;
+    void didCompletePageLoadForMainFrame() final;
+    void didFinishLoading() final;
+    void isPlayingAudioDidChange(bool) final;
+    RefPtr<WebCore::Page> createWindow(WebCore::LocalFrame&, const String&, const WebCore::WindowFeatures&, const WebCore::NavigationAction&) final;
+};
 
 } // namespace WebKit

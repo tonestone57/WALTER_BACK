@@ -13,7 +13,7 @@
  * THIS SOFTWARE IS PROVIDED BY APPLE INC. AND ITS CONTRIBUTORS ``AS IS''
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-* PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL APPLE INC. OR ITS CONTRIBUTORS
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL APPLE INC. OR ITS CONTRIBUTORS
  * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
@@ -24,7 +24,7 @@
  */
 
 #include "config.h"
-#include "WebChromeClient.h"
+#include "WebChromeClientHaiku.h"
 
 #include "WebPage.h"
 #include <WebCore/WindowFeatures.h>
@@ -33,68 +33,82 @@ namespace WebKit {
 
 using namespace WebCore;
 
-void WebChromeClient::platformSetWindowRect(const FloatRect& rect)
+WebChromeClientHaiku::WebChromeClientHaiku(WebPage& page)
+    : WebChromeClient(page)
 {
-    // Haiku-specific implementation for setting the window rectangle.
 }
 
-FloatRect WebChromeClient::platformGetWindowRect()
+void WebChromeClientHaiku::setWindowRect(const FloatRect& rect)
 {
-    // Haiku-specific implementation for getting the window rectangle.
+    // TODO: Implement
+}
+
+FloatRect WebChromeClientHaiku::windowRect() const
+{
+    // TODO: Implement
     return FloatRect();
 }
 
-void WebChromeClient::platformFocus()
+void WebChromeClientHaiku::focus()
 {
-    // Haiku-specific implementation for focusing the window.
+    // TODO: Implement
 }
 
-void WebChromeClient::platformUnfocus()
+void WebChromeClientHaiku::unfocus()
 {
-    // Haiku-specific implementation for unfocusing the window.
+    // TODO: Implement
 }
 
-void WebChromeClient::platformRunJavaScriptAlert(WebFrame* frame, const String& message, Frame&, CompletionHandler<void()>&& completionHandler)
+void WebChromeClientHaiku::runJavaScriptAlert(LocalFrame&, const String&)
 {
-    // Haiku-specific implementation for running a JavaScript alert.
-    completionHandler();
+    // TODO: Implement
 }
 
-void WebChromeClient::platformRunJavaScriptConfirm(WebFrame* frame, const String& message, Frame&, CompletionHandler<void(bool)>&& completionHandler)
+bool WebChromeClientHaiku::runJavaScriptConfirm(LocalFrame&, const String&)
 {
-    // Haiku-specific implementation for running a JavaScript confirm.
-    completionHandler(false);
+    // TODO: Implement
+    return false;
 }
 
-void WebChromeClient::platformRunJavaScriptPrompt(WebFrame* frame, const String& message, const String& defaultValue, Frame&, CompletionHandler<void(const String&)>&& completionHandler)
+bool WebChromeClientHaiku::runJavaScriptPrompt(LocalFrame&, const String&, const String&, String&)
 {
-    // Haiku-specific implementation for running a JavaScript prompt.
-    completionHandler(String());
+    // TODO: Implement
+    return false;
 }
 
-void WebChromeClient::platformSetStatusText(const String& statusText)
+void WebChromeClientHaiku::setStatusbarVisible(bool)
 {
-    // Haiku-specific implementation for setting the status text.
+    // TODO: Implement
 }
 
-void WebChromeClient::platformDidCompletePageLoadForMainFrame()
+void WebChromeClientHaiku::setToolbarsVisible(bool)
 {
-    // Haiku-specific actions to take after the main frame has loaded.
+    // TODO: Implement
 }
 
-void WebChromeClient::platformDidFinishLoading()
+void WebChromeClientHaiku::setMenubarVisible(bool)
 {
-    // Haiku-specific actions to take after the page has finished loading.
+    // TODO: Implement
 }
 
-void WebChromeClient::platformIsPlayingAudioDidChange(bool isPlayingAudio)
+void WebChromeClientHaiku::didCompletePageLoadForMainFrame()
 {
-    // Haiku-specific handling of audio playback state changes.
+    // TODO: Implement
 }
 
-RefPtr<WebCore::Page> WebChromeClient::platformCreateNewPage(WebCore::Page* page, const WebCore::WindowFeatures& windowFeatures, WebCore::Frame& frame, const WebCore::FrameLoadRequest& frameLoadRequest)
+void WebChromeClientHaiku::didFinishLoading()
 {
-    // Haiku-specific implementation for creating a new page.
+    // TODO: Implement
+}
+
+void WebChromeClientHaiku::isPlayingAudioDidChange(bool)
+{
+    // TODO: Implement
+}
+
+RefPtr<Page> WebChromeClientHaiku::createWindow(LocalFrame&, const String&, const WindowFeatures&, const NavigationAction&)
+{
+    // TODO: Implement
     return nullptr;
 }
 

@@ -32,7 +32,6 @@ haiku/UIProcess/NativeWebMouseEventHaiku.cpp
 haiku/UIProcess/NativeWebWheelEventHaiku.cpp
 haiku/UIProcess/SubprocessProxy.cpp
 haiku/UIProcess/WebContextHaiku.cpp
-haiku/UIProcess/WebInspectorProxyHaiku.cpp
 haiku/UIProcess/WebProcessProxyHaiku.cpp
 haiku/UIProcess/WebPreferencesHaiku.cpp
 haiku/UIProcess/WebProcessPoolHaiku.cpp
@@ -50,9 +49,6 @@ haiku/WebProcess/WebCoreSupport/WebFrameLoaderClient.cpp
 haiku/WebProcess/WebCoreSupport/WebHistory.cpp
 haiku/WebProcess/WebCoreSupport/WebPlatformStrategies.cpp
 haiku/WebProcess/WebCoreSupport/WebPluginInfoProvider.cpp
-haiku/WebProcess/WebFrameHaiku.cpp
-haiku/WebProcess/WebPageHaiku.cpp
-haiku/WebProcess/WebProcess.cpp
 haiku/WebKit/WebCore/bindings/js/JSMainThreadExecState.cpp
 haiku/WebKit/WebCore/bindings/js/JSUint8Array.cpp
 haiku/WebKit/WebCore/page/animation/AnimationController.cpp
@@ -76,9 +72,6 @@ haiku/WebKit/WebCore/platform/network/haiku/SocketStreamHandle.cpp
 haiku/WebKit/WebCore/storage/StorageNamespaceImpl.cpp
 haiku/WebKit/WebCore/storage/StorageNamespaceProxy.cpp
 haiku/UIProcess/ProcessLauncherHaiku.cpp
-haiku/WebProcess/WebProcessHaiku.cpp
-haiku/WebProcess/WebChromeClientHaiku.cpp
-haiku/WebProcess/WebFrameLoaderClientHaiku.cpp
 haiku/WebProcess/DrawingAreaHaiku.cpp
 haiku/UIProcess/WebPageProxyHaiku.cpp
 haiku/UIProcess/WebFrameProxyHaiku.cpp
@@ -86,3 +79,19 @@ haiku/UIProcess/DrawingAreaProxyHaiku.cpp
 haiku/UIProcess/Downloads/DownloadProxyHaiku.cpp
 haiku/UIProcess/API/haiku/WebView.cpp
 haiku/UIProcess/haiku/DrawingAreaProxyHaiku.cpp
+haiku/UIProcess/WebClipboardProxyHaiku.cpp
+haiku/UIProcess/WebContextMenuProxyHaiku.cpp
+haiku/UIProcess/WebInspectorProxyHaiku.cpp
+haiku/UIProcess/WebPopupMenuProxyHaiku.cpp
+haiku/UIProcess/WebColorPickerHaiku.cpp
+haiku/UIProcess/WebDateTimePickerHaiku.cpp
+haiku/WebProcess/WebChromeClientHaiku.cpp
+haiku/WebProcess/WebFrameHaiku.cpp
+haiku/WebProcess/WebFrameLoaderClientHaiku.cpp
+haiku/WebProcess/WebPageHaiku.cpp
+haiku/WebProcess/WebProcessHaiku.cpp
+haiku/WebProcess/WebProcessMainHaiku.cpp
+NetworkProcess/haiku/NetworkProcessHaiku.cpp
+NetworkProcess/haiku/NetworkProcessMainHaiku.cpp
+GPUProcess/haiku/GPUProcessHaiku.cpp
+GPUProcess/haiku/GPUProcessMainHaiku.cpp

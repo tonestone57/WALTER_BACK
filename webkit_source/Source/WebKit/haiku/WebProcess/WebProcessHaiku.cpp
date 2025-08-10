@@ -24,16 +24,25 @@
  */
 
 #include "config.h"
-#include "WebFrameHaiku.h"
+#include "WebProcessHaiku.h"
+
+#include "WebProcessCreationParameters.h"
 
 namespace WebKit {
 
-WebFrameHaiku::WebFrameHaiku(WebPage& page, WebCore::FrameIdentifier frameID, WebCore::Frame* frame)
-    : WebFrame(page, frameID, frame)
+WebProcessHaiku& WebProcessHaiku::singleton()
 {
+    static WebProcessHaiku* process = new WebProcessHaiku;
+    return *process;
 }
 
-void WebFrameHaiku::platformInvalidate()
+WebProcessHaiku::WebProcessHaiku()
+{
+    // Set the singleton pointer.
+    WebProcess::setSingleton(this);
+}
+
+void WebProcessHaiku::platformInitialize(const WebProcessCreationParameters& parameters)
 {
     // TODO: Implement
 }

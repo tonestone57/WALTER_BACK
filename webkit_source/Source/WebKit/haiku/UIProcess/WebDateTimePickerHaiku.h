@@ -23,19 +23,20 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-#include "WebFrameHaiku.h"
+#pragma once
+
+#include "WebDateTimePicker.h"
 
 namespace WebKit {
 
-WebFrameHaiku::WebFrameHaiku(WebPage& page, WebCore::FrameIdentifier frameID, WebCore::Frame* frame)
-    : WebFrame(page, frameID, frame)
-{
-}
+class WebDateTimePickerHaiku final : public WebDateTimePicker {
+public:
+    WebDateTimePickerHaiku(WebPageProxy&, WebDateTimePicker::Client&, const WebCore::IntRect&);
+    virtual ~WebDateTimePickerHaiku() = default;
 
-void WebFrameHaiku::platformInvalidate()
-{
-    // TODO: Implement
-}
+private:
+    void showDateTimePicker() override;
+    void endPicker() override;
+};
 
 } // namespace WebKit

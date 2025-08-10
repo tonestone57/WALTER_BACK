@@ -24,30 +24,35 @@
  */
 
 #include "config.h"
-#include "WebPage.h"
+#include "WebPageHaiku.h"
+
+#include "WebPageCreationParameters.h"
 
 namespace WebKit {
 
-void WebPage::platformInitialize(const WebPageCreationParameters& parameters)
+WebPageHaiku::WebPageHaiku(WebPageCreationParameters&& parameters)
+    : WebPage(WTFMove(parameters))
 {
-    // Haiku-specific initialization of the WebPage.
-    // This is where you would set up any platform-specific features or behaviors.
 }
 
-void WebPage::platformDetach()
+void WebPageHaiku::platformInitialize(const WebPageCreationParameters&)
 {
-    // Haiku-specific cleanup of the WebPage.
-    // This is where you would tear down any platform-specific features or behaviors.
+    // TODO: Implement
 }
 
-void WebPage::platformDidReceiveLoadParameters(const LoadParameters&)
+void WebPageHaiku::platformDetach()
 {
-    // Haiku-specific handling of load parameters.
+    // TODO: Implement
 }
 
-void WebPage::platformReinitialize()
+void WebPageHaiku::platformDidReceiveLoadParameters(const LoadParameters&)
 {
-    // Haiku-specific reinitialization of the WebPage.
+    // TODO: Implement
+}
+
+void WebPageHaiku::platformReinitialize()
+{
+    // TODO: Implement
 }
 
 } // namespace WebKit

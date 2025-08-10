@@ -23,19 +23,20 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-#include "WebFrameHaiku.h"
+#pragma once
+
+#include "WebContextMenuProxy.h"
 
 namespace WebKit {
 
-WebFrameHaiku::WebFrameHaiku(WebPage& page, WebCore::FrameIdentifier frameID, WebCore::Frame* frame)
-    : WebFrame(page, frameID, frame)
-{
-}
+class WebContextMenuProxyHaiku final : public WebContextMenuProxy {
+public:
+    WebContextMenuProxyHaiku(WebPageProxy&, ContextMenuContextData&&, const UserData&);
+    virtual ~WebContextMenuProxyHaiku() = default;
 
-void WebFrameHaiku::platformInvalidate()
-{
-    // TODO: Implement
-}
+private:
+    void showContextMenu() override;
+    void cancelContextMenu() override;
+};
 
 } // namespace WebKit

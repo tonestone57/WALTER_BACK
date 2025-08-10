@@ -24,16 +24,23 @@
  */
 
 #include "config.h"
-#include "WebFrameHaiku.h"
+#include "WebColorPickerHaiku.h"
+
+#include "WebPageProxy.h"
 
 namespace WebKit {
 
-WebFrameHaiku::WebFrameHaiku(WebPage& page, WebCore::FrameIdentifier frameID, WebCore::Frame* frame)
-    : WebFrame(page, frameID, frame)
+WebColorPickerHaiku::WebColorPickerHaiku(WebPageProxy& page, const WebCore::Color& color, const WebCore::IntRect& rect)
+    : WebColorPicker(page, color, rect)
 {
 }
 
-void WebFrameHaiku::platformInvalidate()
+void WebColorPickerHaiku::showColorPicker(const WebCore::Color&)
+{
+    // TODO: Implement
+}
+
+void WebColorPickerHaiku::endPicker()
 {
     // TODO: Implement
 }

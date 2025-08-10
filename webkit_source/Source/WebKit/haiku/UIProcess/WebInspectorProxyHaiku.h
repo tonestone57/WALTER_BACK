@@ -23,19 +23,19 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-#include "WebFrameHaiku.h"
+#pragma once
+
+#include "WebInspectorProxy.h"
 
 namespace WebKit {
 
-WebFrameHaiku::WebFrameHaiku(WebPage& page, WebCore::FrameIdentifier frameID, WebCore::Frame* frame)
-    : WebFrame(page, frameID, frame)
-{
-}
+class WebInspectorProxyHaiku final : public WebInspectorProxy {
+public:
+    WebInspectorProxyHaiku(WebPageProxy&);
+    virtual ~WebInspectorProxyHaiku() = default;
 
-void WebFrameHaiku::platformInvalidate()
-{
-    // TODO: Implement
-}
+private:
+    // Implement platform-specific WebInspectorProxy methods here.
+};
 
 } // namespace WebKit

@@ -24,16 +24,23 @@
  */
 
 #include "config.h"
-#include "WebFrameHaiku.h"
+#include "WebDateTimePickerHaiku.h"
+
+#include "WebPageProxy.h"
 
 namespace WebKit {
 
-WebFrameHaiku::WebFrameHaiku(WebPage& page, WebCore::FrameIdentifier frameID, WebCore::Frame* frame)
-    : WebFrame(page, frameID, frame)
+WebDateTimePickerHaiku::WebDateTimePickerHaiku(WebPageProxy& page, WebDateTimePicker::Client& client, const WebCore::IntRect& rect)
+    : WebDateTimePicker(page, client, rect)
 {
 }
 
-void WebFrameHaiku::platformInvalidate()
+void WebDateTimePickerHaiku::showDateTimePicker()
+{
+    // TODO: Implement
+}
+
+void WebDateTimePickerHaiku::endPicker()
 {
     // TODO: Implement
 }

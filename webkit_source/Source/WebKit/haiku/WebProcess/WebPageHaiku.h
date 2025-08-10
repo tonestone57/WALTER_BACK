@@ -23,19 +23,22 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-#include "WebFrameHaiku.h"
+#pragma once
+
+#include "WebPage.h"
 
 namespace WebKit {
 
-WebFrameHaiku::WebFrameHaiku(WebPage& page, WebCore::FrameIdentifier frameID, WebCore::Frame* frame)
-    : WebFrame(page, frameID, frame)
-{
-}
+class WebPageHaiku final : public WebPage {
+public:
+    WebPageHaiku(WebPageCreationParameters&&);
+    virtual ~WebPageHaiku() = default;
 
-void WebFrameHaiku::platformInvalidate()
-{
-    // TODO: Implement
-}
+private:
+    void platformInitialize(const WebPageCreationParameters&) final;
+    void platformDetach() final;
+    void platformDidReceiveLoadParameters(const LoadParameters&) final;
+    void platformReinitialize() final;
+};
 
 } // namespace WebKit

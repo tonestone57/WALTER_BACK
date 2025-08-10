@@ -23,19 +23,22 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-#include "WebFrameHaiku.h"
+#pragma once
+
+#include "WebLocalFrameLoaderClient.h"
 
 namespace WebKit {
 
-WebFrameHaiku::WebFrameHaiku(WebPage& page, WebCore::FrameIdentifier frameID, WebCore::Frame* frame)
-    : WebFrame(page, frameID, frame)
-{
-}
+class WebFrameLoaderClientHaiku final : public WebLocalFrameLoaderClient {
+public:
+    WebFrameLoaderClientHaiku(WebFrame&);
+    virtual ~WebFrameLoaderClientHaiku() = default;
 
-void WebFrameHaiku::platformInvalidate()
-{
-    // TODO: Implement
-}
+private:
+    void platformDispatchOnloadEvents() final;
+    void platformCreatePlugin(const WebCore::Plugin::Parameters&, CompletionHandler<void(RefPtr<WebCore::Widget>&&)>&&) final;
+    bool platformCanHandleRequest(const WebCore::ResourceRequest&) const final;
+    WebCore::ResourceError platformBlockedError(const WebCore::ResourceRequest&) const final;
+};
 
 } // namespace WebKit

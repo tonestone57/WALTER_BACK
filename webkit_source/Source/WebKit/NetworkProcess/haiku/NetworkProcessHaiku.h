@@ -23,19 +23,21 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-#include "WebFrameHaiku.h"
+#pragma once
+
+#include "NetworkProcess.h"
 
 namespace WebKit {
 
-WebFrameHaiku::WebFrameHaiku(WebPage& page, WebCore::FrameIdentifier frameID, WebCore::Frame* frame)
-    : WebFrame(page, frameID, frame)
-{
-}
+class NetworkProcessHaiku final : public NetworkProcess {
+public:
+    NetworkProcessHaiku();
+    ~NetworkProcessHaiku() = default;
 
-void WebFrameHaiku::platformInvalidate()
-{
-    // TODO: Implement
-}
+    static NetworkProcessHaiku& singleton();
+
+private:
+    void platformInitialize(const AuxiliaryProcessCreationParameters&) final;
+};
 
 } // namespace WebKit

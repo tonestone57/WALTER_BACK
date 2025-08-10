@@ -24,38 +24,44 @@
  */
 
 #include "config.h"
-#include "WebLocalFrameLoaderClient.h"
+#include "WebFrameLoaderClientHaiku.h"
 
 #include "WebFrame.h"
 #include "WebPage.h"
 #include <WebCore/FrameLoader.h>
 #include <WebCore/FrameLoaderClient.h>
 #include <WebCore/ResourceError.h>
+#include <WebCore/PluginData.h>
 
 namespace WebKit {
 
 using namespace WebCore;
 
-void WebLocalFrameLoaderClient::platformDispatchOnloadEvents()
+WebFrameLoaderClientHaiku::WebFrameLoaderClientHaiku(WebFrame& frame)
+    : WebLocalFrameLoaderClient(frame)
 {
-    // Haiku-specific implementation for dispatching onload events.
 }
 
-void WebLocalFrameLoaderClient::platformCreatePlugin(const Plugin::Parameters&, CompletionHandler<void(RefPtr<WebCore::Widget>&&)>&& completionHandler)
+void WebFrameLoaderClientHaiku::platformDispatchOnloadEvents()
 {
-    // Haiku-specific implementation for creating a plugin.
+    // TODO: Implement
+}
+
+void WebFrameLoaderClientHaiku::platformCreatePlugin(const Plugin::Parameters&, CompletionHandler<void(RefPtr<Widget>&&)>&& completionHandler)
+{
+    // TODO: Implement
     completionHandler(nullptr);
 }
 
-bool WebLocalFrameLoaderClient::platformCanHandleRequest(const ResourceRequest& request) const
+bool WebFrameLoaderClientHaiku::platformCanHandleRequest(const ResourceRequest&) const
 {
-    // Haiku-specific implementation for checking if a request can be handled.
+    // TODO: Implement
     return true;
 }
 
-ResourceError WebLocalFrameLoaderClient::platformBlockedError(const ResourceRequest& request) const
+ResourceError WebFrameLoaderClientHaiku::platformBlockedError(const ResourceRequest&) const
 {
-    // Haiku-specific implementation for creating a blocked resource error.
+    // TODO: Implement
     return ResourceError();
 }
 

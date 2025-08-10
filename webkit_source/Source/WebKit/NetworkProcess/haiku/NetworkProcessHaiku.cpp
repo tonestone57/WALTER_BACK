@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Haiku, Inc.
+ * Copyright (C) 2024 Haiku, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -24,45 +24,27 @@
  */
 
 #include "config.h"
-#include "NetworkProcess.h"
+#include "NetworkProcessHaiku.h"
 
-#include "NetworkProcessCreationParameters.h"
-#include <WebCore/NetworkStorageSession.h>
-#include <WebCore/NotImplemented.h>
-
-namespace WebCore
-{
-	class NetworkStorageSession;
-}
+#include "AuxiliaryProcessCreationParameters.h"
 
 namespace WebKit {
 
-using namespace WebCore;
-
-void NetworkProcess::platformInitializeNetworkProcess(const NetworkProcessCreationParameters& parameters)
+NetworkProcessHaiku& NetworkProcessHaiku::singleton()
 {
-    notImplemented();
+    static NetworkProcessHaiku* process = new NetworkProcessHaiku;
+    return *process;
 }
 
-void NetworkProcess::allowSpecificHTTPSCertificateForHost(const CertificateInfo& certificateInfo, const String& host)
+NetworkProcessHaiku::NetworkProcessHaiku()
 {
-    notImplemented();
+    // Set the singleton pointer.
+    NetworkProcess::setSingleton(this);
 }
 
-void NetworkProcess::platformTerminate()
+void NetworkProcessHaiku::platformInitialize(const AuxiliaryProcessCreationParameters& parameters)
 {
-    notImplemented();
-}
-
-void NetworkProcess::platformPrepareToSuspend(CompletionHandler<void()>&& completionHandler)
-{
-    notImplemented();
-    completionHandler();
-}
-
-void NetworkProcess::clearDiskCache(WallTime modifiedSince, CompletionHandler<void()>&& completionHandler)
-{
-    notImplemented();
+    // TODO: Implement
 }
 
 } // namespace WebKit

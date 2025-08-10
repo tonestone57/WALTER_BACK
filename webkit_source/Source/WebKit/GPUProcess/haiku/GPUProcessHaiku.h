@@ -23,19 +23,21 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-#include "WebFrameHaiku.h"
+#pragma once
+
+#include "GPUProcess.h"
 
 namespace WebKit {
 
-WebFrameHaiku::WebFrameHaiku(WebPage& page, WebCore::FrameIdentifier frameID, WebCore::Frame* frame)
-    : WebFrame(page, frameID, frame)
-{
-}
+class GPUProcessHaiku final : public GPUProcess {
+public:
+    GPUProcessHaiku();
+    ~GPUProcessHaiku() = default;
 
-void WebFrameHaiku::platformInvalidate()
-{
-    // TODO: Implement
-}
+    static GPUProcessHaiku& singleton();
+
+private:
+    void platformInitialize(const AuxiliaryProcessCreationParameters&) final;
+};
 
 } // namespace WebKit

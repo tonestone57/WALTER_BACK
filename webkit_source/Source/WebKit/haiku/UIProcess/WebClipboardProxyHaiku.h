@@ -23,19 +23,25 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-#include "WebFrameHaiku.h"
+#pragma once
+
+#include "WebClipboardProxy.h"
 
 namespace WebKit {
 
-WebFrameHaiku::WebFrameHaiku(WebPage& page, WebCore::FrameIdentifier frameID, WebCore::Frame* frame)
-    : WebFrame(page, frameID, frame)
-{
-}
+class WebClipboardProxyHaiku final : public WebClipboardProxy {
+public:
+    WebClipboardProxyHaiku() = default;
+    virtual ~WebClipboardProxyHaiku() = default;
 
-void WebFrameHaiku::platformInvalidate()
-{
-    // TODO: Implement
-}
+private:
+    void getTypes(CompletionHandler<void(Vector<String>&&)>&&) override;
+    void write(const WebCore::PasteboardCustomData&, CompletionHandler<void(int64_t)>&&) override;
+    void read(const String&, CompletionHandler<void(WebCore::PasteboardCustomData&&)>&&) override;
+    void files(CompletionHandler<void(Vector<String>&&)>&&) override;
+    void write(const WebCore::SharedBuffer&, const String&, CompletionHandler<void(int64_t)>&&) override;
+    void read(const String&, CompletionHandler<void(std::optional<WebCore::SharedBuffer>&&)>&&) override;
+    void clear(const String&) override;
+};
 
 } // namespace WebKit
