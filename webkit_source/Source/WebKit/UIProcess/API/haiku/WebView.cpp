@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2009 Maxime Simon <simon.maxime@gmail.com>
- * Copyright (C) 2010 Stephan Aßmus <superstippi@gmx.de>
+ * Copyright (C) 2024 Your Name <your@email.com>
  *
  * All rights reserved.
  *
@@ -13,266 +12,118 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY APPLE COMPUTER, INC. ``AS IS'' AND ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL APPLE COMPUTER, INC. OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
- * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY APPLE INC. AND ITS CONTRIBUTORS ``AS IS''
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL APPLE INC. OR ITS CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "config.h"
 #include "WebView.h"
 
-#include "NotImplemented.h"
-#include "WebContext.h"
-#include "WebPageGroup.h"
-#include "WKPage.h"
-#include "WKString.h"
-#include "WKURL.h"
-#include "WebPage.h"
+#include "DrawingAreaProxyHaiku.h"
+#include "NativeWebKeyboardEvent.h"
+#include "NativeWebMouseEvent.h"
+#include "WebEventFactory.h"
+#include "WebPageProxy.h"
+#include "WebProcessPool.h"
 
 #include <Window.h>
 
-using namespace WebKit;
+namespace WebKit {
 
+WebView::WebView(BRect frame, const char* name, uint32 resizingMode, uint32 flags)
+    : BView(frame, name, resizingMode, flags)
+{
+    m_page = WebProcessPool::create("org.haiku.WebKit.WebContent")->createNewPage(nullptr, WebPageConfiguration::create());
+}
 
-static const int32 kMsgNavigateArrow = '_NvA';
-
-
-BWebView::UserData::~UserData()
+WebView::~WebView()
 {
 }
 
-
-BWebView::BWebView(const char* name, BPrivate::Network::BUrlContext* urlContext)
-    : BView(name, B_WILL_DRAW | B_FRAME_EVENTS | B_FULL_UPDATE_ON_RESIZE
-	| B_NAVIGABLE | B_PULSE_NEEDED)
-    , fLastMouseButtons(0)
-    , fLastInputTime(-2000000)
-    , fLastMousePos(0, 0)
-    , fLastScrollOffset(0, 0)
-    , fAutoHidePointer(false)
-    , fUserData(nullptr)
+void WebView::load(const char* url)
 {
-    // FIXME: This is a hack. We should be getting the context and page group from the caller.
-    WKRetainPtr<WKContextRef> context = adoptWK(WKContextCreate());
-    WKRetainPtr<WKPageGroupRef> pageGroup = adoptWK(WKPageGroupCreateWithIdentifier(WKStringCreateWithUTF8CString("default")));
-    fWebView = adoptWK(WKViewCreate(context.get(), pageGroup.get()));
+    m_page->loadURL(URL(String::fromUTF8(url)));
 }
 
-BWebView::~BWebView()
+void WebView::reload()
 {
-	SetUserData(0);
+    m_page->reload();
 }
 
-void BWebView::Shutdown()
+void WebView::goBack()
 {
-	if (Window())
-		RemoveSelf();
-    notImplemented();
+    m_page->goBack();
 }
 
-// #pragma mark - BView hooks
-
-void BWebView::AttachedToWindow()
+void WebView::goForward()
 {
-    notImplemented();
+    m_page->goForward();
 }
 
-void BWebView::DetachedFromWindow()
+void WebView::stopLoading()
 {
-    notImplemented();
+    m_page->stopLoading();
 }
 
-void BWebView::Show()
+void WebView::Draw(BRect updateRect)
 {
-    BView::Show();
-    notImplemented();
+    DrawingAreaProxyHaiku* drawingArea = static_cast<DrawingAreaProxyHaiku*>(m_page->drawingArea());
+    if (drawingArea && drawingArea->backingStore())
+        DrawBitmap(drawingArea->backingStore(), updateRect, updateRect);
 }
 
-void BWebView::Hide()
+void WebView::MouseDown(BPoint where)
 {
-    notImplemented();
-    BView::Hide();
+    BMessage* message = Window()->CurrentMessage();
+    if (!message)
+        return;
+
+    m_page->handleMouseEvent(WebEventFactory::createWebMouseEvent(message, where, where).value());
 }
 
-void BWebView::Draw(BRect rect)
+void WebView::MouseUp(BPoint where)
 {
-    notImplemented();
+    BMessage* message = Window()->CurrentMessage();
+    if (!message)
+        return;
+
+    m_page->handleMouseEvent(WebEventFactory::createWebMouseEvent(message, where, where).value());
 }
 
-void BWebView::FrameResized(float width, float height)
+void WebView::MouseMoved(BPoint where, uint32 transit, const BMessage* dragMessage)
 {
-    notImplemented();
+    BMessage* message = Window()->CurrentMessage();
+    if (!message)
+        return;
+
+    m_page->handleMouseEvent(WebEventFactory::createWebMouseEvent(message, where, where).value());
 }
 
-void BWebView::GetPreferredSize(float* width, float* height)
+void WebView::KeyDown(const char* bytes, int32 numBytes)
 {
-	if (width)
-		*width = 100;
-	if (height)
-		*height = 100;
+    BMessage* message = Window()->CurrentMessage();
+    if (!message)
+        return;
+
+    m_page->handleKeyboardEvent(WebEventFactory::createWebKeyboardEvent(message).value());
 }
 
-void BWebView::MessageReceived(BMessage* message)
+void WebView::KeyUp(const char* bytes, int32 numBytes)
 {
-    notImplemented();
+    BMessage* message = Window()->CurrentMessage();
+    if (!message)
+        return;
+
+    m_page->handleKeyboardEvent(WebEventFactory::createWebKeyboardEvent(message).value());
 }
 
-void BWebView::MakeFocus(bool focused)
-{
-	BView::MakeFocus(focused);
-    notImplemented();
-}
-
-void BWebView::WindowActivated(bool activated)
-{
-    notImplemented();
-}
-
-void BWebView::MouseMoved(BPoint where, uint32, const BMessage*)
-{
-    notImplemented();
-}
-
-void BWebView::MouseDown(BPoint where)
-{
-	MakeFocus(true);
-    SetMouseEventMask(B_POINTER_EVENTS, B_LOCK_WINDOW_FOCUS);
-    notImplemented();
-}
-
-void BWebView::MouseUp(BPoint where)
-{
-    notImplemented();
-}
-
-void BWebView::KeyDown(const char*, int32)
-{
-    notImplemented();
-}
-
-void BWebView::KeyUp(const char*, int32)
-{
-    notImplemented();
-}
-
-void BWebView::Pulse()
-{
-    notImplemented();
-}
-
-// #pragma mark - public API
-
-BString BWebView::MainFrameTitle() const
-{
-    notImplemented();
-    return BString();
-}
-
-BString BWebView::MainFrameRequestedURL() const
-{
-    notImplemented();
-    return BString();
-}
-
-BString BWebView::MainFrameURL() const
-{
-    notImplemented();
-    return BString();
-}
-
-void BWebView::LoadURL(const char* urlString, bool aquireFocus)
-{
-    WKRetainPtr<WKURLRef> url = adoptWK(WKURLCreateWithUTF8CString(urlString));
-    WKPageLoadURL(WKViewGetPage(fWebView.get()), url.get());
-}
-
-void BWebView::Reload()
-{
-    WKPageReload(WKViewGetPage(fWebView.get()));
-}
-
-void BWebView::GoBack()
-{
-    WKPageGoBack(WKViewGetPage(fWebView.get()));
-}
-
-void BWebView::GoForward()
-{
-    WKPageGoForward(WKViewGetPage(fWebView.get()));
-}
-
-void BWebView::StopLoading()
-{
-    WKPageStopLoading(WKViewGetPage(fWebView.get()));
-}
-
-void BWebView::IncreaseZoomFactor(bool textOnly)
-{
-    notImplemented();
-}
-
-void BWebView::DecreaseZoomFactor(bool textOnly)
-{
-    notImplemented();
-}
-
-void BWebView::ResetZoomFactor()
-{
-    notImplemented();
-}
-
-void BWebView::FindString(const char* string, bool forward ,
-    bool caseSensitive, bool wrapSelection, bool startInSelection)
-{
-    notImplemented();
-}
-
-void BWebView::SetDarkMode(bool dark)
-{
-    notImplemented();
-}
-
-void BWebView::SetAutoHidePointer(bool doIt)
-{
-	fAutoHidePointer = doIt;
-}
-
-void BWebView::SetUserData(BWebView::UserData* userData)
-{
-	if (fUserData == userData)
-		return;
-
-	delete fUserData;
-	fUserData = userData;
-}
-
-BWebView::UserData* BWebView::GetUserData() const
-{
-	return fUserData;
-}
-
-
-void BWebView::SetInspectorView(BWebView* inspector)
-{
-    fInspectorView = inspector;
-}
-
-
-BWebView* BWebView::GetInspectorView()
-{
-    return fInspectorView;
-}
-
-
-void BWebView::SetRootLayer(WebCore::GraphicsLayer* layer)
-{
-}
-
+} // namespace WebKit
