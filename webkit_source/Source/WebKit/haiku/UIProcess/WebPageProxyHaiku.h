@@ -27,9 +27,6 @@
 
 #include "APIView.h"
 #include <WebCore/FloatRect.h>
-#include <Handler.h>
-
-class BWebPage;
 
 namespace WebKit {
 
@@ -37,15 +34,11 @@ class DrawingAreaProxy;
 class NativeWebMouseEvent;
 class WebPageProxy;
 
-class ViewClient : public BHandler {
+class ViewClient {
 public:
     virtual ~ViewClient() = default;
     virtual void setViewNeedsDisplay(const WebCore::FloatRect&) = 0;
     virtual void requestScroll(const WebCore::FloatPoint&, const WebCore::IntPoint&) = 0;
-    virtual void MessageReceived(BMessage* message);
-
-private:
-    BWebPage* fWebPage;
 };
 
 } // namespace WebKit

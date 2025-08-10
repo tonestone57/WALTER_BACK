@@ -1,7 +1,5 @@
 haiku/API/APIPageConfigurationHaiku.cpp
 haiku/API/APIViewHaiku.cpp
-haiku/API/haiku/WebKit/WKPageConfigurationHaiku.cpp
-haiku/API/haiku/WebKit/WKViewHaiku.cpp
 haiku/Shared/API/APIContextMenuHaiku.cpp
 haiku/Shared/API/APIPageGroupHaiku.cpp
 haiku/Shared/API/haiku/WebKit/WKContextMenuItem.cpp
@@ -85,10 +83,3 @@ haiku/WebProcess/DrawingAreaHaiku.cpp
 haiku/UIProcess/WebPageProxyHaiku.cpp
 haiku/UIProcess/WebFrameProxyHaiku.cpp
 haiku/UIProcess/DrawingAreaProxyHaiku.cpp
-haiku/UIProcess/WebPageProxyHaiku.h
-haiku/UIProcess/DrawingAreaProxyHaiku.h
-haiku/UIProcess/WebFrameProxyHaiku.h
-haiku/UIProcess/WebPreferencesHaiku.cpp
-haiku/UIProcess/WebPreferencesHaiku.h
-haiku/UIProcess/Downloads/WebDownloadProxy.cpp
-haiku/UIProcess/Downloads/WebDownloadProxy.h
