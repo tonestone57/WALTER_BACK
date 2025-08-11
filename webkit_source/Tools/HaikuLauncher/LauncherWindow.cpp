@@ -52,6 +52,7 @@
 #include <SpaceLayoutItem.h>
 #include <StatusBar.h>
 #include <StringView.h>
+#include <PrintJob.h>
 #include <TextControl.h>
 
 #include <stdio.h>
@@ -65,6 +66,8 @@ enum {
     STOP = 'stop',
     GOTO_URL = 'goul',
     RELOAD = 'reld',
+
+    PRINT_PAGE = 'prnt',
 
     TEXT_SIZE_INCREASE = 'tsin',
     TEXT_SIZE_DECREASE = 'tsdc',
@@ -153,6 +156,15 @@ void LauncherWindow::MessageReceived(BMessage* message)
     case RELOAD:
         CurrentWebView()->Reload();
         break;
+    case PRINT_PAGE: {
+        BPrintJob job("HaikuLauncher");
+        if (job.ConfigJob() == B_OK) {
+            BRect printableRect = job.PrintableRect();
+            CurrentWebView()->Print(job.Settings(),
+                printableRect.Width(), printableRect.Height());
+        }
+        break;
+    }
     case GOTO_URL: {
         BString url;
         if (message->FindString("url", &url) != B_OK)
@@ -362,7 +374,11 @@ void LauncherWindow::init(BWebView* webView, ToolbarPolicy toolbarPolicy)
     if (toolbarPolicy == HaveToolbar) {
         // Menu
         m_menuBar = new BMenuBar("Main menu");
-        BMenu* menu = new BMenu("Window");
+        BMenu* menu = new BMenu("File");
+        menu->AddItem(new BMenuItem("Print" B_UTF8_ELLIPSIS, new BMessage(PRINT_PAGE), 'P'));
+        m_menuBar->AddItem(menu);
+
+        menu = new BMenu("Window");
         BMessage* newWindowMessage = new BMessage(NEW_WINDOW);
         newWindowMessage->AddString("url", "");
         BMenuItem* newItem = new BMenuItem("New", newWindowMessage, 'N');

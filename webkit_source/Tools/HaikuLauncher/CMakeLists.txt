@@ -9,7 +9,7 @@ SET(HaikuLauncher_SOURCES
 SET(HaikuLauncher_LIBRARIES
     JavaScriptCore
     WebCore
-    WebKitLegacy
+    WebKit
     ${LIBXML2_LIBRARIES}
     ${LIBXSLT_LIBRARIES}
     ${SQLITE_LIBRARIES}
@@ -19,7 +19,7 @@ SET(HaikuLauncher_LIBRARIES
 )
 
 INCLUDE_DIRECTORIES(
-    "${WEBKITLEGACY_DIR}/haiku/API"
+    "${WEBKIT_DIR}/haiku/UIProcess"
     /system/develop/headers/private/netservices/
 )
 

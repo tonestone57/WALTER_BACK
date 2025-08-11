@@ -19,46 +19,65 @@
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT of THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include "BWebView.h"
 
-#include "PrintInfo.h"
-#include <WebCore/SharedBuffer.h>
-#include <wtf/CompletionHandler.h>
-#include <wtf/TZoneMalloc.h>
-#include <memory>
+#include "WebContext.h"
+#include "WebPageGroup.h"
+#include "WebPageProxy.h"
+#include "WebView.h"
 
-class BMessage;
-class BPrintJob;
-
-namespace WebCore {
-class LocalFrame;
-class PrintContext;
-class ResourceError;
+BWebView::BWebView(const char* name)
+    : BView(name, B_WILL_DRAW | B_FRAME_EVENTS)
+    , m_page(WebKit::WebProcessPool::create()-> createContext()->createWebPage(WebKit::WebPageGroup::create()))
+{
+    m_webView = std::make_unique<WebKit::WebView>(m_page);
+    AddChild(m_webView.get());
 }
 
-namespace WebKit {
+BWebView::~BWebView()
+{
+}
 
-class WebPrintOperationHaiku {
-    WTF_MAKE_TZONE_ALLOCATED(WebPrintOperationHaiku);
-public:
-    explicit WebPrintOperationHaiku(const PrintInfo&);
-    ~WebPrintOperationHaiku();
+void BWebView::LoadURL(const char* url)
+{
+    m_page.loadUrl(WTF::String::fromUTF8(url));
+}
 
-    void startPrint(WebCore::LocalFrame*, CompletionHandler<void(RefPtr<WebCore::FragmentedSharedBuffer>&&, WebCore::ResourceError&&)>&&);
+void BWebView::GoBack()
+{
+    m_page.goBack();
+}
 
-private:
-    void endPrint();
+void BWebView::GoForward()
+{
+    m_page.goForward();
+}
 
-    const PrintInfo& m_printInfo;
-    std::unique_ptr<WebCore::PrintContext> m_printContext;
-    RefPtr<BPrintJob> m_printJob;
-    int m_pageCount { 0 };
+void BWebView::Reload()
+{
+    m_page.reload();
+}
 
-    CompletionHandler<void(RefPtr<WebCore::FragmentedSharedBuffer>&&, WebCore::ResourceError&&)> m_completionHandler;
-};
+void BWebView::StopLoading()
+{
+    m_page.stopLoading();
+}
 
-} // namespace WebKit
+#include "PrintInfo.h"
+
+void BWebView::Print(const BMessage* settings, float availablePaperWidth, float availablePaperHeight)
+{
+    WebKit::PrintInfo printInfo;
+    printInfo.availablePaperWidth = availablePaperWidth;
+    printInfo.availablePaperHeight = availablePaperHeight;
+    if (settings)
+        printInfo.printSettings = std::make_unique<BMessage>(*settings);
+
+    m_page.print(printInfo, [](WebKit::CallbackBase::Error) {
+        // FIXME: Handle completion
+    });
+}

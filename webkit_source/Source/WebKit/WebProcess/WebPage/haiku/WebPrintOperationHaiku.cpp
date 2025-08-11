@@ -47,22 +47,67 @@ WebPrintOperationHaiku::~WebPrintOperationHaiku()
 {
 }
 
+#include <WebCore/Document.h>
+#include <WebCore/FrameView.h>
+
 void WebPrintOperationHaiku::startPrint(WebCore::LocalFrame* frame, CompletionHandler<void(RefPtr<WebCore::FragmentedSharedBuffer>&&, WebCore::ResourceError&&)>&& completionHandler)
 {
     m_completionHandler = WTFMove(completionHandler);
+
+    String jobName = frame->document()->title();
+    if (jobName.isEmpty())
+        jobName = "WebKit Print output";
+
+    m_printJob = new BPrintJob(jobName.utf8().data());
+    if (m_printInfo.printSettings)
+        m_printJob->SetSettings(new BMessage(*m_printInfo.printSettings));
+
     m_printContext = std::make_unique<WebCore::PrintContext>(*frame);
-    m_printContext->begin(m_printInfo.availablePaperWidth, m_printInfo.availablePaperHeight);
+    m_printContext->begin(m_printJob->PrintableRect().Width(), m_printJob->PrintableRect().Height());
 
-    // FIXME: Implement printing logic.
-    notImplemented();
+    m_pageCount = m_printContext->pageCount();
+    bool success = true;
 
-    endPrint();
+    if (m_pageCount > 0) {
+        if (m_printJob->BeginJob() != B_OK) {
+            success = false;
+        } else {
+            float printedPageWidth = m_printJob->PrintableRect().Width();
+
+            // FIXME: This should be done in an idle task to avoid blocking the main thread.
+            for (int i = 1; i <= m_pageCount; ++i) {
+                if (m_printJob->BeginPage(i) != B_OK) {
+                    success = false;
+                    break;
+                }
+                WebCore::GraphicsContext graphicsContext(m_printJob->View());
+                m_printContext->spoolPage(graphicsContext, i, printedPageWidth);
+                if (m_printJob->CommitPage() != B_OK) {
+                    success = false;
+                    break;
+                }
+            }
+
+            if (success && m_printJob->CommitJob() != B_OK) {
+                success = false;
+            }
+        }
+    }
+
+    endPrint(success);
 }
 
-void WebPrintOperationHaiku::endPrint()
+void WebPrintOperationHaiku::endPrint(bool success)
 {
-    if (m_completionHandler)
+    if (!m_completionHandler)
+        return;
+
+    if (success) {
         m_completionHandler(nullptr, { });
+    } else {
+        // FIXME: Create a better ResourceError
+        m_completionHandler(nullptr, WebCore::ResourceError(String(), -1, m_printContext->frame().document()->url(), "Printing failed"_s, WebCore::ResourceError::Type::General));
+    }
 }
 
 } // namespace WebKit

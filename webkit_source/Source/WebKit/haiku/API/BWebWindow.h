@@ -19,46 +19,29 @@
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT of THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#ifndef B_WEB_WINDOW_H
+#define B_WEB_WINDOW_H
 
-#include "PrintInfo.h"
-#include <WebCore/SharedBuffer.h>
-#include <wtf/CompletionHandler.h>
-#include <wtf/TZoneMalloc.h>
-#include <memory>
+#include <Window.h>
 
-class BMessage;
-class BPrintJob;
+class BWebView;
 
-namespace WebCore {
-class LocalFrame;
-class PrintContext;
-class ResourceError;
-}
-
-namespace WebKit {
-
-class WebPrintOperationHaiku {
-    WTF_MAKE_TZONE_ALLOCATED(WebPrintOperationHaiku);
+class BWebWindow : public BWindow {
 public:
-    explicit WebPrintOperationHaiku(const PrintInfo&);
-    ~WebPrintOperationHaiku();
+    BWebWindow(BRect frame, const char* title, window_look look,
+        window_feel feel, uint32 flags,
+        uint32 workspace = B_CURRENT_WORKSPACE);
+    virtual ~BWebWindow();
 
-    void startPrint(WebCore::LocalFrame*, CompletionHandler<void(RefPtr<WebCore::FragmentedSharedBuffer>&&, WebCore::ResourceError&&)>&&);
+    BWebView* CurrentWebView() const { return m_currentWebView; }
+    void SetCurrentWebView(BWebView* view) { m_currentWebView = view; }
 
 private:
-    void endPrint();
-
-    const PrintInfo& m_printInfo;
-    std::unique_ptr<WebCore::PrintContext> m_printContext;
-    RefPtr<BPrintJob> m_printJob;
-    int m_pageCount { 0 };
-
-    CompletionHandler<void(RefPtr<WebCore::FragmentedSharedBuffer>&&, WebCore::ResourceError&&)> m_completionHandler;
+    BWebView* m_currentWebView;
 };
 
-} // namespace WebKit
+#endif // B_WEB_WINDOW_H

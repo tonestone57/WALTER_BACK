@@ -112,6 +112,10 @@
 #include <WebCore/LegacyWebArchive.h>
 #endif
 
+#if ENABLE(PRINTING) && PLATFORM(HAIKU)
+#include "WebPrintOperationHaiku.h"
+#endif
+
 #ifndef NDEBUG
 #include <wtf/RefCountedLeakCounter.h>
 #endif
@@ -858,6 +862,41 @@ String WebFrame::layerTreeAsText() const
 
     return localFrame->contentRenderer()->compositor().layerTreeAsText();
 }
+
+#if ENABLE(PRINTING)
+void WebFrame::print(const PrintInfo& printInfo, CompletionHandler<void(const IPC::SharedBufferReference&, const WebCore::ResourceError&)>&& completionHandler)
+{
+    if (!m_coreFrame) {
+        completionHandler({ }, { });
+        return;
+    }
+
+#if PLATFORM(GTK)
+    if (!m_printOperation)
+        m_printOperation = makeUnique<WebPrintOperationGtk>(printInfo);
+    m_printOperation->startPrint(m_frame->coreLocalFrame(), [completionHandler = WTFMove(completionHandler)] (RefPtr<WebCore::FragmentedSharedBuffer>&& printedPages, WebCore::ResourceError&& error) mutable {
+        if (error.isNull())
+            completionHandler(IPC::SharedBufferReference(WTFMove(printedPages)), { });
+        else
+            completionHandler({ }, error);
+    });
+#elif PLATFORM(HAIKU)
+    if (!m_printOperation)
+        m_printOperation = makeUnique<WebPrintOperationHaiku>(printInfo);
+
+    m_printOperation->startPrint(coreLocalFrame(), [completionHandler = WTFMove(completionHandler)] (RefPtr<WebCore::FragmentedSharedBuffer>&& printedPages, WebCore::ResourceError&& error) mutable {
+        if (error.isNull())
+            completionHandler(IPC::SharedBufferReference(WTFMove(printedPages)), { });
+        else
+            completionHandler({ }, error);
+    });
+#else
+    UNUSED_PARAM(printInfo);
+    notImplemented();
+    completionHandler({ }, { });
+#endif
+}
+#endif // ENABLE(PRINTING)
 
 unsigned WebFrame::pendingUnloadCount() const
 {
