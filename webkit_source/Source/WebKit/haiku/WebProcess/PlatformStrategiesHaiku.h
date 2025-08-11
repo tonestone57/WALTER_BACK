@@ -19,33 +19,32 @@
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * ARISING IN ANY WAY OUT of THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-#include "WebProcessHaiku.h"
+#ifndef PlatformStrategiesHaiku_h
+#define PlatformStrategiesHaiku_h
 
-#include "PlatformStrategiesHaiku.h"
-#include "WebProcessCreationParameters.h"
+#include <WebCore/PlatformStrategies.h>
+#include <wtf/NeverDestroyed.h>
 
-namespace WebKit {
-
-WebProcessHaiku& WebProcessHaiku::singleton()
-{
-    static WebProcessHaiku* process = new WebProcessHaiku;
-    return *process;
+namespace WebCore {
+class PasteboardStrategy;
 }
 
-WebProcessHaiku::WebProcessHaiku()
-{
-    // Set the singleton pointer.
-    WebProcess::setSingleton(this);
-}
+class PlatformStrategiesHaiku : public WebCore::PlatformStrategies {
+public:
+    static void initialize();
 
-void WebProcessHaiku::platformInitialize(const WebProcessCreationParameters& parameters)
-{
-    PlatformStrategiesHaiku::initialize();
-}
+private:
+    friend class WTF::NeverDestroyed<PlatformStrategiesHaiku>;
+    PlatformStrategiesHaiku();
 
-} // namespace WebKit
+    WebCore::LoaderStrategy* createLoaderStrategy() override;
+    WebCore::PasteboardStrategy* createPasteboardStrategy() override;
+    WebCore::MediaStrategy* createMediaStrategy() override;
+    WebCore::BlobRegistry* createBlobRegistry() override;
+};
+
+#endif // PlatformStrategiesHaiku_h
