@@ -23,42 +23,23 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-#include "WebDateTimePickerHaiku.h"
+#pragma once
 
-#include "WebPageProxy.h"
+#include "WebNotificationManager.h"
 
 namespace WebKit {
 
-WebDateTimePickerHaiku::WebDateTimePickerHaiku(WebPageProxy& page, WebDateTimePicker::Client& client, const WebCore::IntRect& rect)
-    : WebDateTimePicker(page, client, rect)
-{
-}
+class WebNotificationManagerHaiku final : public WebNotificationManager::Provider {
+public:
+    WebNotificationManagerHaiku();
+    virtual ~WebNotificationManagerHaiku() = default;
 
-#include <Button.h>
-#include <DatePicker.h>
-#include <LayoutBuilder.h>
-#include <TimeSpinner.h>
-#include <Window.h>
-
-void WebDateTimePickerHaiku::showDateTimePicker()
-{
-    BWindow* window = new BWindow(BRect(100, 100, 400, 400), "Date/Time Picker", B_TITLED_WINDOW, 0);
-    BDatePicker* datePicker = new BDatePicker("date_picker", new BMessage('dtch'));
-    BTimeSpinner* timeSpinner = new BTimeSpinner("time_spinner", new BMessage('tmch'));
-    BButton* okButton = new BButton("ok", "OK", new BMessage('ok'));
-    BLayoutBuilder::Group<>(window, B_VERTICAL, B_USE_DEFAULT_SPACING)
-        .SetInsets(B_USE_WINDOW_INSETS)
-        .Add(datePicker)
-        .Add(timeSpinner)
-        .Add(okButton)
-    .End();
-    window->Show();
-}
-
-void WebDateTimePickerHaiku::endPicker()
-{
-    // TODO: Implement
-}
+private:
+    // WebNotificationManager::Provider
+    void showNotification(WebPageProxy&, const String&, const String&, const String&, const String&, WebCore::NotificationData&&, CompletionHandler<void(WebCore::NotificationClient::Permission)>&&) override;
+    void cancelNotification(const UUID& notificationID) override;
+    void clearNotifications(const Vector<UUID>& notificationIDs) override;
+    void didDestroyNotification(const UUID& notificationID) override;
+};
 
 } // namespace WebKit

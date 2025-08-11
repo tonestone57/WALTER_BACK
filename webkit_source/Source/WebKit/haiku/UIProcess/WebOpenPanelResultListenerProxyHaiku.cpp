@@ -24,41 +24,21 @@
  */
 
 #include "config.h"
-#include "WebDateTimePickerHaiku.h"
+#include "WebOpenPanelResultListenerProxyHaiku.h"
 
 #include "WebPageProxy.h"
+#include <WebCore/NotImplemented.h>
 
 namespace WebKit {
 
-WebDateTimePickerHaiku::WebDateTimePickerHaiku(WebPageProxy& page, WebDateTimePicker::Client& client, const WebCore::IntRect& rect)
-    : WebDateTimePicker(page, client, rect)
+WebOpenPanelResultListenerProxyHaiku::WebOpenPanelResultListenerProxyHaiku(WebPageProxy& page, Ref<API::OpenPanelParameters>&& parameters)
+    : WebOpenPanelResultListenerProxy(page, WTFMove(parameters))
 {
 }
 
-#include <Button.h>
-#include <DatePicker.h>
-#include <LayoutBuilder.h>
-#include <TimeSpinner.h>
-#include <Window.h>
-
-void WebDateTimePickerHaiku::showDateTimePicker()
+void WebOpenPanelResultListenerProxyHaiku::didChooseFiles(const Vector<String>& files)
 {
-    BWindow* window = new BWindow(BRect(100, 100, 400, 400), "Date/Time Picker", B_TITLED_WINDOW, 0);
-    BDatePicker* datePicker = new BDatePicker("date_picker", new BMessage('dtch'));
-    BTimeSpinner* timeSpinner = new BTimeSpinner("time_spinner", new BMessage('tmch'));
-    BButton* okButton = new BButton("ok", "OK", new BMessage('ok'));
-    BLayoutBuilder::Group<>(window, B_VERTICAL, B_USE_DEFAULT_SPACING)
-        .SetInsets(B_USE_WINDOW_INSETS)
-        .Add(datePicker)
-        .Add(timeSpinner)
-        .Add(okButton)
-    .End();
-    window->Show();
-}
-
-void WebDateTimePickerHaiku::endPicker()
-{
-    // TODO: Implement
+    notImplemented();
 }
 
 } // namespace WebKit

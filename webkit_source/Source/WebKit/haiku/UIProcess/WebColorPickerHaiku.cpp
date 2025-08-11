@@ -35,9 +35,16 @@ WebColorPickerHaiku::WebColorPickerHaiku(WebPageProxy& page, const WebCore::Colo
 {
 }
 
-void WebColorPickerHaiku::showColorPicker(const WebCore::Color&)
+#include <ColorControl.h>
+#include <Window.h>
+
+void WebColorPickerHaiku::showColorPicker(const WebCore::Color& color)
 {
-    // TODO: Implement
+    BWindow* window = new BWindow(BRect(100, 100, 400, 400), "Color Picker", B_TITLED_WINDOW, 0);
+    BColorControl* colorControl = new BColorControl(BPoint(10, 10), B_CELLS_32x8, 8, "color_control", new BMessage('clch'));
+    window->AddChild(colorControl);
+    colorControl->SetValue(color.rgb());
+    window->Show();
 }
 
 void WebColorPickerHaiku::endPicker()

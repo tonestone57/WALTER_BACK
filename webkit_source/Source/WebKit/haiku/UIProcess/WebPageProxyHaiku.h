@@ -38,10 +38,13 @@ class WebView;
 #include "FindOptions.h"
 #include "WebContextMenuProxy.h"
 #include "ContextMenuContextData.h"
+#include "WebOpenPanelResultListenerProxy.h"
+#include "FileChooserSettings.h"
+#include <Handler.h>
 
 class WebContextMenuProxy;
 
-class WebPageProxyHaiku final : public WebPageProxy {
+class WebPageProxyHaiku final : public WebPageProxy, public BHandler {
 public:
     static Ref<WebPageProxy> create(PageConfiguration&);
     ~WebPageProxyHaiku();
@@ -70,7 +73,14 @@ public:
 private:
     // WebPageProxy
     void showContextMenu(FrameInfoData&&, ContextMenuContextData&&, const UserData&) override;
+    void runOpenPanel(WebFrameProxy&, FrameInfoData&&, API::OpenPanelParameters&, WebOpenPanelResultListenerProxy&) override;
+    void runJavaScriptAlert(WebFrameProxy&, FrameInfoData&&, const String&, CompletionHandler<void()>&&) override;
+    void runJavaScriptConfirm(WebFrameProxy&, FrameInfoData&&, const String&, CompletionHandler<void(bool)>&&) override;
+    void runJavaScriptPrompt(WebFrameProxy&, FrameInfoData&&, const String&, const String&, CompletionHandler<void(const String&)>&&) override;
     void createView();
+
+    // BHandler
+    void MessageReceived(BMessage* message) override;
 
     // IPC::MessageReceiver
     void didReceiveMessage(IPC::Connection&, IPC::Decoder&) override;
@@ -89,6 +99,7 @@ private:
     std::unique_ptr<IconLoadingClientHaiku> m_iconLoadingClient;
     std::unique_ptr<FindClientHaiku> m_findClient;
     RefPtr<WebContextMenuProxy> m_activeContextMenu;
+    RefPtr<WebOpenPanelResultListenerProxy> m_openPanelResultListener;
 };
 
 } // namespace WebKit

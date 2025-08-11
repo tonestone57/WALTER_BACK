@@ -24,41 +24,35 @@
  */
 
 #include "config.h"
-#include "WebDateTimePickerHaiku.h"
+#include "WebNotificationManager.h"
 
-#include "WebPageProxy.h"
+#include <WebCore/NotImplemented.h>
 
 namespace WebKit {
 
-WebDateTimePickerHaiku::WebDateTimePickerHaiku(WebPageProxy& page, WebDateTimePicker::Client& client, const WebCore::IntRect& rect)
-    : WebDateTimePicker(page, client, rect)
+WebNotificationManagerHaiku::WebNotificationManagerHaiku()
 {
 }
 
-#include <Button.h>
-#include <DatePicker.h>
-#include <LayoutBuilder.h>
-#include <TimeSpinner.h>
-#include <Window.h>
-
-void WebDateTimePickerHaiku::showDateTimePicker()
+void WebNotificationManagerHaiku::showNotification(WebPageProxy&, const String&, const String&, const String&, const String&, WebCore::NotificationData&&, CompletionHandler<void(WebCore::NotificationClient::Permission)>&& completionHandler)
 {
-    BWindow* window = new BWindow(BRect(100, 100, 400, 400), "Date/Time Picker", B_TITLED_WINDOW, 0);
-    BDatePicker* datePicker = new BDatePicker("date_picker", new BMessage('dtch'));
-    BTimeSpinner* timeSpinner = new BTimeSpinner("time_spinner", new BMessage('tmch'));
-    BButton* okButton = new BButton("ok", "OK", new BMessage('ok'));
-    BLayoutBuilder::Group<>(window, B_VERTICAL, B_USE_DEFAULT_SPACING)
-        .SetInsets(B_USE_WINDOW_INSETS)
-        .Add(datePicker)
-        .Add(timeSpinner)
-        .Add(okButton)
-    .End();
-    window->Show();
+    notImplemented();
+    completionHandler(WebCore::NotificationClient::Permission::Denied);
 }
 
-void WebDateTimePickerHaiku::endPicker()
+void WebNotificationManagerHaiku::cancelNotification(const UUID& notificationID)
 {
-    // TODO: Implement
+    notImplemented();
+}
+
+void WebNotificationManagerHaiku::clearNotifications(const Vector<UUID>& notificationIDs)
+{
+    notImplemented();
+}
+
+void WebNotificationManagerHaiku::didDestroyNotification(const UUID& notificationID)
+{
+    notImplemented();
 }
 
 } // namespace WebKit

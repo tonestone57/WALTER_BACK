@@ -67,8 +67,36 @@ void WebView::MouseUp(BPoint where)
 void WebView::MouseMoved(BPoint where, uint32 transit, const BMessage* dragMessage)
 {
     BMessage* message = Window()->CurrentMessage();
-    if (message)
+    if (message) {
+        uint32 buttons;
+        GetMouse(&where, &buttons, true);
+#include "WebHitTestResultData.h"
+
+        if (buttons) {
+            m_page.requestHitTestResultAtPoint(where, [this](WebHitTestResultData&& hitTestResult, bool) {
+                if (!hitTestResult.linkURL.isEmpty()) {
+                    printf("Dragging a link: %s\n", hitTestResult.linkURL.utf8().data());
+                } else if (!hitTestResult.imageURL.isEmpty()) {
+                    printf("Dragging an image: %s\n", hitTestResult.imageURL.utf8().data());
+                } else {
+                    // This is a drag of text.
+                    printf("Drag detected\n");
+                }
+            });
+        }
         m_page.handleMouseEvent(NativeWebMouseEvent(message, this));
+    }
+}
+
+void WebView::MessageReceived(BMessage* message)
+{
+    switch (message->what) {
+    case B_SIMPLE_DATA:
+        printf("File drop detected\n");
+        break;
+    default:
+        BView::MessageReceived(message);
+    }
 }
 
 void WebView::KeyDown(const char* bytes, int32 numBytes)

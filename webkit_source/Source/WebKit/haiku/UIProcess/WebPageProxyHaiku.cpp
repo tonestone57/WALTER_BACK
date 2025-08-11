@@ -174,16 +174,75 @@ void WebPageProxyHaiku::resetZoomFactor()
 
 #include "WebContextMenuProxyHaiku.h"
 
+#include <FilePanel.h>
+
 void WebPageProxyHaiku::findString(const String& string, OptionSet<FindOptions> options, unsigned maxMatchCount)
 {
     WebPageProxy::findString(string, options, maxMatchCount);
 }
+
+#include <Entry.h>
+#include <Path.h>
+
+void WebPageProxyHaiku::runOpenPanel(WebFrameProxy&, FrameInfoData&&, API::OpenPanelParameters& parameters, WebOpenPanelResultListenerProxy& listener)
+{
+    m_openPanelResultListener = &listener;
+    BFilePanel* panel = new BFilePanel(B_OPEN_PANEL, new BMessenger(this), nullptr, 0, parameters.allowMultipleFiles());
+    panel->Show();
+}
+
+void WebPageProxyHaiku::MessageReceived(BMessage* message)
+{
+    switch (message->what) {
+    case B_REFS_RECEIVED: {
+        entry_ref ref;
+        Vector<String> files;
+        for (int32 i = 0; message->FindRef("refs", i, &ref) == B_OK; i++) {
+            BPath path(&ref);
+            files.append(path.Path());
+        }
+        m_openPanelResultListener->didChooseFiles(files);
+        m_openPanelResultListener = nullptr;
+        break;
+    }
+    case B_CANCEL:
+        m_openPanelResultListener->didCancel();
+        m_openPanelResultListener = nullptr;
+        break;
+    default:
+        BHandler::MessageReceived(message);
+    }
+}
+
+#include <Alert.h>
 
 void WebPageProxyHaiku::showContextMenu(FrameInfoData&& frameInfo, ContextMenuContextData&& contextMenuContext, const UserData& userData)
 {
     auto contextMenu = WebContextMenuProxyHaiku::create(*this, WTFMove(contextMenuContext), userData);
     m_activeContextMenu = contextMenu.ptr();
     m_activeContextMenu->show();
+}
+
+void WebPageProxyHaiku::runJavaScriptAlert(WebFrameProxy&, FrameInfoData&&, const String& message, CompletionHandler<void()>&& completionHandler)
+{
+    BAlert* alert = new BAlert("JavaScript Alert", message.utf8().data(), "OK");
+    alert->Go(nullptr);
+    completionHandler();
+}
+
+#include "JSPromptPanel.h"
+
+void WebPageProxyHaiku::runJavaScriptConfirm(WebFrameProxy&, FrameInfoData&&, const String& message, CompletionHandler<void(bool)>&& completionHandler)
+{
+    BAlert* alert = new BAlert("JavaScript Confirm", message.utf8().data(), "Cancel", "OK");
+    int32 result = alert->Go();
+    completionHandler(result == 1);
+}
+
+void WebPageProxyHaiku::runJavaScriptPrompt(WebFrameProxy&, FrameInfoData&&, const String& message, const String& defaultValue, CompletionHandler<void(const String&)>&& completionHandler)
+{
+    JSPromptPanel* panel = new JSPromptPanel("JavaScript Prompt", message.utf8().data(), defaultValue.utf8().data(), WTFMove(completionHandler));
+    panel->Show();
 }
 
 } // namespace WebKit

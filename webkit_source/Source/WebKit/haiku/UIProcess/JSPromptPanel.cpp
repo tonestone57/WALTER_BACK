@@ -24,41 +24,52 @@
  */
 
 #include "config.h"
-#include "WebDateTimePickerHaiku.h"
+#include "JSPromptPanel.h"
 
-#include "WebPageProxy.h"
+#include <Button.h>
+#include <LayoutBuilder.h>
+#include <StringView.h>
+#include <TextView.h>
 
 namespace WebKit {
 
-WebDateTimePickerHaiku::WebDateTimePickerHaiku(WebPageProxy& page, WebDateTimePicker::Client& client, const WebCore::IntRect& rect)
-    : WebDateTimePicker(page, client, rect)
+JSPromptPanel::JSPromptPanel(const char* title, const char* message, const char* defaultValue,
+    CompletionHandler<void(const String&)>&& completionHandler)
+    : BWindow(BRect(100, 100, 400, 250), title, B_MODAL_WINDOW, B_ASYNCHRONOUS_CONTROLS)
+    , m_completionHandler(WTFMove(completionHandler))
 {
-}
+    m_textView = new BTextView("text_view");
+    m_textView->SetText(defaultValue);
 
-#include <Button.h>
-#include <DatePicker.h>
-#include <LayoutBuilder.h>
-#include <TimeSpinner.h>
-#include <Window.h>
+    m_okButton = new BButton("ok", "OK", new BMessage('ok'));
+    m_cancelButton = new BButton("cancel", "Cancel", new BMessage('cncl'));
 
-void WebDateTimePickerHaiku::showDateTimePicker()
-{
-    BWindow* window = new BWindow(BRect(100, 100, 400, 400), "Date/Time Picker", B_TITLED_WINDOW, 0);
-    BDatePicker* datePicker = new BDatePicker("date_picker", new BMessage('dtch'));
-    BTimeSpinner* timeSpinner = new BTimeSpinner("time_spinner", new BMessage('tmch'));
-    BButton* okButton = new BButton("ok", "OK", new BMessage('ok'));
-    BLayoutBuilder::Group<>(window, B_VERTICAL, B_USE_DEFAULT_SPACING)
+    BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
         .SetInsets(B_USE_WINDOW_INSETS)
-        .Add(datePicker)
-        .Add(timeSpinner)
-        .Add(okButton)
+        .Add(new BStringView("message", message))
+        .Add(m_textView)
+        .AddGroup(B_HORIZONTAL, B_USE_DEFAULT_SPACING)
+            .AddGlue()
+            .Add(m_cancelButton)
+            .Add(m_okButton)
+        .End()
     .End();
-    window->Show();
 }
 
-void WebDateTimePickerHaiku::endPicker()
+void JSPromptPanel::MessageReceived(BMessage* message)
 {
-    // TODO: Implement
+    switch (message->what) {
+    case 'ok':
+        m_completionHandler(String(m_textView->Text()));
+        Quit();
+        break;
+    case 'cncl':
+        m_completionHandler(String());
+        Quit();
+        break;
+    default:
+        BWindow::MessageReceived(message);
+    }
 }
 
 } // namespace WebKit
