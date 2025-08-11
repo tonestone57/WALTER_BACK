@@ -25,35 +25,20 @@
 
 #pragma once
 
-#include "WebChromeClient.h"
-
-namespace WebCore {
-class ContextMenu;
-}
+#include "WebContextMenuProxy.h"
+#include <PopUpMenu.h>
 
 namespace WebKit {
 
-class WebChromeClientHaiku final : public WebChromeClient {
+class NativeWebContextMenuHaiku final : public BPopUpMenu {
 public:
-    WebChromeClientHaiku(WebPage&);
-    virtual ~WebChromeClientHaiku() = default;
+    NativeWebContextMenuHaiku(const Vector<WebContextMenuItemData>&);
+    virtual ~NativeWebContextMenuHaiku() = default;
+
+    const WebContextMenuItemData* Go(BPoint, bool, bool, bool);
 
 private:
-    void showContextMenu(const WebCore::ContextMenu*) const override;
-    void setWindowRect(const WebCore::FloatRect&) final;
-    WebCore::FloatRect windowRect() const final;
-    void focus() final;
-    void unfocus() final;
-    void runJavaScriptAlert(WebCore::LocalFrame&, const String&) final;
-    bool runJavaScriptConfirm(WebCore::LocalFrame&, const String&) final;
-    bool runJavaScriptPrompt(WebCore::LocalFrame&, const String&, const String&, String&) final;
-    void setStatusbarVisible(bool) final;
-    void setToolbarsVisible(bool) final;
-    void setMenubarVisible(bool) final;
-    void didCompletePageLoadForMainFrame() final;
-    void didFinishLoading() final;
-    void isPlayingAudioDidChange(bool) final;
-    RefPtr<WebCore::Page> createWindow(WebCore::LocalFrame&, const String&, const WebCore::WindowFeatures&, const WebCore::NavigationAction&) final;
+    const Vector<WebContextMenuItemData>& m_items;
 };
 
 } // namespace WebKit

@@ -220,7 +220,7 @@ void WebPageProxyHaiku::showContextMenu(FrameInfoData&& frameInfo, ContextMenuCo
 {
     auto contextMenu = WebContextMenuProxyHaiku::create(*this, WTFMove(contextMenuContext), userData);
     m_activeContextMenu = contextMenu.ptr();
-    m_activeContextMenu->show();
+    contextMenu->show();
 }
 
 void WebPageProxyHaiku::runJavaScriptAlert(WebFrameProxy&, FrameInfoData&&, const String& message, CompletionHandler<void()>&& completionHandler)
@@ -243,6 +243,49 @@ void WebPageProxyHaiku::runJavaScriptPrompt(WebFrameProxy&, FrameInfoData&&, con
 {
     JSPromptPanel* panel = new JSPromptPanel("JavaScript Prompt", message.utf8().data(), defaultValue.utf8().data(), WTFMove(completionHandler));
     panel->Show();
+}
+
+void WebPageProxyHaiku::contextMenuItemSelected(const WebContextMenuItemData& item)
+{
+    if (item.action() == ContextMenuAction::Ignore)
+        return;
+
+    if (item.action() < ContextMenuAction::LastAPIAction) {
+         WebPageProxy::contextMenuItemSelected(item);
+        return;
+    }
+
+    switch (item.action()) {
+    case ContextMenuAction::DownloadFile:
+        send(Messages::WebPage::DownloadFile(item.url(), item.title()));
+        break;
+    case ContextMenuAction::DownloadImage:
+        send(Messages::WebPage::DownloadImage(item.url()));
+        break;
+    case ContextMenuAction::CopyImage:
+        send(Messages::WebPage::CopyImage(item.url()));
+        break;
+    case ContextMenuAction::CopyImageURL:
+        send(Messages::WebPage::CopyImageURL(item.url()));
+        break;
+    case ContextMenuAction::CopyMediaURL:
+        send(Messages::WebPage::CopyMediaURL(item.url()));
+        break;
+    case ContextMenuAction::OpenImageInNewWindow:
+        send(Messages::WebPage::OpenImageInNewWindow(item.url()));
+        break;
+    case ContextMenuAction::OpenMediaInNewWindow:
+        send(Messages::WebPage::OpenMediaInNewWindow(item.url()));
+        break;
+    case ContextMenuAction::ToggleMediaControls:
+        send(Messages::WebPage::ToggleMediaControls(item.url()));
+        break;
+    case ContextMenuAction::ToggleMediaLoop:
+        send(Messages::WebPage::ToggleMediaLoop(item.url()));
+        break;
+    default:
+        break;
+    }
 }
 
 } // namespace WebKit

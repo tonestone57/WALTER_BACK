@@ -23,11 +23,18 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
+#include "config.hh"
 #include "WebChromeClientHaiku.h"
 
 #include "WebPage.h"
+#include "WebProcess.h"
+#include "WebPageProxyMessages.h"
+#include <WebCore/ContextMenu.h>
+#include <WebCore/FrameLoader.h>
 #include <WebCore/WindowFeatures.h>
+
+#include "WebContextMenuItemData.h"
+#include "ContextMenuContextData.h"
 
 namespace WebKit {
 
@@ -110,6 +117,16 @@ RefPtr<Page> WebChromeClientHaiku::createWindow(LocalFrame&, const String&, cons
 {
     // TODO: Implement
     return nullptr;
+}
+
+void WebChromeClientHaiku::showContextMenu(const ContextMenu* menu) const
+{
+    Vector<WebContextMenuItemData> menuItems;
+    for (const auto& item : menu->items())
+        menuItems.append(WebContextMenuItemData(item));
+
+    m_page.process().send(Messages::WebPageProxy::ShowContextMenu(
+            m_page.contextMenuContextData(), menuItems), m_page.identifier());
 }
 
 } // namespace WebKit

@@ -6125,6 +6125,60 @@ void WebPage::didSelectItemFromActiveContextMenu(const WebContextMenuItemData& i
     if (auto contextMenu = std::exchange(m_contextMenu, nullptr))
         contextMenu->itemSelected(item);
 }
+
+void WebPage::downloadFile(const URL& url, const String& title)
+{
+    if (m_page)
+        m_page->mainFrame().loader().load(FrameLoadRequest(m_page->mainFrame(), ResourceRequest(url, title)));
+}
+
+void WebPage::downloadImage(const URL& url)
+{
+    if (m_page)
+        m_page->mainFrame().loader().load(FrameLoadRequest(m_page->mainFrame(), ResourceRequest(url, "download")));
+}
+
+void WebPage::copyImage(const URL& url)
+{
+    if (m_page)
+        m_page->mainFrame().loader().load(FrameLoadRequest(m_page->mainFrame(), ResourceRequest(url, "copy")));
+}
+
+void WebPage::copyImageURL(const URL& url)
+{
+    if (m_page)
+        m_page->mainFrame().loader().load(FrameLoadRequest(m_page->mainFrame(), ResourceRequest(url, "copy-url")));
+}
+
+void WebPage::copyMediaURL(const URL& url)
+{
+    if (m_page)
+        m_page->mainFrame().loader().load(FrameLoadRequest(m_page->mainFrame(), ResourceRequest(url, "copy-url")));
+}
+
+void WebPage::openImageInNewWindow(const URL& url)
+{
+    if (m_page)
+        m_page->mainFrame().loader().load(FrameLoadRequest(m_page->mainFrame(), ResourceRequest(url, "_blank")));
+}
+
+void WebPage::openMediaInNewWindow(const URL& url)
+{
+    if (m_page)
+        m_page->mainFrame().loader().load(FrameLoadRequest(m_page->mainFrame(), ResourceRequest(url, "_blank")));
+}
+
+void WebPage::toggleMediaControls(const URL& url)
+{
+    if (m_page)
+        m_page->mainFrame().loader().load(FrameLoadRequest(m_page->mainFrame(), ResourceRequest(url, "toggle-controls")));
+}
+
+void WebPage::toggleMediaLoop(const URL& url)
+{
+    if (m_page)
+        m_page->mainFrame().loader().load(FrameLoadRequest(m_page->mainFrame(), ResourceRequest(url, "toggle-loop")));
+}
 #endif
 
 void WebPage::replaceSelectionWithText(LocalFrame* frame, const String& text)

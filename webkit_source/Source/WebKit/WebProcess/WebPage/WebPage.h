@@ -2384,6 +2384,15 @@ private:
 
 #if ENABLE(CONTEXT_MENUS)
     void didSelectItemFromActiveContextMenu(const WebContextMenuItemData&);
+    void downloadFile(const URL&, const String&);
+    void downloadImage(const URL&);
+    void copyImage(const URL&);
+    void copyImageURL(const URL&);
+    void copyMediaURL(const URL&);
+    void openImageInNewWindow(const URL&);
+    void openMediaInNewWindow(const URL&);
+    void toggleMediaControls(const URL&);
+    void toggleMediaLoop(const URL&);
 #endif
 
     void changeSelectedIndex(int32_t index);

@@ -19,64 +19,51 @@
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT of THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "config.h"
-#include "WebContextMenuProxyHaiku.h"
+#include "NativeWebContextMenuHaiku.h"
 
-#include "WebPageProxy.h"
 #include "WebContextMenuItemData.h"
-#include <PopUpMenu.h>
 #include <MenuItem.h>
-#include <Window.h>
 
 namespace WebKit {
 
-WebContextMenuProxyHaiku::WebContextMenuProxyHaiku(WebPageProxy& page, ContextMenuContextData&& context, const UserData& userData)
-    : WebContextMenuProxy(page, WTFMove(context), userData)
+NativeWebContextMenuHaiku::NativeWebContextMenuHaiku(const Vector<WebContextMenuItemData>& items)
+    : BPopUpMenu("context menu", false, false)
+    , m_items(items)
 {
-}
-
-#include "WebPageProxyHaiku.h"
-
-void WebContextMenuProxyHaiku::show()
-{
-    BPopUpMenu* menu = new BPopUpMenu("context menu", false, false);
-    for (const auto& item : m_context.menuItems()) {
+    for (const auto& item : m_items) {
         if (item.type() == WebCore::SeparatorType) {
-            menu->AddSeparatorItem();
+            AddSeparatorItem();
             continue;
         }
+
         BMessage* message = new BMessage(item.action());
         BMenuItem* menuItem = new BMenuItem(item.title().utf8().data(), message);
-        menu->AddItem(menuItem);
-    }
-
-    WebPageProxyHaiku& page = static_cast<WebPageProxyHaiku&>(m_page.get());
-    BPoint where;
-    uint32 buttons;
-    page.view()->GetMouse(&where, &buttons, true);
-    BPoint screen_where = page.view()->ConvertToScreen(where);
-
-    BMenuItem* selected = menu->Go(screen_where, false, true, true);
-    if (selected) {
-        if (const BMessage* message = selected->Message()) {
-            int32 action = message->what;
-            for (const auto& item : m_context.menuItems()) {
-                if (item.action() == action) {
-                    m_page->contextMenuItemSelected(item);
-                    break;
-                }
-            }
-        }
+        AddItem(menuItem);
     }
 }
 
-void WebContextMenuProxyHaiku::cancel()
+const WebContextMenuItemData* NativeWebContextMenuHaiku::Go(BPoint where, bool delivers_message, bool open_anyway, bool async)
 {
-    // TODO: Implement
+    BMenuItem* selected = BPopUpMenu::Go(where, delivers_message, open_anyway, async);
+    if (!selected)
+        return nullptr;
+
+    const BMessage* message = selected->Message();
+    if (!message)
+        return nullptr;
+
+    int32 action = message->what;
+    for (const auto& item : m_items) {
+        if (item.action() == action)
+            return &item;
+    }
+
+    return nullptr;
 }
 
 } // namespace WebKit

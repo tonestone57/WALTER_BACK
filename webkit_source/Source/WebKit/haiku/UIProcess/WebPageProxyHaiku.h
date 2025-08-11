@@ -100,6 +100,9 @@ private:
     std::unique_ptr<FindClientHaiku> m_findClient;
     RefPtr<WebContextMenuProxy> m_activeContextMenu;
     RefPtr<WebOpenPanelResultListenerProxy> m_openPanelResultListener;
+
+    // WebContextMenuProxy::Client
+    void contextMenuItemSelected(const WebContextMenuItemData&) override;
 };
 
 } // namespace WebKit

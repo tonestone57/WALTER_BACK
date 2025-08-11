@@ -38,8 +38,8 @@ public:
 
 private:
     WebContextMenuProxyHaiku(WebPageProxy&, ContextMenuContextData&&, const UserData&);
-    void showContextMenu() override;
-    void cancelContextMenu() override;
+    void show() override;
+    void cancel() override;
 };
 
 } // namespace WebKit

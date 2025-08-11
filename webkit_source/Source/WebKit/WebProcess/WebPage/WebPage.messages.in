@@ -402,6 +402,15 @@ messages -> WebPage WantsAsyncDispatchMessage {
     DidDismissContextMenu()
     DidSelectItemFromActiveContextMenu(WebKit::WebContextMenuItemData menuItem)
     ContextMenuForKeyEvent()
+    DownloadFile(URL url, String title)
+    DownloadImage(URL url)
+    CopyImage(URL url)
+    CopyImageURL(URL url)
+    CopyMediaURL(URL url)
+    OpenImageInNewWindow(URL url)
+    OpenMediaInNewWindow(URL url)
+    ToggleMediaControls(URL url)
+    ToggleMediaLoop(URL url)
 #endif
 
     # Open panel.
