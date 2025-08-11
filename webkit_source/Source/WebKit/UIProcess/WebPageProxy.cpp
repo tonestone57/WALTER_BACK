@@ -10428,6 +10428,27 @@ void WebPageProxy::contextMenuItemSelected(const WebContextMenuItemData& item, c
         downloadInfo = { { hitTestData.absoluteMediaURL, { } } };
         break;
 
+    case ContextMenuItemTagSearchWeb: {
+        auto searchWithText = [this] (const String& text) {
+            if (text.isEmpty())
+                return;
+
+            String encoded = WTF::encodeWithURLEscapeSequences(text.trim(deprecatedIsSpaceOrNewline));
+            encoded = makeStringByReplacingAll(encoded, "%20"_s, "+"_s);
+
+            StringBuilder url;
+            url.append("https://www.google.com/search?q="_s);
+            url.append(encoded);
+            loadRequest(ResourceRequest(URL({ }, url.toString())));
+        };
+
+        if (!hitTestData.linkText.isEmpty())
+            searchWithText(hitTestData.linkText);
+        else
+            getSelectionOrContentsAsString(searchWithText);
+        break;
+    }
+
     case ContextMenuItemTagCheckSpellingWhileTyping:
         TextChecker::setContinuousSpellCheckingEnabled(!TextChecker::state().contains(TextCheckerState::ContinuousSpellCheckingEnabled));
             protectedLegacyMainFrameProcess()->updateTextCheckerState();

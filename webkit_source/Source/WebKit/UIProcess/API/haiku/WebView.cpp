@@ -32,6 +32,7 @@
 #include "NativeWebKeyboardEvent.h"
 #include "NativeWebMouseEvent.h"
 #include "WebEventFactory.h"
+#include "WebContextMenuProxyHaiku.h"
 #include "WebPageProxy.h"
 #include "WebProcessPool.h"
 
@@ -124,6 +125,11 @@ void WebView::KeyUp(const char* bytes, int32 numBytes)
         return;
 
     m_page->handleKeyboardEvent(WebEventFactory::createWebKeyboardEvent(message).value());
+}
+
+Ref<WebContextMenuProxy> WebView::createContextMenuProxy(WebPageProxy& page, FrameInfoData&& frameInfo, ContextMenuContextData&& context, const UserData& userData)
+{
+    return WebContextMenuProxyHaiku::create(this, page, WTFMove(frameInfo), WTFMove(context), userData);
 }
 
 } // namespace WebKit
