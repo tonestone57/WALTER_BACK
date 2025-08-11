@@ -23,52 +23,27 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef B_WEB_VIEW_H
-#define B_WEB_VIEW_H
+#ifndef B_WEB_PAGE_CLIENT_H
+#define B_WEB_PAGE_CLIENT_H
 
-#include <View.h>
-#include <memory>
+#include <String.h>
 
-#include "WebDragDestination.h"
-#include "WebDragSource.h"
+class BWebView;
 
-class BMessage;
-
-namespace WebKit {
-class WebPageProxy;
-class WebView;
-}
-
-class BWebView : public BView {
+class BWebPageClient {
 public:
-    BWebView(const char* name);
-    virtual ~BWebView();
+    virtual ~BWebPageClient() = default;
 
-    void LoadURL(const char* url);
-    void GoBack();
-    void GoForward();
-    void Reload();
-    void StopLoading();
-
-    void Print(const BMessage* settings, float availablePaperWidth, float availablePaperHeight);
-    void GetContentsAsString(BFile& file);
-    void ShowInspector();
-
-    virtual void MouseMoved(BPoint where, uint32 transit, const BMessage* dragMessage);
-    virtual void MessageReceived(BMessage* message);
-    virtual void FrameResized(float newWidth, float newHeight);
-
-    void SetClient(BWebPageClient* client);
-    BWebPageClient* Client() const;
-
-    WebKit::WebPageProxy& page() const { return m_page; }
-
-private:
-    std::unique_ptr<WebKit::WebView> m_webView;
-    WebKit::WebPageProxy& m_page;
-    BWebPageClient* m_client;
-    WebKit::WebDragSource m_dragSource;
-    WebKit::WebDragDestination m_dragDestination;
+    virtual void TitleChanged(const BString& title, BWebView* view) { }
+    virtual void LoadCommitted(const BString& url, BWebView* view) { }
+    virtual void LoadFinished(const BString& url, BWebView* view) { }
+    virtual void LoadProgress(float progress, BWebView* view) { }
+    virtual void NavigationCapabilitiesChanged(bool canGoBackward,
+        bool canGoForward, bool canStop, BWebView* view) { }
+    virtual BWebView* CreateInspectorWindow() { return nullptr; }
+    virtual bool AuthenticationChallenge(const BString& message, BString& inOutUser,
+        BString& inOutPassword, bool& inOutRememberCredentials) { return false; }
+    virtual BWebView* CreateNewWindow() { return nullptr; }
 };
 
-#endif // B_WEB_VIEW_H
+#endif // B_WEB_PAGE_CLIENT_H

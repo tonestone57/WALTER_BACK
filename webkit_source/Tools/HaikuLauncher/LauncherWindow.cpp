@@ -129,13 +129,7 @@ void LauncherWindow::MessageReceived(BMessage* message)
         }
     	break;
     case OPEN_INSPECTOR: {
-        // FIXME: wouldn't the view better be in the same window?
-        BRect frame = Frame();
-        frame.OffsetBy(20, 20);
-        LauncherWindow* inspectorWindow = new LauncherWindow(frame);
-        inspectorWindow->Show();
-
-        CurrentWebView()->SetInspectorView(inspectorWindow->CurrentWebView());
+        CurrentWebView()->ShowInspector();
         break;
     }
 	case SAVE_PAGE: {
@@ -234,142 +228,173 @@ bool LauncherWindow::QuitRequested()
 
 // #pragma mark - Notification API
 
-void LauncherWindow::NavigationRequested(const BString& url, BWebView* view)
-{
-}
-
-void LauncherWindow::NewWindowRequested(const BString& url, bool primaryAction)
-{
-    // Always open new windows in the application thread, since
-    // creating a BWebView will try to grab the application lock.
-    // But our own WebPage may already try to lock us from within
-    // the application thread -> dead-lock. Thus we can't wait for
-    // a reply here.
-    BMessage message(NEW_WINDOW);
-    message.AddString("url", url);
-    be_app->PostMessage(&message);
-}
-
-void LauncherWindow::NewPageCreated(BWebView* view, BRect windowFrame,
-	bool modalDialog, bool resizable, bool activate)
-{
-	if (!windowFrame.IsValid())
-		windowFrame = Frame().OffsetByCopy(10, 10);
-	LauncherWindow* window = new LauncherWindow(windowFrame, view, HaveToolbar);
-	window->Show();
-}
-
-void LauncherWindow::LoadNegotiating(const BString& url, BWebView* view)
-{
-    BString status("Requesting: ");
-    status << url;
-    StatusChanged(status, view);
-}
-
-void LauncherWindow::LoadCommitted(const BString& url, BWebView* view)
-{
-	// This hook is invoked when the load is commited.
-    if (m_url)
-        m_url->SetText(url.String());
-
-    BString status("Loading: ");
-    status << url;
-    StatusChanged(status, view);
-
-    NavigationCapabilitiesChanged(m_BackButton->IsEnabled(),
-        m_ForwardButton->IsEnabled(), true, view);
-}
-
-void LauncherWindow::LoadProgress(float progress, BWebView* view)
-{
-    if (m_loadingProgressBar) {
-        if (progress < 100 && m_loadingProgressBar->IsHidden())
-            m_loadingProgressBar->Show();
-        m_loadingProgressBar->SetTo(progress);
-    }
-}
-
-void LauncherWindow::LoadFailed(const BString& url, BWebView* view)
-{
-    BString status(url);
-    status << " failed.";
-    StatusChanged(status, view);
-    if (m_loadingProgressBar && !m_loadingProgressBar->IsHidden())
-        m_loadingProgressBar->Hide();
-}
-
-void LauncherWindow::LoadFinished(const BString& url, BWebView* view)
-{
-    // Update the URL again to handle cases where LoadCommitted is not called
-    // (for example when navigating to anchors in the same page).
-    if (m_url)
-        m_url->SetText(url.String());
-
-    BString status(url);
-    status << " finished.";
-    StatusChanged(status, view);
-    if (m_loadingProgressBar && !m_loadingProgressBar->IsHidden())
-        m_loadingProgressBar->Hide();
-
-    NavigationCapabilitiesChanged(m_BackButton->IsEnabled(),
-        m_ForwardButton->IsEnabled(), false, view);
-}
-
-void LauncherWindow::SetToolBarsVisible(bool flag, BWebView* view)
-{
-    // TODO
-}
-
-void LauncherWindow::SetStatusBarVisible(bool flag, BWebView* view)
-{
-    // TODO
-}
-
-void LauncherWindow::SetMenuBarVisible(bool flag, BWebView* view)
-{
-    // TODO
-}
-
-void LauncherWindow::TitleChanged(const BString& title, BWebView* view)
-{
-    updateTitle(title);
-}
-
-void LauncherWindow::StatusChanged(const BString& statusText, BWebView* view)
-{
-    if (m_statusText)
-        m_statusText->SetText(statusText.String());
-}
-
-void LauncherWindow::NavigationCapabilitiesChanged(bool canGoBackward,
-    bool canGoForward, bool canStop, BWebView* view)
-{
-    if (m_BackButton)
-        m_BackButton->SetEnabled(canGoBackward);
-    if (m_ForwardButton)
-        m_ForwardButton->SetEnabled(canGoForward);
-    if (m_StopButton)
-        m_StopButton->SetEnabled(canStop);
-}
-
+// void LauncherWindow::NavigationRequested(const BString& url, BWebView* view)
+// {
+// }
 
 bool
-LauncherWindow::AuthenticationChallenge(BString message, BString& inOutUser,
-	BString& inOutPassword, bool& inOutRememberCredentials,
-	uint32 failureCount, BWebView* view)
+LauncherWindow::AuthenticationChallenge(const BString& message, BString& inOutUser,
+	BString& inOutPassword, bool& inOutRememberCredentials)
 {
 	AuthenticationPanel* panel = new AuthenticationPanel(Frame());
 		// Panel auto-destructs.
 	bool success = panel->getAuthentication(message, inOutUser, inOutPassword,
-		inOutRememberCredentials, failureCount > 0, inOutUser, inOutPassword,
+		inOutRememberCredentials, false, inOutUser, inOutPassword,
 		&inOutRememberCredentials);
 	return success;
 }
+
+BWebView* LauncherWindow::CreateInspectorWindow()
+{
+    BRect frame = Frame();
+    frame.OffsetBy(20, 20);
+    LauncherWindow* inspectorWindow = new LauncherWindow(frame);
+    inspectorWindow->Show();
+    return inspectorWindow->CurrentWebView();
+}
+
+BWebView* LauncherWindow::CreateNewWindow()
+{
+    BRect frame = Frame();
+    frame.OffsetBy(20, 20);
+    LauncherWindow* newWindow = new LauncherWindow(frame);
+    newWindow->Show();
+    return newWindow->CurrentWebView();
+}
+
+// void LauncherWindow::NewWindowRequested(const BString& url, bool primaryAction)
+// {
+//     // Always open new windows in the application thread, since
+//     // creating a BWebView will try to grab the application lock.
+//     // But our own WebPage may already try to lock us from within
+//     // the application thread -> dead-lock. Thus we can't wait for
+//     // a reply here.
+//     BMessage message(NEW_WINDOW);
+//     message.AddString("url", url);
+//     be_app->PostMessage(&message);
+// }
+
+// void LauncherWindow::NewPageCreated(BWebView* view, BRect windowFrame,
+// 	bool modalDialog, bool resizable, bool activate)
+// {
+// 	if (!windowFrame.IsValid())
+// 		windowFrame = Frame().OffsetByCopy(10, 10);
+// 	LauncherWindow* window = new LauncherWindow(windowFrame, view, HaveToolbar);
+// 	window->Show();
+// }
+
+// void LauncherWindow::LoadNegotiating(const BString& url, BWebView* view)
+// {
+//     BString status("Requesting: ");
+//     status << url;
+//     StatusChanged(status, view);
+// }
+
+// void LauncherWindow::LoadCommitted(const BString& url, BWebView* view)
+// {
+// 	// This hook is invoked when the load is commited.
+//     if (m_url)
+//         m_url->SetText(url.String());
+
+//     BString status("Loading: ");
+//     status << url;
+//     StatusChanged(status, view);
+
+//     NavigationCapabilitiesChanged(m_BackButton->IsEnabled(),
+//         m_ForwardButton->IsEnabled(), true, view);
+// }
+
+// void LauncherWindow::LoadProgress(float progress, BWebView* view)
+// {
+//     if (m_loadingProgressBar) {
+//         if (progress < 100 && m_loadingProgressBar->IsHidden())
+//             m_loadingProgressBar->Show();
+//         m_loadingProgressBar->SetTo(progress);
+//     }
+// }
+
+// void LauncherWindow::LoadFailed(const BString& url, BWebView* view)
+// {
+//     BString status(url);
+//     status << " failed.";
+//     StatusChanged(status, view);
+//     if (m_loadingProgressBar && !m_loadingProgressBar->IsHidden())
+//         m_loadingProgressBar->Hide();
+// }
+
+// void LauncherWindow::LoadFinished(const BString& url, BWebView* view)
+// {
+//     // Update the URL again to handle cases where LoadCommitted is not called
+//     // (for example when navigating to anchors in the same page).
+//     if (m_url)
+//         m_url->SetText(url.String());
+
+//     BString status(url);
+//     status << " finished.";
+//     StatusChanged(status, view);
+//     if (m_loadingProgressBar && !m_loadingProgressBar->IsHidden())
+//         m_loadingProgressBar->Hide();
+
+//     NavigationCapabilitiesChanged(m_BackButton->IsEnabled(),
+//         m_ForwardButton->IsEnabled(), false, view);
+// }
+
+// void LauncherWindow::SetToolBarsVisible(bool flag, BWebView* view)
+// {
+//     // TODO
+// }
+
+// void LauncherWindow::SetStatusBarVisible(bool flag, BWebView* view)
+// {
+//     // TODO
+// }
+
+// void LauncherWindow::SetMenuBarVisible(bool flag, BWebView* view)
+// {
+//     // TODO
+// }
+
+// void LauncherWindow::TitleChanged(const BString& title, BWebView* view)
+// {
+//     updateTitle(title);
+// }
+
+// void LauncherWindow::StatusChanged(const BString& statusText, BWebView* view)
+// {
+//     if (m_statusText)
+//         m_statusText->SetText(statusText.String());
+// }
+
+// void LauncherWindow::NavigationCapabilitiesChanged(bool canGoBackward,
+//     bool canGoForward, bool canStop, BWebView* view)
+// {
+//     if (m_BackButton)
+//         m_BackButton->SetEnabled(canGoBackward);
+//     if (m_ForwardButton)
+//         m_ForwardButton->SetEnabled(canGoForward);
+//     if (m_StopButton)
+//         m_StopButton->SetEnabled(canStop);
+// }
+
+
+// bool
+// LauncherWindow::AuthenticationChallenge(BString message, BString& inOutUser,
+// 	BString& inOutPassword, bool& inOutRememberCredentials,
+// 	uint32 failureCount, BWebView* view)
+// {
+// 	AuthenticationPanel* panel = new AuthenticationPanel(Frame());
+// 		// Panel auto-destructs.
+// 	bool success = panel->getAuthentication(message, inOutUser, inOutPassword,
+// 		inOutRememberCredentials, failureCount > 0, inOutUser, inOutPassword,
+// 		&inOutRememberCredentials);
+// 	return success;
+// }
 
 
 void LauncherWindow::init(BWebView* webView, ToolbarPolicy toolbarPolicy)
 {
 	SetCurrentWebView(webView);
+    webView->SetClient(this);
 
     if (toolbarPolicy == HaveToolbar) {
         // Menu
@@ -386,7 +411,7 @@ void LauncherWindow::init(BWebView* webView, ToolbarPolicy toolbarPolicy)
         newItem->SetTarget(be_app);
         menu->AddItem(new BMenuItem("Open location", new BMessage(OPEN_LOCATION), 'L'));
         menu->AddItem(new BMenuItem("Inspect page", new BMessage(OPEN_INSPECTOR), 'I'));
-	    menu->AddItem(new BMenuItem("Save page", new BMessage(SAVE_PAGE), 'S'));
+	    menu->AddItem(new BMenuItem("Save page" B_UTF8_ELLIPSIS, new BMessage(SAVE_PAGE), 'S'));
         menu->AddSeparatorItem();
         menu->AddItem(new BMenuItem("Close", new BMessage(B_QUIT_REQUESTED), 'W', B_SHIFT_KEY));
         BMenuItem* quitItem = new BMenuItem("Quit", new BMessage(B_QUIT_REQUESTED), 'Q');

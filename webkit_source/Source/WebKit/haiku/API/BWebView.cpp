@@ -29,17 +29,33 @@
 #include "WebPageGroup.h"
 #include "WebPageProxy.h"
 #include "WebView.h"
+#include <GroupLayout.h>
+#include <GroupLayoutBuilder.h>
 
 BWebView::BWebView(const char* name)
     : BView(name, B_WILL_DRAW | B_FRAME_EVENTS)
     , m_page(WebKit::WebProcessPool::create()-> createContext()->createWebPage(WebKit::WebPageGroup::create()))
+    , m_client(nullptr)
+    , m_dragSource(m_page)
+    , m_dragDestination(m_page)
 {
     m_webView = std::make_unique<WebKit::WebView>(m_page);
-    AddChild(m_webView.get());
+    SetLayout(new BGroupLayout(B_HORIZONTAL));
+    AddChild(BGroupLayoutBuilder(B_HORIZONTAL).Add(m_webView.get()));
 }
 
 BWebView::~BWebView()
 {
+}
+
+void BWebView::SetClient(BWebPageClient* client)
+{
+    m_client = client;
+}
+
+BWebPageClient* BWebView::Client() const
+{
+    return m_client;
 }
 
 void BWebView::LoadURL(const char* url)
@@ -80,4 +96,49 @@ void BWebView::Print(const BMessage* settings, float availablePaperWidth, float 
     m_page.print(printInfo, [](WebKit::CallbackBase::Error) {
         // FIXME: Handle completion
     });
+}
+
+void BWebView::GetContentsAsString(BFile& file)
+{
+    m_page.getContentsAsString([&file](const String& content, WebKit::CallbackBase::Error) {
+        if (!content.isEmpty()) {
+            const auto& utf8 = content.utf8();
+            file.Write(utf8.data(), utf8.length());
+        }
+    });
+}
+
+void BWebView::ShowInspector()
+{
+    m_page.showInspector();
+}
+
+void BWebView::MouseMoved(BPoint where, uint32 transit, const BMessage* dragMessage)
+{
+    if (dragMessage) {
+        switch (transit) {
+        case B_ENTERED_VIEW:
+            m_dragDestination.DragEntered(dragMessage, where);
+            break;
+        case B_INSIDE_VIEW:
+            m_dragDestination.DragUpdated(dragMessage, where);
+            break;
+        case B_EXITED_VIEW:
+            m_dragDestination.DragExited(dragMessage, where);
+            break;
+        }
+    } else {
+        BView::MouseMoved(where, transit, dragMessage);
+    }
+}
+
+void BWebView::MessageReceived(BMessage* message)
+{
+    switch (message->what) {
+    case B_SIMPLE_DATA:
+        m_dragDestination.Drop(message, BPoint());
+        break;
+    default:
+        BView::MessageReceived(message);
+    }
 }

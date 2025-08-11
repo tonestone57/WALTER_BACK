@@ -81,10 +81,61 @@ void WebPageProxyHaiku::didReceiveMessage(IPC::Connection& connection, IPC::Deco
 
 #include "FrameInfoData.h"
 
+#include "BWebView.h"
+#include "BWebPageClient.h"
+
 void WebPageProxyHaiku::didReceiveTitleForFrame(WebCore::FrameIdentifier frameID, const String& title, const UserData&)
 {
-    if (mainFrame() && mainFrame()->frameID() == frameID)
+    if (mainFrame() && mainFrame()->frameID() == frameID) {
         m_mainFrameTitle = title;
+        if (auto* webView = static_cast<BWebView*>(view()->Parent())) {
+            if (auto* client = webView->Client())
+                client->TitleChanged(title, webView);
+        }
+    }
+}
+
+Ref<WebPageProxy> WebPageProxyHaiku::createInspectorPage()
+{
+    if (auto* webView = static_cast<BWebView*>(view()->Parent())) {
+        if (auto* client = webView->Client()) {
+            if (auto* inspectorView = client->CreateInspectorWindow())
+                return inspectorView->page();
+        }
+    }
+
+    return WebPageProxy::createInspectorPage();
+}
+
+RefPtr<WebPageProxy> WebPageProxyHaiku::createNewPage(WebCore::WindowFeatures&&)
+{
+    if (auto* webView = static_cast<BWebView*>(view()->Parent())) {
+        if (auto* client = webView->Client()) {
+            if (auto* newView = client->CreateNewWindow())
+                return &newView->page();
+        }
+    }
+    return nullptr;
+}
+
+void WebPageProxyHaiku::didUpdateBackForwardList(WebFrameProxy*, API::BackForwardListItem*, const Vector<Ref<API::BackForwardListItem>>&, const Vector<Ref<API::BackForwardListItem>>&)
+{
+    if (auto* webView = static_cast<BWebView*>(view()->Parent())) {
+        if (auto* client = webView->Client())
+            client->NavigationCapabilitiesChanged(canGoBack(), canGoForward(), isLoading(), webView);
+    }
+}
+
+void WebPageProxyHaiku::didFinishLoadForFrame(WebCore::FrameIdentifier frameID, FrameInfoData&& frameInfo, WebCore::ResourceRequest&& request, std::optional<WebCore::NavigationIdentifier> navigationID, bool wasLoadedFromBackForwardCache, const UserData& userData)
+{
+    WebPageProxy::didFinishLoadForFrame(frameID, WTFMove(frameInfo), WTFMove(request), navigationID, wasLoadedFromBackForwardCache, userData);
+
+    if (mainFrame() && mainFrame()->frameID() == frameID) {
+        if (auto* webView = static_cast<BWebView*>(view()->Parent())) {
+            if (auto* client = webView->Client())
+                client->LoadFinished(m_mainFrameURL, webView);
+        }
+    }
 }
 
 const String& WebPageProxyHaiku::mainFrameURL() const
@@ -96,8 +147,13 @@ void WebPageProxyHaiku::didCommitLoadForFrame(WebCore::FrameIdentifier frameID, 
 {
     WebPageProxy::didCommitLoadForFrame(frameID, WTFMove(frameInfo), WTFMove(request), navigationID, WTFMove(mimeType), frameHasCustomContentProvider, frameLoadType, certificateInfo, usedLegacyTLS, WTFMove(proxyName), source, containsPluginDocument, hasInsecureContent, mouseEventPolicy, userData);
 
-    if (mainFrame() && mainFrame()->frameID() == frameID)
+    if (mainFrame() && mainFrame()->frameID() == frameID) {
         m_mainFrameURL = frameInfo.url;
+        if (auto* webView = static_cast<BWebView*>(view()->Parent())) {
+            if (auto* client = webView->Client())
+                client->LoadCommitted(m_mainFrameURL, webView);
+        }
+    }
 }
 
 double WebPageProxyHaiku::estimatedProgress() const
@@ -113,6 +169,10 @@ void WebPageProxyHaiku::didStartProgress()
 void WebPageProxyHaiku::didChangeProgress(double value)
 {
     m_estimatedProgress = value;
+    if (auto* webView = static_cast<BWebView*>(view()->Parent())) {
+        if (auto* client = webView->Client())
+            client->LoadProgress(value, webView);
+    }
 }
 
 void WebPageProxyHaiku::didFinishProgress()
@@ -237,6 +297,26 @@ void WebPageProxyHaiku::runJavaScriptConfirm(WebFrameProxy&, FrameInfoData&&, co
     BAlert* alert = new BAlert("JavaScript Confirm", message.utf8().data(), "Cancel", "OK");
     int32 result = alert->Go();
     completionHandler(result == 1);
+}
+
+#include <AuthenticationChallenge.h>
+#include <Credential.h>
+
+void WebPageProxyHaiku::runAuthenticationPanel(WebFrameProxy&, FrameInfoData&&, WebCore::AuthenticationChallenge& challenge, CompletionHandler<void(WebCore::Credential, WebCore::ShouldContinueWithoutCredential)>&& completionHandler)
+{
+    if (auto* webView = static_cast<BWebView*>(view()->Parent())) {
+        if (auto* client = webView->Client()) {
+            BString message = challenge.localizedDescription();
+            BString user;
+            BString password;
+            bool remember = false;
+            if (client->AuthenticationChallenge(message, user, password, remember)) {
+                completionHandler(WebCore::Credential(user.String(), password.String(), WebCore::Credential::Persistence::None), WebCore::ShouldContinueWithoutCredential::No);
+                return;
+            }
+        }
+    }
+    completionHandler({}, WebCore::ShouldContinueWithoutCredential::Yes);
 }
 
 void WebPageProxyHaiku::runJavaScriptPrompt(WebFrameProxy&, FrameInfoData&&, const String& message, const String& defaultValue, CompletionHandler<void(const String&)>&& completionHandler)

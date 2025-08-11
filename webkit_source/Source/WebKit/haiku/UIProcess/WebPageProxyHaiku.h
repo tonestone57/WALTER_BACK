@@ -77,6 +77,9 @@ private:
     void runJavaScriptAlert(WebFrameProxy&, FrameInfoData&&, const String&, CompletionHandler<void()>&&) override;
     void runJavaScriptConfirm(WebFrameProxy&, FrameInfoData&&, const String&, CompletionHandler<void(bool)>&&) override;
     void runJavaScriptPrompt(WebFrameProxy&, FrameInfoData&&, const String&, const String&, CompletionHandler<void(const String&)>&&) override;
+    void runAuthenticationPanel(WebFrameProxy&, FrameInfoData&&, WebCore::AuthenticationChallenge&, CompletionHandler<void(WebCore::Credential, WebCore::ShouldContinueWithoutCredential)>&&) override;
+    RefPtr<WebPageProxy> createNewPage(WebCore::WindowFeatures&&) override;
+    Ref<WebPageProxy> createInspectorPage() override;
     void createView();
 
     // BHandler
@@ -86,6 +89,8 @@ private:
     void didReceiveMessage(IPC::Connection&, IPC::Decoder&) override;
 
     // WebPageProxy
+    void didUpdateBackForwardList(WebFrameProxy*, API::BackForwardListItem*, const Vector<Ref<API::BackForwardListItem>>&, const Vector<Ref<API::BackForwardListItem>>&) override;
+    void didFinishLoadForFrame(WebCore::FrameIdentifier, FrameInfoData&&, WebCore::ResourceRequest&&, std::optional<WebCore::NavigationIdentifier>, bool, const UserData&) override;
     void didReceiveTitleForFrame(WebCore::FrameIdentifier, const String&, const UserData&) override;
     void didCommitLoadForFrame(WebCore::FrameIdentifier, FrameInfoData&&, WebCore::ResourceRequest&&, std::optional<WebCore::NavigationIdentifier>, String&&, bool, WebCore::FrameLoadType, const WebCore::CertificateInfo&, bool, String&&, WebCore::ResourceResponseSource, bool, WebCore::HasInsecureContent, WebCore::MouseEventPolicy, const UserData&) override;
     void didStartProgress() override;

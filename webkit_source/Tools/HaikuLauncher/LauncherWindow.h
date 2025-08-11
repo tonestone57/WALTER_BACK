@@ -30,7 +30,8 @@
 #ifndef LauncherWindow_h
 #define LauncherWindow_h
 
-#include "WebWindow.h"
+#include "BWebWindow.h"
+#include "BWebPageClient.h"
 #include <Messenger.h>
 #include <String.h>
 
@@ -55,7 +56,7 @@ enum {
     WINDOW_CLOSED = 'wndc',
 };
 
-class LauncherWindow : public BWebWindow {
+class LauncherWindow : public BWebWindow, public BWebPageClient {
 public:
     LauncherWindow(BRect frame, ToolbarPolicy = HaveToolbar);
     LauncherWindow(BRect frame, BWebView* view, ToolbarPolicy = HaveToolbar);
@@ -66,27 +67,17 @@ public:
     virtual bool QuitRequested();
 
 private:
-    // WebPage notification API implementations
-    virtual void NavigationRequested(const BString& url, BWebView* view) override;
-    virtual void NewWindowRequested(const BString& url, bool primaryAction) override;
-	virtual void NewPageCreated(BWebView* view, BRect windowFrame,
-		bool modalDialog, bool resizable, bool activate) override;
-    virtual void LoadNegotiating(const BString& url, BWebView* view) override;
-    virtual void LoadCommitted(const BString& url, BWebView* view) override;
-    virtual void LoadProgress(float progress, BWebView* view) override;
-    virtual void LoadFailed(const BString& url, BWebView* view) override;
-    virtual void LoadFinished(const BString& url, BWebView* view) override;
+    // BWebPageClient notifications
     virtual void TitleChanged(const BString& title, BWebView* view) override;
-    virtual void SetToolBarsVisible(bool flag, BWebView* view) override;
-    virtual void SetStatusBarVisible(bool flag, BWebView* view) override;
-    virtual void SetMenuBarVisible(bool flag, BWebView* view) override;
-    virtual void StatusChanged(const BString& status, BWebView* view) override;
+    virtual void LoadCommitted(const BString& url, BWebView* view) override;
+    virtual void LoadFinished(const BString& url, BWebView* view) override;
+    virtual void LoadProgress(float progress, BWebView* view) override;
     virtual void NavigationCapabilitiesChanged(bool canGoBackward,
         bool canGoForward, bool canStop, BWebView* view) override;
-	virtual	bool				AuthenticationChallenge(BString message,
-									BString& inOutUser, BString& inOutPassword,
-									bool& inOutRememberCredentials,
-									uint32 failureCount, BWebView* view);
+    virtual BWebView* CreateInspectorWindow() override;
+    virtual bool AuthenticationChallenge(const BString& message, BString& inOutUser,
+        BString& inOutPassword, bool& inOutRememberCredentials) override;
+    virtual BWebView* CreateNewWindow() override;
 
     void init(BWebView* view, ToolbarPolicy);
     void updateTitle(const BString& title);

@@ -30,9 +30,9 @@
 
 #include "DownloadWindow.h"
 #include "LauncherWindow.h"
-#include "WebPage.h"
-#include "WebView.h"
-#include "WebViewConstants.h"
+// #include "WebPage.h"
+// #include "WebView.h"
+// #include "WebViewConstants.h"
 
 #include <Alert.h>
 #include <Autolock.h>
@@ -92,11 +92,11 @@ void LauncherApp::ReadyToRun()
 	// Since we will essentially run the GUI...
 	set_thread_priority(Thread(), B_DISPLAY_PRIORITY);
 
-    BWebPage::InitializeOnce();
-    BWebPage::SetCacheModel(B_WEBKIT_CACHE_MODEL_WEB_BROWSER);
+    // BWebPage::InitializeOnce();
+    // BWebPage::SetCacheModel(B_WEBKIT_CACHE_MODEL_WEB_BROWSER);
 
-    mkdir("localStorage", 0755);
-    BWebSettings::SetPersistentStoragePath("localStorage");
+    // mkdir("localStorage", 0755);
+    // BWebSettings::SetPersistentStoragePath("localStorage");
 
 	BFile settingsFile;
 	BRect windowFrameFromSettings = m_lastWindowFrame;
@@ -119,7 +119,7 @@ void LauncherApp::ReadyToRun()
 	}
 
     m_downloadWindow = new DownloadWindow(BRect(10, 10, 100, 100), true);
-    BWebPage::SetDownloadListener(BMessenger(m_downloadWindow));
+    // BWebPage::SetDownloadListener(BMessenger(m_downloadWindow));
     m_downloadWindow->Show();
 }
 
@@ -185,10 +185,10 @@ void LauncherApp::MessageReceived(BMessage* message)
 		BFile file(&saveTo, name,
 			B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE);
 
-		BWebPage* page = NULL;
-        message->FindPointer("page", (void**)&page);
+		BWebView* view = NULL;
+        message->FindPointer("view", (void**)&view);
 
-        page->GetContentsAsMHTML(file);
+        view->GetContentsAsString(file);
 		break;
 	}
     default:
@@ -229,8 +229,8 @@ bool LauncherApp::QuitRequested()
         	continue;
         if (webWindow->QuitRequested()) {
         	m_lastWindowFrame = webWindow->Frame();
-            webWindow->CurrentWebView()->Shutdown();
-            delete webWindow->CurrentWebView();
+            // webWindow->CurrentWebView()->Shutdown();
+            // delete webWindow->CurrentWebView();
         	webWindow->Quit();
         	i--;
         } else {
@@ -246,7 +246,7 @@ bool LauncherApp::QuitRequested()
 		settingsArchive.Flatten(&settingsFile);
 	}
 
-	BWebPage::ShutdownOnce();
+	// BWebPage::ShutdownOnce();
 
     return true;
 }
