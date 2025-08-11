@@ -35,6 +35,9 @@ OBJC_CLASS NSPrintInfo;
 typedef struct _GtkPageSetup GtkPageSetup;
 typedef struct _GtkPrintJob GtkPrintJob;
 typedef struct _GtkPrintSettings GtkPrintSettings;
+#elif PLATFORM(HAIKU)
+#include <memory>
+class BMessage;
 #else
 // FIXME: This should use the windows equivalent.
 class NSPrintInfo;
@@ -84,6 +87,8 @@ struct PrintInfo {
     GRefPtr<GtkPrintSettings> printSettings;
     GRefPtr<GtkPageSetup> pageSetup;
     PrintMode printMode { PrintMode::Async };
+#elif PLATFORM(HAIKU)
+    std::unique_ptr<BMessage> printSettings;
 #endif
 };
 

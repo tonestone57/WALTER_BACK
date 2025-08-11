@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Apple Inc. All rights reserved.
+ * Copyright (C) 2024 Haiku, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -19,31 +19,50 @@
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * ARISING IN ANY WAY OUT of THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include "config.h"
+#include "WebPrintOperationHaiku.h"
 
-#include <wtf/ArgumentCoder.h>
+#include "WebErrors.h"
+#include <WebCore/LocalFrame.h>
+#include <WebCore/PrintContext.h>
+#include <WebCore/ResourceError.h>
+#include <wtf/TZoneMallocInlines.h>
 
-class BMessenger;
+#include <private/print/PrintJob.h>
 
 namespace WebKit {
-struct PrintInfo;
+
+WTF_MAKE_TZONE_ALLOCATED_IMPL(WebPrintOperationHaiku);
+
+WebPrintOperationHaiku::WebPrintOperationHaiku(const PrintInfo& printInfo)
+    : m_printInfo(printInfo)
+{
 }
 
-namespace IPC {
-
-template<> struct ArgumentCoder<BMessenger> {
-    static void encode(Encoder&, const BMessenger&);
-    static void encode(Encoder&, BMessenger&&);
-    static std::optional<BMessenger> decode(Decoder&);
-};
-
-template<> struct ArgumentCoder<WebKit::PrintInfo> {
-    static void encode(Encoder&, const WebKit::PrintInfo&);
-    static std::optional<WebKit::PrintInfo> decode(Decoder&);
-};
-
+WebPrintOperationHaiku::~WebPrintOperationHaiku()
+{
 }
+
+void WebPrintOperationHaiku::startPrint(WebCore::LocalFrame* frame, CompletionHandler<void(RefPtr<WebCore::FragmentedSharedBuffer>&&, WebCore::ResourceError&&)>&& completionHandler)
+{
+    m_completionHandler = WTFMove(completionHandler);
+    m_printContext = std::make_unique<WebCore::PrintContext>(*frame);
+    m_printContext->begin(m_printInfo.availablePaperWidth, m_printInfo.availablePaperHeight);
+
+    // FIXME: Implement printing logic.
+    notImplemented();
+
+    endPrint();
+}
+
+void WebPrintOperationHaiku::endPrint()
+{
+    if (m_completionHandler)
+        m_completionHandler(nullptr, { });
+}
+
+} // namespace WebKit

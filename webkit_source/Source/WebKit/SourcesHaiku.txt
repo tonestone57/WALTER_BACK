@@ -67,6 +67,8 @@ haiku/Shared/NativeWebMouseEventHaiku.cpp
 haiku/Shared/NativeWebWheelEventHaiku.cpp
 haiku/Shared/WebEventFactory.cpp
 haiku/Shared/WebPreferencesStoreHaiku.cpp
+haiku/Shared/haiku/PrintInfoHaiku.cpp
+Platform/IPC/haiku/ArgumentCodersHaiku.cpp
 NetworkProcess/haiku/NetworkProcessHaiku.cpp
 NetworkProcess/haiku/NetworkProcessMainHaiku.cpp
 GPUProcess/haiku/GPUProcessHaiku.cpp

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Apple Inc. All rights reserved.
+ * Copyright (C) 2024 Haiku, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,27 +23,17 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include "config.h"
+#include "PrintInfo.h"
 
-#include <wtf/ArgumentCoder.h>
+#if PLATFORM(HAIKU)
 
-class BMessenger;
+#include <wtf/NeverDestroyed.h>
 
 namespace WebKit {
-struct PrintInfo;
-}
 
-namespace IPC {
+// Nothing to do here yet.
 
-template<> struct ArgumentCoder<BMessenger> {
-    static void encode(Encoder&, const BMessenger&);
-    static void encode(Encoder&, BMessenger&&);
-    static std::optional<BMessenger> decode(Decoder&);
-};
+} // namespace WebKit
 
-template<> struct ArgumentCoder<WebKit::PrintInfo> {
-    static void encode(Encoder&, const WebKit::PrintInfo&);
-    static std::optional<WebKit::PrintInfo> decode(Decoder&);
-};
-
-}
+#endif // PLATFORM(HAIKU)

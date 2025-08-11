@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Apple Inc. All rights reserved.
+ * Copyright (C) 2024 Haiku, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -19,31 +19,45 @@
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * ARISING IN ANY WAY OUT of THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #pragma once
 
-#include <wtf/ArgumentCoder.h>
+#include "PrintInfo.h"
+#include <WebCore/SharedBuffer.h>
+#include <wtf/CompletionHandler.h>
+#include <wtf/TZoneMalloc.h>
+#include <memory>
 
-class BMessenger;
+class BMessage;
+class BPrintJob;
+
+namespace WebCore {
+class LocalFrame;
+class PrintContext;
+class ResourceError;
+}
 
 namespace WebKit {
-struct PrintInfo;
-}
 
-namespace IPC {
+class WebPrintOperationHaiku {
+    WTF_MAKE_TZONE_ALLOCATED(WebPrintOperationHaiku);
+public:
+    explicit WebPrintOperationHaiku(const PrintInfo&);
+    ~WebPrintOperationHaiku();
 
-template<> struct ArgumentCoder<BMessenger> {
-    static void encode(Encoder&, const BMessenger&);
-    static void encode(Encoder&, BMessenger&&);
-    static std::optional<BMessenger> decode(Decoder&);
+    void startPrint(WebCore::LocalFrame*, CompletionHandler<void(RefPtr<WebCore::FragmentedSharedBuffer>&&, WebCore::ResourceError&&)>&&);
+
+private:
+    void endPrint();
+
+    const PrintInfo& m_printInfo;
+    std::unique_ptr<WebCore::PrintContext> m_printContext;
+    RefPtr<BPrintJob> m_printJob;
+
+    CompletionHandler<void(RefPtr<WebCore::FragmentedSharedBuffer>&&, WebCore::ResourceError&&)> m_completionHandler;
 };
 
-template<> struct ArgumentCoder<WebKit::PrintInfo> {
-    static void encode(Encoder&, const WebKit::PrintInfo&);
-    static std::optional<WebKit::PrintInfo> decode(Decoder&);
-};
-
-}
+} // namespace WebKit

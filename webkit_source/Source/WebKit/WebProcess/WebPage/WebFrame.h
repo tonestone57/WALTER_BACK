@@ -303,6 +303,14 @@ private:
     SafeBrowsingCheckOngoing m_isSafeBrowsingCheckOngoing { SafeBrowsingCheckOngoing::No };
     Markable<WebCore::LayerHostingContextIdentifier> m_layerHostingContextIdentifier;
     Markable<WebCore::FrameIdentifier> m_frameIDBeforeProvisionalNavigation;
+
+#if ENABLE(PRINTING)
+#if PLATFORM(GTK)
+    std::unique_ptr<WebPrintOperationGtk> m_printOperation;
+#elif PLATFORM(HAIKU)
+    std::unique_ptr<WebPrintOperationHaiku> m_printOperation;
+#endif
+#endif
 };
 
 } // namespace WebKit
