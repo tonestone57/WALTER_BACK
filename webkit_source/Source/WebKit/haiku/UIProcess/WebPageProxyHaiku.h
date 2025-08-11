@@ -36,6 +36,10 @@ class WebView;
 #include "IconLoadingClientHaiku.h"
 #include "FindClientHaiku.h"
 #include "FindOptions.h"
+#include "WebContextMenuProxy.h"
+#include "ContextMenuContextData.h"
+
+class WebContextMenuProxy;
 
 class WebPageProxyHaiku final : public WebPageProxy {
 public:
@@ -64,6 +68,8 @@ public:
     void findString(const String&, OptionSet<FindOptions>, unsigned maxMatchCount);
 
 private:
+    // WebPageProxy
+    void showContextMenu(FrameInfoData&&, ContextMenuContextData&&, const UserData&) override;
     void createView();
 
     // IPC::MessageReceiver
@@ -82,6 +88,7 @@ private:
     double m_estimatedProgress;
     std::unique_ptr<IconLoadingClientHaiku> m_iconLoadingClient;
     std::unique_ptr<FindClientHaiku> m_findClient;
+    RefPtr<WebContextMenuProxy> m_activeContextMenu;
 };
 
 } // namespace WebKit

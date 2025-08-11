@@ -31,10 +31,13 @@ namespace WebKit {
 
 class WebContextMenuProxyHaiku final : public WebContextMenuProxy {
 public:
-    WebContextMenuProxyHaiku(WebPageProxy&, ContextMenuContextData&&, const UserData&);
-    virtual ~WebContextMenuProxyHaiku() = default;
+    static Ref<WebContextMenuProxyHaiku> create(WebPageProxy& page, ContextMenuContextData&& context, const UserData& userData)
+    {
+        return adoptRef(*new WebContextMenuProxyHaiku(page, WTFMove(context), userData));
+    }
 
 private:
+    WebContextMenuProxyHaiku(WebPageProxy&, ContextMenuContextData&&, const UserData&);
     void showContextMenu() override;
     void cancelContextMenu() override;
 };

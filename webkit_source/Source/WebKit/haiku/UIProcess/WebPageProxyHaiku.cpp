@@ -172,9 +172,18 @@ void WebPageProxyHaiku::resetZoomFactor()
     setPageZoomFactor(1.0);
 }
 
+#include "WebContextMenuProxyHaiku.h"
+
 void WebPageProxyHaiku::findString(const String& string, OptionSet<FindOptions> options, unsigned maxMatchCount)
 {
     WebPageProxy::findString(string, options, maxMatchCount);
+}
+
+void WebPageProxyHaiku::showContextMenu(FrameInfoData&& frameInfo, ContextMenuContextData&& contextMenuContext, const UserData& userData)
+{
+    auto contextMenu = WebContextMenuProxyHaiku::create(*this, WTFMove(contextMenuContext), userData);
+    m_activeContextMenu = contextMenu.ptr();
+    m_activeContextMenu->show();
 }
 
 } // namespace WebKit

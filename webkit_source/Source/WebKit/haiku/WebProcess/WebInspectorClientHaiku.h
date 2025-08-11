@@ -25,33 +25,22 @@
 
 #pragma once
 
-#include "WebInspectorProxy.h"
+#include "WebInspectorClient.h"
 
 namespace WebKit {
 
-class WebInspectorProxyHaiku final : public WebInspectorProxy {
+class WebInspectorClientHaiku final : public WebInspectorClient {
 public:
-    WebInspectorProxyHaiku(WebPageProxy&);
-    virtual ~WebInspectorProxyHaiku();
-
-class BWindow;
+    WebInspectorClientHaiku(WebPage&);
+    virtual ~WebInspectorClientHaiku() = default;
 
 private:
-    // WebInspectorProxy
-    Ref<WebPageProxy> createInspectorPage(Ref<API::PageConfiguration>&&) override;
-    String inspectorURL() const override;
-    String inspectorPageURL() const override;
-    String inspectorTestPageURL() const override;
-    void platformCreateInspectorWindow() override;
-    void platformCloseInspectorWindow() override;
-    void platformBringToFront() override;
-    void platformDidClose() override;
-    bool platformIsFront() override;
-    void platformAttach() override;
-    void platformDetach() override;
-
-    BWindow* m_inspectorWindow { nullptr };
-    WebView* m_inspectorView { nullptr };
+    // WebInspectorClient
+    void bringToFront() override;
+    void didClose() override;
+    bool isFront() override;
+    void attach() override;
+    void detach() override;
 };
 
 } // namespace WebKit

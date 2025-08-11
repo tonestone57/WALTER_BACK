@@ -27,6 +27,10 @@
 #include "WebContextMenuProxyHaiku.h"
 
 #include "WebPageProxy.h"
+#include "WebContextMenuItemData.h"
+#include <PopUpMenu.h>
+#include <MenuItem.h>
+#include <Window.h>
 
 namespace WebKit {
 
@@ -37,7 +41,35 @@ WebContextMenuProxyHaiku::WebContextMenuProxyHaiku(WebPageProxy& page, ContextMe
 
 void WebContextMenuProxyHaiku::showContextMenu()
 {
-    // TODO: Implement
+    BPopUpMenu* menu = new BPopUpMenu("context menu", false, false);
+    for (const auto& item : m_context.menuItems()) {
+        if (item.type() == WebCore::SeparatorType) {
+            menu->AddSeparatorItem();
+            continue;
+        }
+        BMessage* message = new BMessage(item.action());
+        BMenuItem* menuItem = new BMenuItem(item.title().utf8().data(), message);
+        menu->AddItem(menuItem);
+    }
+
+    BRect mouseRect;
+    uint32 buttons;
+    m_page.view()->GetMouse(&mouseRect.leftTop(), &buttons, true);
+    mouseRect.rightTop() = mouseRect.leftTop();
+    m_page.view()->ConvertToScreen(&mouseRect);
+
+    BMenuItem* selected = menu->Go(mouseRect.leftTop(), false, true, true);
+    if (selected) {
+        if (const BMessage* message = selected->Message()) {
+            int32 action = message->what;
+            for (const auto& item : m_context.menuItems()) {
+                if (item.action() == action) {
+                    m_page.contextMenuItemSelected(item);
+                    break;
+                }
+            }
+        }
+    }
 }
 
 void WebContextMenuProxyHaiku::cancelContextMenu()

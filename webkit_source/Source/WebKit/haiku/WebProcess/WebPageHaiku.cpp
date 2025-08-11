@@ -27,6 +27,9 @@
 #include "WebPageHaiku.h"
 
 #include "WebPageCreationParameters.h"
+#include "WebInspectorClientHaiku.h"
+#include <WebCore/InspectorController.h>
+#include <WebCore/Page.h>
 
 namespace WebKit {
 
@@ -37,7 +40,7 @@ WebPageHaiku::WebPageHaiku(WebPageCreationParameters&& parameters)
 
 void WebPageHaiku::platformInitialize(const WebPageCreationParameters&)
 {
-    // TODO: Implement
+    m_page->inspectorController().setInspectorClient(std::make_unique<WebInspectorClientHaiku>(*this));
 }
 
 void WebPageHaiku::platformDetach()

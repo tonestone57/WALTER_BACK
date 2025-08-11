@@ -27,6 +27,7 @@
 #include "WebInspectorProxyHaiku.h"
 
 #include "WebPageProxy.h"
+#include <WebCore/NotImplemented.h>
 
 namespace WebKit {
 
@@ -35,6 +36,89 @@ WebInspectorProxyHaiku::WebInspectorProxyHaiku(WebPageProxy& page)
 {
 }
 
-// Implement platform-specific WebInspectorProxy methods here.
+WebInspectorProxyHaiku::~WebInspectorProxyHaiku()
+{
+}
+
+Ref<WebPageProxy> WebInspectorProxyHaiku::createInspectorPage(Ref<API::PageConfiguration>&& configuration)
+{
+    notImplemented();
+    return WebInspectorProxy::createInspectorPage(WTFMove(configuration));
+}
+
+String WebInspectorProxyHaiku::inspectorURL() const
+{
+    return "resource:///org/webkit/inspector/UserInterface/Main.html"_s;
+}
+
+String WebInspectorProxyHaiku::inspectorPageURL() const
+{
+    return "resource:///org/webkit/inspector/UserInterface/Main.html"_s;
+}
+
+String WebInspectorProxyHaiku::inspectorTestPageURL() const
+{
+    return "resource:///org/webkit/inspector/UserInterface/Test.html"_s;
+}
+
+#include "WebPageProxyHaiku.h"
+#include "WebView.h"
+#include <Window.h>
+
+void WebInspectorProxyHaiku::platformCreateInspectorWindow()
+{
+    if (m_inspectorWindow) {
+        m_inspectorWindow->Activate();
+        return;
+    }
+
+    m_inspectorWindow = new BWindow(BRect(100, 100, 900, 700), "Web Inspector", B_TITLED_WINDOW, 0);
+
+    Ref<API::PageConfiguration> configuration = API::PageConfiguration::create();
+    Ref<WebPageProxy> inspectorPage = createInspectorPage(WTFMove(configuration));
+    m_inspectorView = static_cast<WebPageProxyHaiku*>(inspectorPage.ptr())->view();
+
+    m_inspectorWindow->AddChild(m_inspectorView);
+    m_inspectorWindow->Show();
+}
+
+void WebInspectorProxyHaiku::platformCloseInspectorWindow()
+{
+    if (m_inspectorWindow) {
+        m_inspectorWindow->Lock();
+        m_inspectorWindow->Quit();
+        m_inspectorWindow = nullptr;
+        m_inspectorView = nullptr;
+    }
+}
+
+void WebInspectorProxyHaiku::platformBringToFront()
+{
+    if (m_inspectorWindow)
+        m_inspectorWindow->Activate();
+}
+
+void WebInspectorProxyHaiku::platformDidClose()
+{
+    m_inspectorWindow = nullptr;
+    m_inspectorView = nullptr;
+}
+
+bool WebInspectorProxyHaiku::platformIsFront()
+{
+    if (m_inspectorWindow)
+        return m_inspectorWindow->IsActive();
+    return false;
+}
+
+void WebInspectorProxyHaiku::platformAttach()
+{
+    notImplemented();
+}
+
+void WebInspectorProxyHaiku::platformDetach()
+{
+    notImplemented();
+}
 
 } // namespace WebKit
