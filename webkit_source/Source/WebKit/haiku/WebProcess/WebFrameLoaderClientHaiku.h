@@ -35,6 +35,9 @@ public:
     virtual ~WebFrameLoaderClientHaiku() = default;
 
 private:
+    void startDownload(const WebCore::ResourceRequest&, const String& suggestedName = String(), WebCore::FromDownloadAttribute = WebCore::FromDownloadAttribute::No) final;
+    void convertMainResourceLoadToDownload(WebCore::DocumentLoader*, const WebCore::ResourceRequest&, const WebCore::ResourceResponse&) final;
+
     void platformDispatchOnloadEvents() final;
     void platformCreatePlugin(const WebCore::Plugin::Parameters&, CompletionHandler<void(RefPtr<WebCore::Widget>&&)>&&) final;
     bool platformCanHandleRequest(const WebCore::ResourceRequest&) const final;

@@ -28,6 +28,7 @@
 
 #include "WebPageCreationParameters.h"
 #include "WebInspectorClientHaiku.h"
+#include "DownloadManager.h"
 #include <WebCore/InspectorController.h>
 #include <WebCore/Page.h>
 
@@ -35,6 +36,11 @@ namespace WebKit {
 
 WebPageHaiku::WebPageHaiku(WebPageCreationParameters&& parameters)
     : WebPage(WTFMove(parameters))
+    , m_downloadManager(std::make_unique<DownloadManager>(*this))
+{
+}
+
+WebPageHaiku::~WebPageHaiku()
 {
 }
 

@@ -25,26 +25,34 @@
 
 #pragma once
 
-#include "WebPage.h"
-#include "DownloadManager.h"
-#include <memory>
+#include "DownloadID.h"
+#include <wtf/HashMap.h>
+#include <wtf/Noncopyable.h>
+#include <wtf/text/WTFString.h>
+
+namespace WebCore {
+class ResourceRequest;
+}
 
 namespace WebKit {
 
-class WebPageHaiku final : public WebPage {
-public:
-    WebPageHaiku(WebPageCreationParameters&&);
-    virtual ~WebPageHaiku();
+class Download;
+class WebPage;
 
-    DownloadManager& downloadManager() { return *m_downloadManager; }
+class DownloadManager {
+    WTF_MAKE_NONCOPYABLE(DownloadManager);
+public:
+    DownloadManager(WebPage&);
+    ~DownloadManager();
+
+    DownloadID startDownload(const WebCore::ResourceRequest&);
+    void cancelDownload(DownloadID);
+
+    void removeDownload(DownloadID);
 
 private:
-    void platformInitialize(const WebPageCreationParameters&) final;
-    void platformDetach() final;
-    void platformDidReceiveLoadParameters(const LoadParameters&) final;
-    void platformReinitialize() final;
-
-    std::unique_ptr<DownloadManager> m_downloadManager;
+    WebPage& m_page;
+    HashMap<DownloadID, std::unique_ptr<Download>> m_downloads;
 };
 
 } // namespace WebKit

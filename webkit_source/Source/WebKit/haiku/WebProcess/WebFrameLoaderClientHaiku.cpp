@@ -26,8 +26,11 @@
 #include "config.h"
 #include "WebFrameLoaderClientHaiku.h"
 
+#include "DownloadManager.h"
 #include "WebFrame.h"
 #include "WebPage.h"
+#include "WebPageHaiku.h"
+#include <WebCore/DocumentLoader.h>
 #include <WebCore/FrameLoader.h>
 #include <WebCore/FrameLoaderClient.h>
 #include <WebCore/ResourceError.h>
@@ -40,6 +43,26 @@ using namespace WebCore;
 WebFrameLoaderClientHaiku::WebFrameLoaderClientHaiku(WebFrame& frame)
     : WebLocalFrameLoaderClient(frame)
 {
+}
+
+void WebFrameLoaderClientHaiku::startDownload(const ResourceRequest& request, const String&, FromDownloadAttribute)
+{
+    if (!m_frame)
+        return;
+
+    if (auto* page = m_frame->page())
+        static_cast<WebPageHaiku*>(page)->downloadManager().startDownload(request);
+}
+
+void WebFrameLoaderClientHaiku::convertMainResourceLoadToDownload(DocumentLoader* documentLoader, const ResourceRequest& request, const ResourceResponse& response)
+{
+    if (!m_frame)
+        return;
+
+    if (auto* page = m_frame->page()) {
+        static_cast<WebPageHaiku*>(page)->downloadManager().startDownload(request);
+        documentLoader->cancelMainResourceLoad(pluginWillHandleLoadError(response));
+    }
 }
 
 void WebFrameLoaderClientHaiku::platformDispatchOnloadEvents()

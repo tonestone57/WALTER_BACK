@@ -23,28 +23,41 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
-
-#include "WebPage.h"
+#include "config.h"
 #include "DownloadManager.h"
-#include <memory>
+
+#include "Download.h"
+#include "WebPage.h"
 
 namespace WebKit {
 
-class WebPageHaiku final : public WebPage {
-public:
-    WebPageHaiku(WebPageCreationParameters&&);
-    virtual ~WebPageHaiku();
+DownloadManager::DownloadManager(WebPage& page)
+    : m_page(page)
+{
+}
 
-    DownloadManager& downloadManager() { return *m_downloadManager; }
+DownloadManager::~DownloadManager()
+{
+}
 
-private:
-    void platformInitialize(const WebPageCreationParameters&) final;
-    void platformDetach() final;
-    void platformDidReceiveLoadParameters(const LoadParameters&) final;
-    void platformReinitialize() final;
+DownloadID DownloadManager::startDownload(const WebCore::ResourceRequest& request)
+{
+    DownloadID downloadID;
+    auto download = std::make_unique<Download>(m_page, downloadID, request);
+    download->start();
+    m_downloads.set(downloadID, WTFMove(download));
+    return downloadID;
+}
 
-    std::unique_ptr<DownloadManager> m_downloadManager;
-};
+void DownloadManager::cancelDownload(DownloadID downloadID)
+{
+    if (auto* download = m_downloads.get(downloadID))
+        download->cancel();
+}
+
+void DownloadManager::removeDownload(DownloadID downloadID)
+{
+    m_downloads.remove(downloadID);
+}
 
 } // namespace WebKit
