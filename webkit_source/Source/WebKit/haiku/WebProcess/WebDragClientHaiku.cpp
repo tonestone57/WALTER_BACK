@@ -23,36 +23,38 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include "config.h"
+#include "WebDragClientHaiku.h"
 
-#include "WebDragDestination.h"
-#include "WebDragSource.h"
-#include <View.h>
+#include "WebPage.h"
 
 namespace WebKit {
 
-class WebPageProxy;
+WebDragClientHaiku::WebDragClientHaiku(WebPage& page)
+    : m_page(page)
+{
+}
 
-class WebView : public BView {
-public:
-    WebView(WebPageProxy&);
-    virtual ~WebView() = default;
+void WebDragClientHaiku::willPerformDragDestinationAction(WebCore::DragDestinationAction, WebCore::DragData&)
+{
+}
 
-    void Draw(BRect updateRect) override;
+void WebDragClientHaiku::willPerformDragSourceAction(WebCore::DragSourceAction, const WebCore::IntPoint&, WebCore::DataTransfer&)
+{
+}
 
-    void MouseDown(BPoint where) override;
-    void MouseUp(BPoint where) override;
-    void MouseMoved(BPoint where, uint32 transit, const BMessage* dragMessage) override;
+OptionSet<WebCore::DragSourceAction> WebDragClientHaiku::dragSourceActionMaskForPoint(const WebCore::IntPoint&)
+{
+    return WebCore::DragSourceAction::None;
+}
 
-    void KeyDown(const char* bytes, int32 numBytes) override;
-    void KeyUp(const char* bytes, int32 numBytes) override;
+void WebDragClientHaiku::startDrag(WebCore::DragImageRef, const WebCore::IntPoint&, const WebCore::IntPoint&, WebCore::DataTransfer&, WebCore::Frame&, bool)
+{
+}
 
-    void MessageReceived(BMessage* message) override;
-
-private:
-    WebPageProxy& m_page;
-    WebDragSource m_dragSource;
-    WebDragDestination m_dragDestination;
-};
+void WebDragClientHaiku::dragControllerDestroyed()
+{
+    delete this;
+}
 
 } // namespace WebKit

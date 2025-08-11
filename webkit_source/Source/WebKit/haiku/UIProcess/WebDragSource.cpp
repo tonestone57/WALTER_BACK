@@ -23,36 +23,34 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
-
-#include "WebDragDestination.h"
+#include "config.h"
 #include "WebDragSource.h"
+
+#include "WebPageProxy.h"
+#include "WebPageProxyHaiku.h"
+#include <Bitmap.h>
+#include <Message.h>
 #include <View.h>
+#include <WebCore/DragData.h>
 
 namespace WebKit {
 
-class WebPageProxy;
+WebDragSource::WebDragSource(WebPageProxy& page)
+    : m_page(page)
+{
+}
 
-class WebView : public BView {
-public:
-    WebView(WebPageProxy&);
-    virtual ~WebView() = default;
+void WebDragSource::StartDrag(WebCore::DragData& dragData, BBitmap* dragImage)
+{
+    BMessage dragMessage(B_SIMPLE_DATA);
+    if (dragData.asURLData()) {
+        dragMessage.AddString("text/uri-list", dragData.asURL());
+        dragMessage.AddString("text/plain", dragData.asURL());
+    }
+    if (dragData.asTextData())
+        dragMessage.AddString("text/plain", dragData.asText());
 
-    void Draw(BRect updateRect) override;
-
-    void MouseDown(BPoint where) override;
-    void MouseUp(BPoint where) override;
-    void MouseMoved(BPoint where, uint32 transit, const BMessage* dragMessage) override;
-
-    void KeyDown(const char* bytes, int32 numBytes) override;
-    void KeyUp(const char* bytes, int32 numBytes) override;
-
-    void MessageReceived(BMessage* message) override;
-
-private:
-    WebPageProxy& m_page;
-    WebDragSource m_dragSource;
-    WebDragDestination m_dragDestination;
-};
+    static_cast<WebPageProxyHaiku&>(m_page).view()->DragMessage(&dragMessage, dragImage, B_OP_ALPHA, BPoint(0, 0));
+}
 
 } // namespace WebKit

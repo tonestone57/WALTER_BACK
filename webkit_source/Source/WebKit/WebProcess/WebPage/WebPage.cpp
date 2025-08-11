@@ -103,7 +103,11 @@
 #include "WebDatabaseProvider.h"
 #include "WebDateTimeChooser.h"
 #include "WebDiagnosticLoggingClient.h"
+#if PLATFORM(HAIKU)
+#include "WebDragClientHaiku.h"
+#else
 #include "WebDragClient.h"
+#endif
 #include "WebEditorClient.h"
 #include "WebErrors.h"
 #include "WebEventConversion.h"
@@ -794,7 +798,11 @@ WebPage::WebPage(PageIdentifier pageID, WebPageCreationParameters&& parameters)
     );
 
 #if ENABLE(DRAG_SUPPORT)
+#if PLATFORM(HAIKU)
+    pageConfiguration.dragClient = makeUnique<WebDragClientHaiku>(*this);
+#else
     pageConfiguration.dragClient = makeUnique<WebDragClient>(this);
+#endif
 #endif
     pageConfiguration.inspectorBackendClient = makeUnique<WebInspectorBackendClient>(this);
 #if USE(AUTOCORRECTION_PANEL)

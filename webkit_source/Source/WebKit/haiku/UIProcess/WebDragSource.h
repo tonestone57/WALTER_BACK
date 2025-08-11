@@ -25,34 +25,28 @@
 
 #pragma once
 
-#include "WebDragDestination.h"
-#include "WebDragSource.h"
-#include <View.h>
+#include <WebCore/DragActions.h>
+
+class BView;
+class BBitmap;
+
+namespace WebCore {
+class DragData;
+}
 
 namespace WebKit {
 
 class WebPageProxy;
 
-class WebView : public BView {
+class WebDragSource {
 public:
-    WebView(WebPageProxy&);
-    virtual ~WebView() = default;
+    WebDragSource(WebPageProxy&);
+    ~WebDragSource() = default;
 
-    void Draw(BRect updateRect) override;
-
-    void MouseDown(BPoint where) override;
-    void MouseUp(BPoint where) override;
-    void MouseMoved(BPoint where, uint32 transit, const BMessage* dragMessage) override;
-
-    void KeyDown(const char* bytes, int32 numBytes) override;
-    void KeyUp(const char* bytes, int32 numBytes) override;
-
-    void MessageReceived(BMessage* message) override;
+    void StartDrag(WebCore::DragData&, BBitmap* dragImage);
 
 private:
     WebPageProxy& m_page;
-    WebDragSource m_dragSource;
-    WebDragDestination m_dragDestination;
 };
 
 } // namespace WebKit

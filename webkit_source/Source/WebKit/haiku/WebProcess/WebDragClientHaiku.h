@@ -25,34 +25,25 @@
 
 #pragma once
 
-#include "WebDragDestination.h"
-#include "WebDragSource.h"
-#include <View.h>
+#include <WebCore/DragClient.h>
 
 namespace WebKit {
 
-class WebPageProxy;
+class WebPage;
 
-class WebView : public BView {
+class WebDragClientHaiku final : public WebCore::DragClient {
 public:
-    WebView(WebPageProxy&);
-    virtual ~WebView() = default;
-
-    void Draw(BRect updateRect) override;
-
-    void MouseDown(BPoint where) override;
-    void MouseUp(BPoint where) override;
-    void MouseMoved(BPoint where, uint32 transit, const BMessage* dragMessage) override;
-
-    void KeyDown(const char* bytes, int32 numBytes) override;
-    void KeyUp(const char* bytes, int32 numBytes) override;
-
-    void MessageReceived(BMessage* message) override;
+    WebDragClientHaiku(WebPage&);
+    virtual ~WebDragClientHaiku() = default;
 
 private:
-    WebPageProxy& m_page;
-    WebDragSource m_dragSource;
-    WebDragDestination m_dragDestination;
+    void willPerformDragDestinationAction(WebCore::DragDestinationAction, WebCore::DragData&) override;
+    void willPerformDragSourceAction(WebCore::DragSourceAction, const WebCore::IntPoint&, WebCore::DataTransfer&) override;
+    OptionSet<WebCore::DragSourceAction> dragSourceActionMaskForPoint(const WebCore::IntPoint&) override;
+    void startDrag(WebCore::DragImageRef, const WebCore::IntPoint&, const WebCore::IntPoint&, WebCore::DataTransfer&, WebCore::Frame&, bool) override;
+    void dragControllerDestroyed() override;
+
+    WebPage& m_page;
 };
 
 } // namespace WebKit

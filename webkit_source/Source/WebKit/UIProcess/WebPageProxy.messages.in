@@ -349,6 +349,12 @@ messages -> WebPageProxy {
 #if PLATFORM(COCOA)
     # Dictionary support.
     DidPerformDictionaryLookup(struct WebCore::DictionaryPopupInfo dictionaryPopupInfo)
+#endif
+
+#if ENABLE(DRAG_SUPPORT)
+    # Drag and drop messages
+    StartDrag(WebCore::DragData dragData, WebCore::ShareableBitmap::Handle dragImage)
+#endif
 
     # Keyboard input support messages
     ExecuteSavedCommandBySelector(String selector) -> (bool handled) Synchronous

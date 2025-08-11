@@ -35,6 +35,8 @@ namespace WebKit {
 WebView::WebView(WebPageProxy& page)
     : BView("WebKit WebView", B_WILL_DRAW | B_FRAME_EVENTS)
     , m_page(page)
+    , m_dragSource(page)
+    , m_dragDestination(page)
 {
 }
 
@@ -66,25 +68,22 @@ void WebView::MouseUp(BPoint where)
 
 void WebView::MouseMoved(BPoint where, uint32 transit, const BMessage* dragMessage)
 {
-    BMessage* message = Window()->CurrentMessage();
-    if (message) {
-        uint32 buttons;
-        GetMouse(&where, &buttons, true);
-#include "WebHitTestResultData.h"
-
-        if (buttons) {
-            m_page.requestHitTestResultAtPoint(where, [this](WebHitTestResultData&& hitTestResult, bool) {
-                if (!hitTestResult.linkURL.isEmpty()) {
-                    printf("Dragging a link: %s\n", hitTestResult.linkURL.utf8().data());
-                } else if (!hitTestResult.imageURL.isEmpty()) {
-                    printf("Dragging an image: %s\n", hitTestResult.imageURL.utf8().data());
-                } else {
-                    // This is a drag of text.
-                    printf("Drag detected\n");
-                }
-            });
+    if (dragMessage) {
+        switch (transit) {
+        case B_ENTERED_VIEW:
+            m_dragDestination.DragEntered(dragMessage, where);
+            break;
+        case B_INSIDE_VIEW:
+            m_dragDestination.DragUpdated(dragMessage, where);
+            break;
+        case B_EXITED_VIEW:
+            m_dragDestination.DragExited(dragMessage, where);
+            break;
         }
-        m_page.handleMouseEvent(NativeWebMouseEvent(message, this));
+    } else {
+        BMessage* message = Window()->CurrentMessage();
+        if (message)
+            m_page.handleMouseEvent(NativeWebMouseEvent(message, this));
     }
 }
 
@@ -92,7 +91,7 @@ void WebView::MessageReceived(BMessage* message)
 {
     switch (message->what) {
     case B_SIMPLE_DATA:
-        printf("File drop detected\n");
+        m_dragDestination.Drop(message, BPoint());
         break;
     default:
         BView::MessageReceived(message);
