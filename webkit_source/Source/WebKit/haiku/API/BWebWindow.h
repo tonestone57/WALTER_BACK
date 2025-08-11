@@ -28,6 +28,7 @@
 
 #include <Window.h>
 
+class BBitmap;
 class BWebView;
 
 class BWebWindow : public BWindow {
@@ -39,6 +40,32 @@ public:
 
     BWebView* CurrentWebView() const { return m_currentWebView; }
     void SetCurrentWebView(BWebView* view) { m_currentWebView = view; }
+
+    virtual void NavigationRequested(const BString& url, BWebView* view);
+    virtual void NewWindowRequested(const BString& url, bool primaryAction);
+    virtual void CloseWindowRequested(BWebView* view);
+    virtual void NewPageCreated(BWebView* view, BRect windowFrame, bool modalDialog, bool resizable, bool activate);
+    virtual void LoadNegotiating(const BString& url, BWebView* view);
+    virtual void LoadCommitted(const BString& url, BWebView* view);
+    virtual void LoadFailed(const BString& url, BWebView* view);
+    virtual void LoadFinished(const BString& url, BWebView* view);
+    virtual void LoadProgress(float progress, BWebView* view);
+    virtual void MainDocumentError(const BString& failingURL, const BString& localizedDescription, BWebView* view);
+    virtual void TitleChanged(const BString& title, BWebView* view);
+    virtual void IconReceived(const BBitmap* icon, BWebView* view);
+    virtual void ResizeRequested(float width, float height, BWebView* view);
+    virtual void SetToolBarsVisible(bool flag, BWebView* view);
+    virtual void SetStatusBarVisible(bool flag, BWebView* view);
+    virtual void SetMenuBarVisible(bool flag, BWebView* view);
+    virtual void SetResizable(bool flag, BWebView* view);
+    virtual void StatusChanged(const BString& status, BWebView* view);
+    virtual void NavigationCapabilitiesChanged(bool canGoBackward,
+        bool canGoForward, bool canStop, BWebView* view);
+    virtual void UpdateGlobalHistory(const BString& url);
+    virtual bool AuthenticationChallenge(BString message,
+                        BString& inOutUser, BString& inOutPassword,
+                        bool& inOutRememberCredentials,
+                        uint32 failureCount, BWebView* view);
 
 private:
     BWebView* m_currentWebView;

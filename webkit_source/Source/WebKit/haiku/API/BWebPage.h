@@ -51,6 +51,34 @@ public:
     void ResetZoomFactor();
 
     void SetDarkMode(bool dark);
+
+    // BWebPageClient hooks
+    virtual void NavigationRequested(const BString& url, BWebView* view) override;
+    virtual void NewWindowRequested(const BString& url, bool primaryAction) override;
+    virtual void CloseWindowRequested(BWebView* view) override;
+    virtual void NewPageCreated(BWebView* view, BRect windowFrame, bool modalDialog, bool resizable, bool activate) override;
+    virtual void LoadNegotiating(const BString& url, BWebView* view) override;
+    virtual void LoadCommitted(const BString& url, BWebView* view) override;
+    virtual void LoadFailed(const BString& url, BWebView* view) override;
+    virtual void LoadFinished(const BString& url, BWebView* view) override;
+    virtual void LoadProgress(float progress, BWebView* view) override;
+    virtual void MainDocumentError(const BString& failingURL, const BString& localizedDescription, BWebView* view) override;
+    virtual void TitleChanged(const BString& title, BWebView* view) override;
+    virtual void IconReceived(const BBitmap* icon, BWebView* view) override;
+    virtual void ResizeRequested(float width, float height, BWebView* view) override;
+    virtual void SetToolBarsVisible(bool flag, BWebView* view) override;
+    virtual void SetStatusBarVisible(bool flag, BWebView* view) override;
+    virtual void SetMenuBarVisible(bool flag, BWebView* view) override;
+    virtual void SetResizable(bool flag, BWebView* view) override;
+    virtual void StatusChanged(const BString& status, BWebView* view) override;
+    virtual void NavigationCapabilitiesChanged(bool canGoBackward,
+        bool canGoForward, bool canStop, BWebView* view) override;
+    virtual void UpdateGlobalHistory(const BString& url) override;
+    virtual bool AuthenticationChallenge(BString message,
+                        BString& inOutUser, BString& inOutPassword,
+                        bool& inOutRememberCredentials,
+                        uint32 failureCount, BWebView* view);
+
 private:
     BWebView* fWebView;
     WebKit::WebDragSource m_dragSource;

@@ -35,3 +35,29 @@ BWebWindow::BWebWindow(BRect frame, const char* title, window_look look,
 BWebWindow::~BWebWindow()
 {
 }
+
+void BWebWindow::NavigationRequested(const BString& url, BWebView* view) { }
+void BWebWindow::NewWindowRequested(const BString& url, bool primaryAction) { }
+void BWebWindow::CloseWindowRequested(BWebView* view) { }
+void BWebWindow::NewPageCreated(BWebView* view, BRect windowFrame, bool modalDialog, bool resizable, bool activate) { }
+void BWebWindow::LoadNegotiating(const BString& url, BWebView* view) { }
+void BWebWindow::LoadCommitted(const BString& url, BWebView* view) { }
+void BWebWindow::LoadFailed(const BString& url, BWebView* view) { }
+void BWebWindow::LoadFinished(const BString& url, BWebView* view) { }
+void BWebWindow::LoadProgress(float progress, BWebView* view) { }
+void BWebWindow::MainDocumentError(const BString& failingURL, const BString& localizedDescription, BWebView* view) { }
+void BWebWindow::TitleChanged(const BString& title, BWebView* view) { }
+void BWebWindow::IconReceived(const BBitmap* icon, BWebView* view) { }
+void BWebWindow::ResizeRequested(float width, float height, BWebView* view) { }
+void BWebWindow::SetToolBarsVisible(bool flag, BWebView* view) { }
+void BWebWindow::SetStatusBarVisible(bool flag, BWebView* view) { }
+void BWebWindow::SetMenuBarVisible(bool flag, BWebView* view) { }
+void BWebWindow::SetResizable(bool flag, BWebView* view) { }
+void BWebWindow::StatusChanged(const BString& status, BWebView* view) { }
+void BWebWindow::NavigationCapabilitiesChanged(bool canGoBackward,
+    bool canGoForward, bool canStop, BWebView* view) { }
+void BWebWindow::UpdateGlobalHistory(const BString& url) { }
+bool BWebWindow::AuthenticationChallenge(BString message,
+                    BString& inOutUser, BString& inOutPassword,
+                    bool& inOutRememberCredentials,
+                    uint32 failureCount, BWebView* view) { return false; }

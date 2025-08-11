@@ -25,9 +25,11 @@
 
 #include "BWebPage.h"
 #include "BWebView.h"
+#include "BWebWindow.h"
 
 #include <Message.h>
 #include <View.h>
+#include <Window.h>
 
 BWebPage::BWebPage(BWebView* view)
     : BWebPageClient()
@@ -113,4 +115,136 @@ void BWebPage::ResetZoomFactor()
 void BWebPage::SetDarkMode(bool dark)
 {
     fWebView->page().preferences().setDarkModeEnabled(dark);
+}
+
+// BWebPageClient hooks
+void BWebPage::NavigationRequested(const BString& url, BWebView* view)
+{
+    if (BWebWindow* window = static_cast<BWebWindow*>(fWebView->Window()))
+        window->NavigationRequested(url, view);
+}
+
+void BWebPage::NewWindowRequested(const BString& url, bool primaryAction)
+{
+    if (BWebWindow* window = static_cast<BWebWindow*>(fWebView->Window()))
+        window->NewWindowRequested(url, primaryAction);
+}
+
+void BWebPage::CloseWindowRequested(BWebView* view)
+{
+    if (BWebWindow* window = static_cast<BWebWindow*>(fWebView->Window()))
+        window->CloseWindowRequested(view);
+}
+
+void BWebPage::NewPageCreated(BWebView* view, BRect windowFrame, bool modalDialog, bool resizable, bool activate)
+{
+    if (BWebWindow* window = static_cast<BWebWindow*>(fWebView->Window()))
+        window->NewPageCreated(view, windowFrame, modalDialog, resizable, activate);
+}
+
+void BWebPage::LoadNegotiating(const BString& url, BWebView* view)
+{
+    if (BWebWindow* window = static_cast<BWebWindow*>(fWebView->Window()))
+        window->LoadNegotiating(url, view);
+}
+
+void BWebPage::LoadCommitted(const BString& url, BWebView* view)
+{
+    if (BWebWindow* window = static_cast<BWebWindow*>(fWebView->Window()))
+        window->LoadCommitted(url, view);
+}
+
+void BWebPage::LoadFailed(const BString& url, BWebView* view)
+{
+    if (BWebWindow* window = static_cast<BWebWindow*>(fWebView->Window()))
+        window->LoadFailed(url, view);
+}
+
+void BWebPage::LoadFinished(const BString& url, BWebView* view)
+{
+    if (BWebWindow* window = static_cast<BWebWindow*>(fWebView->Window()))
+        window->LoadFinished(url, view);
+}
+
+void BWebPage::LoadProgress(float progress, BWebView* view)
+{
+    if (BWebWindow* window = static_cast<BWebWindow*>(fWebView->Window()))
+        window->LoadProgress(progress, view);
+}
+
+void BWebPage::MainDocumentError(const BString& failingURL, const BString& localizedDescription, BWebView* view)
+{
+    if (BWebWindow* window = static_cast<BWebWindow*>(fWebView->Window()))
+        window->MainDocumentError(failingURL, localizedDescription, view);
+}
+
+void BWebPage::TitleChanged(const BString& title, BWebView* view)
+{
+    if (BWebWindow* window = static_cast<BWebWindow*>(fWebView->Window()))
+        window->TitleChanged(title, view);
+}
+
+void BWebPage::IconReceived(const BBitmap* icon, BWebView* view)
+{
+    if (BWebWindow* window = static_cast<BWebWindow*>(fWebView->Window()))
+        window->IconReceived(icon, view);
+}
+
+void BWebPage::ResizeRequested(float width, float height, BWebView* view)
+{
+    if (BWebWindow* window = static_cast<BWebWindow*>(fWebView->Window()))
+        window->ResizeRequested(width, height, view);
+}
+
+void BWebPage::SetToolBarsVisible(bool flag, BWebView* view)
+{
+    if (BWebWindow* window = static_cast<BWebWindow*>(fWebView->Window()))
+        window->SetToolBarsVisible(flag, view);
+}
+
+void BWebPage::SetStatusBarVisible(bool flag, BWebView* view)
+{
+    if (BWebWindow* window = static_cast<BWebWindow*>(fWebView->Window()))
+        window->SetStatusBarVisible(flag, view);
+}
+
+void BWebPage::SetMenuBarVisible(bool flag, BWebView* view)
+{
+    if (BWebWindow* window = static_cast<BWebWindow*>(fWebView->Window()))
+        window->SetMenuBarVisible(flag, view);
+}
+
+void BWebPage::SetResizable(bool flag, BWebView* view)
+{
+    if (BWebWindow* window = static_cast<BWebWindow*>(fWebView->Window()))
+        window->SetResizable(flag, view);
+}
+
+void BWebPage::StatusChanged(const BString& status, BWebView* view)
+{
+    if (BWebWindow* window = static_cast<BWebWindow*>(fWebView->Window()))
+        window->StatusChanged(status, view);
+}
+
+void BWebPage::NavigationCapabilitiesChanged(bool canGoBackward,
+    bool canGoForward, bool canStop, BWebView* view)
+{
+    if (BWebWindow* window = static_cast<BWebWindow*>(fWebView->Window()))
+        window->NavigationCapabilitiesChanged(canGoBackward, canGoForward, canStop, view);
+}
+
+void BWebPage::UpdateGlobalHistory(const BString& url)
+{
+    if (BWebWindow* window = static_cast<BWebWindow*>(fWebView->Window()))
+        window->UpdateGlobalHistory(url);
+}
+
+bool BWebPage::AuthenticationChallenge(BString message,
+                    BString& inOutUser, BString& inOutPassword,
+                    bool& inOutRememberCredentials,
+                    uint32 failureCount, BWebView* view)
+{
+    if (BWebWindow* window = static_cast<BWebWindow*>(fWebView->Window()))
+        return window->AuthenticationChallenge(message, inOutUser, inOutPassword, inOutRememberCredentials, failureCount, view);
+    return false;
 }
