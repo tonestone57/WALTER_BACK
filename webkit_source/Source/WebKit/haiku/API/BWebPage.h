@@ -19,39 +19,28 @@
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * ARISING IN ANY WAY OUT of THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef B_WEB_PAGE_H
+#define B_WEB_PAGE_H
 
-#ifndef B_WEB_VIEW_H
-#define B_WEB_VIEW_H
+#include "BWebPageClient.h"
+#include "WebDragDestination.h"
+#include "WebDragSource.h"
 
-#include <View.h>
-#include <memory>
-
-#include "BWebPage.h"
+#include <Point.h>
 
 class BMessage;
+class BWebView;
 
-namespace WebKit {
-class WebPageProxy;
-class WebView;
-}
-
-class BWebView : public BView {
+class BWebPage : public BWebPageClient {
 public:
-    BWebView(const char* name);
-    virtual ~BWebView();
+    BWebPage(BWebView* view);
+    virtual ~BWebPage();
 
-    void LoadURL(const char* url);
-    void GoBack();
-    void GoForward();
-    void Reload();
-    void StopLoading();
-
-    void Print(const BMessage* settings, float availablePaperWidth, float availablePaperHeight);
-    void GetContentsAsString(BFile& file);
-    void ShowInspector();
+    virtual void MouseMoved(BPoint where, uint32 transit, const BMessage* dragMessage);
+    virtual void MessageReceived(BMessage* message);
 
     void FindString(const char* string, bool forward = true,
                             bool caseSensitive = false, bool wrapSelection = true,
@@ -62,19 +51,10 @@ public:
     void ResetZoomFactor();
 
     void SetDarkMode(bool dark);
-
-    virtual void MouseMoved(BPoint where, uint32 transit, const BMessage* dragMessage);
-    virtual void MessageReceived(BMessage* message);
-    virtual void FrameResized(float newWidth, float newHeight);
-
-    BWebPage* WebPage() const;
-
-    WebKit::WebPageProxy& page() const { return m_page; }
-
 private:
-    std::unique_ptr<WebKit::WebView> m_webView;
-    WebKit::WebPageProxy& m_page;
-    BWebPage* m_webPage;
+    BWebView* fWebView;
+    WebKit::WebDragSource m_dragSource;
+    WebKit::WebDragDestination m_dragDestination;
 };
 
-#endif // B_WEB_VIEW_H
+#endif // B_WEB_PAGE_H

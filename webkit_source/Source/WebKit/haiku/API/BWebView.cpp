@@ -25,6 +25,7 @@
 
 #include "BWebView.h"
 
+#include "BWebPage.h"
 #include "WebContext.h"
 #include "WebPageGroup.h"
 #include "WebPageProxy.h"
@@ -35,27 +36,21 @@
 BWebView::BWebView(const char* name)
     : BView(name, B_WILL_DRAW | B_FRAME_EVENTS)
     , m_page(WebKit::WebProcessPool::create()-> createContext()->createWebPage(WebKit::WebPageGroup::create()))
-    , m_client(nullptr)
-    , m_dragSource(m_page)
-    , m_dragDestination(m_page)
 {
     m_webView = std::make_unique<WebKit::WebView>(m_page);
+    m_webPage = new BWebPage(this);
     SetLayout(new BGroupLayout(B_HORIZONTAL));
     AddChild(BGroupLayoutBuilder(B_HORIZONTAL).Add(m_webView.get()));
 }
 
 BWebView::~BWebView()
 {
+	delete m_webPage;
 }
 
-void BWebView::SetClient(BWebPageClient* client)
+BWebPage* BWebView::WebPage() const
 {
-    m_client = client;
-}
-
-BWebPageClient* BWebView::Client() const
-{
-    return m_client;
+    return m_webPage;
 }
 
 void BWebView::LoadURL(const char* url)
@@ -113,32 +108,42 @@ void BWebView::ShowInspector()
     m_page.showInspector();
 }
 
+void BWebView::FindString(const char* string, bool forward,
+    bool caseSensitive, bool wrapSelection, bool startInSelection)
+{
+    m_webPage->FindString(string, forward, caseSensitive, wrapSelection, startInSelection);
+}
+
+void BWebView::IncreaseZoomFactor(bool textOnly)
+{
+    m_webPage->IncreaseZoomFactor(textOnly);
+}
+
+void BWebView::DecreaseZoomFactor(bool textOnly)
+{
+    m_webPage->DecreaseZoomFactor(textOnly);
+}
+
+void BWebView::ResetZoomFactor()
+{
+    m_webPage->ResetZoomFactor();
+}
+
+void BWebView::SetDarkMode(bool dark)
+{
+    m_webPage->SetDarkMode(dark);
+}
+
 void BWebView::MouseMoved(BPoint where, uint32 transit, const BMessage* dragMessage)
 {
-    if (dragMessage) {
-        switch (transit) {
-        case B_ENTERED_VIEW:
-            m_dragDestination.DragEntered(dragMessage, where);
-            break;
-        case B_INSIDE_VIEW:
-            m_dragDestination.DragUpdated(dragMessage, where);
-            break;
-        case B_EXITED_VIEW:
-            m_dragDestination.DragExited(dragMessage, where);
-            break;
-        }
-    } else {
+    if (dragMessage)
+        m_webPage->MouseMoved(where, transit, dragMessage);
+    else
         BView::MouseMoved(where, transit, dragMessage);
-    }
 }
 
 void BWebView::MessageReceived(BMessage* message)
 {
-    switch (message->what) {
-    case B_SIMPLE_DATA:
-        m_dragDestination.Drop(message, BPoint());
-        break;
-    default:
-        BView::MessageReceived(message);
-    }
+    m_webPage->MessageReceived(message);
+    BView::MessageReceived(message);
 }
