@@ -45,8 +45,12 @@ private:
 
     int32_t						CountItems() const;
     BReference<BWebHistoryItem>	ItemAt(int32_t index) const;
+    BReference<BWebHistoryItem>	ItemAtOffset(int32_t offset) const;
 
     BReference<BWebHistoryItem>	CurrentItem() const;
+
+    int32_t						BackListCount() const;
+    int32_t						ForwardListCount() const;
 
 private:
     WebKit::WebBackForwardList&	fList;

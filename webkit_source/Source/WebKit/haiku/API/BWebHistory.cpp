@@ -44,7 +44,19 @@ int32_t BWebHistory::CountItems() const
 
 BReference<BWebHistoryItem> BWebHistory::ItemAt(int32_t index) const
 {
-    WebKit::WebBackForwardListItem* item = fList.itemAtIndex(index);
+    if (index < 0 || (unsigned)index >= fList.entries().size())
+        return nullptr;
+
+    int32_t offset = index - fList.backListCount();
+    WebKit::WebBackForwardListItem* item = fList.itemAtIndex(offset);
+    if (!item)
+        return nullptr;
+    return new BWebHistoryItem(*item);
+}
+
+BReference<BWebHistoryItem> BWebHistory::ItemAtOffset(int32_t offset) const
+{
+    WebKit::WebBackForwardListItem* item = fList.itemAtIndex(offset);
     if (!item)
         return nullptr;
     return new BWebHistoryItem(*item);
@@ -56,6 +68,16 @@ BReference<BWebHistoryItem> BWebHistory::CurrentItem() const
     if (!item)
         return nullptr;
     return new BWebHistoryItem(*item);
+}
+
+int32_t BWebHistory::BackListCount() const
+{
+    return fList.backListCount();
+}
+
+int32_t BWebHistory::ForwardListCount() const
+{
+    return fList.forwardListCount();
 }
 
 
