@@ -1309,6 +1309,7 @@ public:
 #endif
 
 #if ENABLE(DRAG_SUPPORT)
+    void startDrag(const WebCore::DragData&, const WebCore::ShareableBitmap::Handle&);
     void dragEnded(std::optional<WebCore::FrameIdentifier>, WebCore::IntPoint clientPosition, WebCore::IntPoint globalPosition, OptionSet<WebCore::DragOperation>, CompletionHandler<void(std::optional<WebCore::RemoteUserInputEventData>)>&&);
 
     void willPerformLoadDragDestinationAction();

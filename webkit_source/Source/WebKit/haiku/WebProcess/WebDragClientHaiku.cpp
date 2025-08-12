@@ -48,8 +48,14 @@ OptionSet<WebCore::DragSourceAction> WebDragClientHaiku::dragSourceActionMaskFor
     return WebCore::DragSourceAction::None;
 }
 
-void WebDragClientHaiku::startDrag(WebCore::DragImageRef, const WebCore::IntPoint&, const WebCore::IntPoint&, WebCore::DataTransfer&, WebCore::Frame&, bool)
+void WebDragClientHaiku::startDrag(WebCore::DragImageRef dragImage, const WebCore::IntPoint& dragImageOrigin, const WebCore::IntPoint&, WebCore::DataTransfer& dataTransfer, WebCore::Frame&, bool)
 {
+    RefPtr<WebCore::ShareableBitmap> dragImageBitmap = WebCore::ShareableBitmap::create(dragImage);
+    WebCore::ShareableBitmap::Handle dragImageHandle;
+    if (dragImageBitmap)
+        dragImageBitmap->createHandle(dragImageHandle);
+
+    m_page.startDrag(WebCore::DragData(&dataTransfer, dragImageOrigin, dragImageOrigin, dataTransfer.getDragAndDropData()), dragImageHandle);
 }
 
 void WebDragClientHaiku::dragControllerDestroyed()
