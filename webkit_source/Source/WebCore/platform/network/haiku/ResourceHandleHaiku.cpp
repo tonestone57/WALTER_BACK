@@ -39,6 +39,10 @@
 #include "ResourceHandleInternal.h"
 #include "SharedBuffer.h"
 
+#include <Url.h>
+#include <UrlRequest.h>
+#include <UrlProtocolRoster.h>
+
 // TODO move to SynchronousLoaderClientHaiku.cpp
 #include "SynchronousLoaderClient.h"
 
@@ -86,8 +90,27 @@ void ResourceHandle::cancel()
 
 void ResourceHandle::platformLoadResourceSynchronously(NetworkingContext* context, const ResourceRequest& request, StoredCredentialsPolicy /*storedCredentials*/, WebCore::SecurityOrigin*, ResourceError& error, ResourceResponse& response, Vector<unsigned char>& data)
 {
-    fprintf(stderr, "platformLoadResourceSynchronously is not implemented!\n");
-    ASSERT_NOT_REACHED();
+    BUrlRequest* urlRequest = BUrlProtocolRoster::MakeRequest(BUrl(request.url().string().utf8().data()));
+    if (!urlRequest) {
+        error = ResourceError::cannotLoadURL(request.url());
+        return;
+    }
+
+    BMallocIO resultData;
+    status_t status = urlRequest->Perform(&resultData);
+    if (status != B_OK) {
+        error = ResourceError(String::fromUTF8(strerror(status)), status, request.url(), String::fromUTF8(strerror(status)));
+        delete urlRequest;
+        return;
+    }
+
+    const BUrlResult& result = urlRequest->Result();
+    response = ResourceResponse(BUrl(result.Url()), result.ContentType(), result.Length(), result.StatusText());
+
+    data.resize(resultData.BufferLength());
+    memcpy(data.data(), resultData.Buffer(), resultData.BufferLength());
+
+    delete urlRequest;
 }
 
 

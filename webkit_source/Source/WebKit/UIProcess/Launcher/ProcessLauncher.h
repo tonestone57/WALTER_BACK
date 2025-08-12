@@ -60,6 +60,10 @@ OBJC_CLASS BERenderingProcess;
 #include "glib/XDGDBusProxy.h"
 #endif
 
+#if PLATFORM(HAIKU)
+#include <sys/socket.h>
+#endif
+
 namespace WebKit {
 
 #if PLATFORM(GTK) || PLATFORM(WPE) || PLATFORM(HAIKU)

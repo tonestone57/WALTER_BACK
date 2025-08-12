@@ -71,8 +71,10 @@ public:
     void GoBack();
     void GoForward();
 
+    virtual void MouseDown(BPoint where);
+    virtual void MouseUp(BPoint where);
     virtual void MouseMoved(BPoint where, uint32 transit, const BMessage* dragMessage);
-    virtual void MessageReceived(BMessage* message);
+    virtual void KeyDown(const char* bytes, int32 numBytes);
     virtual void FrameResized(float newWidth, float newHeight);
 
     BWebPage* WebPage() const;

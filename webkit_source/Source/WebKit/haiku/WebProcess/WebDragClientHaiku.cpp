@@ -45,7 +45,7 @@ void WebDragClientHaiku::willPerformDragSourceAction(WebCore::DragSourceAction, 
 
 OptionSet<WebCore::DragSourceAction> WebDragClientHaiku::dragSourceActionMaskForPoint(const WebCore::IntPoint&)
 {
-    return WebCore::DragSourceAction::None;
+    return WebCore::DragSourceAction::Copy;
 }
 
 void WebDragClientHaiku::startDrag(WebCore::DragImageRef dragImage, const WebCore::IntPoint& dragImageOrigin, const WebCore::IntPoint&, WebCore::DataTransfer& dataTransfer, WebCore::Frame&, bool)

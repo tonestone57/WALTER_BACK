@@ -33,6 +33,7 @@
 #include "WebPageGroup.h"
 #include "WebPageProxy.h"
 #include "WebView.h"
+#include "WebEventFactory.h"
 #include <GroupLayout.h>
 #include <GroupLayoutBuilder.h>
 
@@ -159,16 +160,28 @@ void BWebView::SetDarkMode(bool dark)
     m_webPage->SetDarkMode(dark);
 }
 
-void BWebView::MouseMoved(BPoint where, uint32 transit, const BMessage* dragMessage)
+void BWebView::MouseDown(BPoint where)
 {
-    if (dragMessage)
-        m_webPage->MouseMoved(where, transit, dragMessage);
-    else
-        BView::MouseMoved(where, transit, dragMessage);
+    // FIXME: Get the button from the message.
+    m_page.handleMouseEvent(WebKit::WebEventFactory::createWebMouseEvent(WebCore::WebEventType::MouseDown,
+        where, where, 0, 0, 0));
 }
 
-void BWebView::MessageReceived(BMessage* message)
+void BWebView::MouseUp(BPoint where)
 {
-    m_webPage->MessageReceived(message);
-    BView::MessageReceived(message);
+    // FIXME: Get the button from the message.
+    m_page.handleMouseEvent(WebKit::WebEventFactory::createWebMouseEvent(WebCore::WebEventType::MouseUp,
+        where, where, 0, 0, 0));
+}
+
+void BWebView::MouseMoved(BPoint where, uint32 transit, const BMessage* dragMessage)
+{
+    m_page.handleMouseEvent(WebKit::WebEventFactory::createWebMouseEvent(WebCore::WebEventType::MouseMove,
+        where, where, 0, 0, 0));
+}
+
+void BWebView::KeyDown(const char* bytes, int32 numBytes)
+{
+    // FIXME: This is not correct. We need to create a proper WebKeyboardEvent.
+    m_page.handleKeyboardEvent(WebKit::WebKeyboardEvent());
 }

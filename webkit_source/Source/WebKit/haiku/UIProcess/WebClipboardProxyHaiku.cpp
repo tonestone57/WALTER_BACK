@@ -30,6 +30,8 @@
 #include <WebCore/SharedBuffer.h>
 #include <Clipboard.h>
 #include <Message.h>
+#include <Entry.h>
+#include <Path.h>
 
 namespace WebKit {
 
@@ -114,8 +116,19 @@ void WebClipboardProxyHaiku::read(const String& type, CompletionHandler<void(Web
 
 void WebClipboardProxyHaiku::files(CompletionHandler<void(Vector<String>&&)>&& completionHandler)
 {
-    // TODO: Implement
-    completionHandler({ });
+    Vector<String> fileList;
+    if (be_clipboard->Lock()) {
+        BMessage* data = be_clipboard->Data();
+        if (data) {
+            entry_ref ref;
+            for (int32 i = 0; data->FindRef("refs", i, &ref) == B_OK; i++) {
+                BPath path(&ref);
+                fileList.append(String::fromUTF8(path.Path()));
+            }
+        }
+        be_clipboard->Unlock();
+    }
+    completionHandler(WTFMove(fileList));
 }
 
 void WebClipboardProxyHaiku::write(const WebCore::SharedBuffer& buffer, const String& type, CompletionHandler<void(int64_t)>&& completionHandler)

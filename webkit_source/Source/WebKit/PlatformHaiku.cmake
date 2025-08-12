@@ -79,6 +79,7 @@ set(WebKit_WEB_PREFERENCES_TEMPLATES
 
 set(WebKit_WEB_PREFERENCES
     ${WTF_SCRIPTS_DIR}/Preferences/UnifiedWebPreferences.yaml
+    ${WEBKIT_DIR}/haiku/HaikuWebPreferences.yaml
 )
 
 set_source_files_properties(${WebKit_WEB_PREFERENCES} PROPERTIES GENERATED TRUE)

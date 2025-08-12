@@ -24,34 +24,68 @@
  */
 
 #include "config.h"
-#include "ProcessLauncherHaiku.h"
+#include "ProcessLauncher.h"
 
 #include "Connection.h"
 #include "ProcessExecutablePath.h"
+#include <errno.h>
+#include <signal.h>
+#include <stdio.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
 #include <wtf/text/CString.h>
+#include <wtf/UniStdExtras.h>
+
+#include <support/Locker.h>
+#include <app/Roster.h>
+#include <kernel/image.h>
 
 namespace WebKit {
 
-ProcessLauncherHaiku::ProcessLauncherHaiku(ProcessLauncher::Client& client, LaunchOptions&& launchOptions)
-    : ProcessLauncher(client, WTFMove(launchOptions))
+void ProcessLauncher::launchProcess()
 {
+    IPC::Connection::SocketPair socketPair = IPC::Connection::createPlatformConnection();
+
+    String executablePath = processExecutablePath();
+    if (executablePath.isEmpty()) {
+        printf("Could not find the WebProcess executable\n");
+        return;
+    }
+
+    CString executablePathCString = executablePath.utf8();
+    const char* argv[] = {
+        executablePathCString.data(),
+        "--" WEBKIT_PROCESS_NAME_PREFIX "process",
+        String::number(m_launchOptions.processIdentifier.toUInt64()).utf8().data(),
+        String::number(socketPair.server).utf8().data(),
+        nullptr
+    };
+
+    thread_id thread = load_image_etc(3, argv, (const char**)environ, B_NORMAL_PRIORITY,
+        B_CURRENT_TEAM, 0);
+
+    if (thread < B_OK) {
+        printf("Failed to launch %s: %s\n", executablePath.utf8().data(), strerror(thread));
+        return;
+    }
+
+    m_processID = thread;
+    resume_thread(thread);
+
+    didFinishLaunchingProcess(m_processID, IPC::Connection::Identifier(socketPair.client));
 }
 
-void ProcessLauncherHaiku::launchProcess()
+void ProcessLauncher::terminateProcess()
 {
-    // Implementation of process launching on Haiku will go here.
-    // This will likely involve using load_image() and resume_thread().
+    if (!m_processID)
+        return;
 
-    // For now, we will just fail gracefully.
-    didFinishLaunchingProcess(0, IPC::Connection::Identifier{});
+    kill_thread(m_processID);
+    m_processID = 0;
 }
 
-void ProcessLauncherHaiku::terminateProcess()
-{
-    // Implementation of process termination on Haiku will go here.
-}
-
-void ProcessLauncherHaiku::platformInvalidate()
+void ProcessLauncher::platformInvalidate()
 {
 }
 

@@ -28,6 +28,8 @@
 
 #include <View.h>
 #include <Bitmap.h>
+#include <GraphicsContext.h>
+#include <GraphicsContextHaiku.h>
 
 namespace WebKit {
 
@@ -35,20 +37,37 @@ BackingStore::BackingStore(const WebCore::IntSize& size, float deviceScaleFactor
     : m_size(size)
     , m_deviceScaleFactor(deviceScaleFactor)
 {
+    BRect bounds(0, 0, size.width() - 1, size.height() - 1);
+    m_bitmap = new BBitmap(bounds, B_RGBA32);
 }
 
 void BackingStore::incorporateUpdate(ShareableBitmap::Handle&& handle, const WebCore::IntRect& rect)
 {
-    m_bitmap = ShareableBitmap::create(WTFMove(handle));
+    RefPtr<ShareableBitmap> updateBitmap = ShareableBitmap::create(WTFMove(handle));
+    if (!updateBitmap)
+        return;
+
+    BBitmap* updateBBitmap = updateBitmap->haikuBitmap();
+    if (!updateBBitmap)
+        return;
+
+    uint8* from = (uint8*)updateBBitmap->Bits();
+    uint8* to = (uint8*)m_bitmap->Bits();
+    int32 fromBpr = updateBBitmap->BytesPerRow();
+    int32 toBpr = m_bitmap->BytesPerRow();
+
+    for (int32 y = rect.y(); y < rect.maxY(); y++) {
+        memcpy(to + y * toBpr + rect.x() * 4,
+            from + y * fromBpr + rect.x() * 4,
+            rect.width() * 4);
+    }
 }
 
 void BackingStore::paint(BView* view, const WebCore::IntRect& rect)
 {
     if (m_bitmap) {
-        // FIXME: This is not correct. We need to handle the rect.
-        BBitmap* bitmap = m_bitmap->haikuBitmap();
-        if (bitmap)
-            view->DrawBitmap(bitmap);
+        BRect dirty(rect.x(), rect.y(), rect.maxX() - 1, rect.maxY() - 1);
+        view->DrawBitmap(m_bitmap, dirty, dirty);
     }
 }
 

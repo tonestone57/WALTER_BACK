@@ -47,12 +47,12 @@ DrawingAreaProxyHaiku::~DrawingAreaProxyHaiku()
 
 void DrawingAreaProxyHaiku::sizeDidChange()
 {
-    notImplemented();
+    m_backingStore = std::make_unique<BackingStore>(size(), page()->deviceScaleFactor());
 }
 
 void DrawingAreaProxyHaiku::deviceScaleFactorDidChange(CompletionHandler<void()>&& completionHandler)
 {
-    notImplemented();
+    m_backingStore = std::make_unique<BackingStore>(size(), page()->deviceScaleFactor());
     completionHandler();
 }
 
