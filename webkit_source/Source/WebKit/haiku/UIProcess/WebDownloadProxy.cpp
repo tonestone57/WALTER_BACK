@@ -74,7 +74,7 @@ void WebDownloadProxy::cancel()
 
 void WebDownloadProxy::resume()
 {
-    // TODO: Implement
+    process().send(Messages::WebProcess::ResumeDownload(m_downloadID, m_path.Path()), 0);
 }
 
 void WebDownloadProxy::setDestination(const String& destination)
@@ -96,8 +96,7 @@ void WebDownloadProxy::didReceiveResponse(const WebCore::ResourceResponse& respo
 
     if (m_path.InitCheck() != B_OK) {
         // No path provided, use the default downloads folder.
-        // TODO: Get this from a setting.
-        m_path.SetTo("/boot/home/Downloads");
+        m_path.SetTo(m_page->preferences().downloadPath());
     }
 
     BPath filePath = m_path;
@@ -120,7 +119,7 @@ void WebDownloadProxy::didReceiveResponse(const WebCore::ResourceResponse& respo
     m_path = filePath;
 
     if (m_file.SetTo(m_path.Path(), B_CREATE_FILE | B_ERASE_FILE | B_WRITE_ONLY) != B_OK) {
-        // TODO: report error
+        didFail(WebCore::ResourceError(String(), 0, URL(), "Failed to create download file"), { });
         return;
     }
 
@@ -134,12 +133,13 @@ void WebDownloadProxy::didReceiveData(const IPC::DataReference& data, uint64_t)
     m_bytesReceived += data.size();
 
     if (m_bdownload->client())
-        m_bdownload->client()->DownloadProgress(m_bdownload, m_bytesReceived, 0); // TODO: expected size
+        m_bdownload->client()->DownloadProgress(m_bdownload, m_bytesReceived, m_response.expectedContentLength());
 }
 
 void WebDownloadProxy::didFinish()
 {
     platformDidFinish();
+    process().send(Messages::WebProcess::ClearDownloadResumeData(m_downloadID), 0);
     if (m_bdownload->client())
         m_bdownload->client()->DownloadFinished(m_bdownload);
 }
@@ -147,12 +147,14 @@ void WebDownloadProxy::didFinish()
 void WebDownloadProxy::didFail(const WebCore::ResourceError& error, const IPC::DataReference&)
 {
     platformDidFinish();
+    process().send(Messages::WebProcess::ClearDownloadResumeData(m_downloadID), 0);
     if (m_bdownload->client())
         m_bdownload->client()->DownloadFailed(m_bdownload);
 }
 
 void WebDownloadProxy::didCancel(const IPC::DataReference&)
 {
+    platformCancel();
     if (m_bdownload->client())
         m_bdownload->client()->DownloadCancelled(m_bdownload);
 }

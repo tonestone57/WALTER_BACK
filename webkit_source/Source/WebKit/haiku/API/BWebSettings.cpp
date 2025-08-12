@@ -36,6 +36,16 @@ BWebSettings::BWebSettings(BWebView& view)
 {
 }
 
+void BWebSettings::SetDownloadPath(const BString& path)
+{
+    m_preferences.setDownloadPath(String::fromUTF8(path.String()));
+}
+
+BString BWebSettings::DownloadPath() const
+{
+    return BString(m_preferences.downloadPath().utf8().data());
+}
+
 BWebSettings::~BWebSettings()
 {
 }

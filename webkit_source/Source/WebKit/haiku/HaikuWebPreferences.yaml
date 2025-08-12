@@ -1,0 +1,14 @@
+# Haiku-specific Web Preferences
+
+downloadPath:
+  type: String
+  status: embedder
+  humanReadableName: "Download Path"
+  humanReadableDescription: "The default path for downloaded files."
+  defaultValue:
+    WebKit:
+      default: '"/boot/home/Downloads"_str'
+    WebKitLegacy:
+      default: '"/boot/home/Downloads"_str'
+    WebCore:
+      default: '""_str'

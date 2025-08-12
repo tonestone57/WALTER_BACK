@@ -252,4 +252,6 @@ messages -> WebProcess : AuxiliaryProcess WantsAsyncDispatchMessage {
 #endif
 
     CancelDownload(WebKit::DownloadID downloadID)
+    ResumeDownload(WebKit::DownloadID downloadID, String path)
+    ClearDownloadResumeData(WebKit::DownloadID downloadID)
 }

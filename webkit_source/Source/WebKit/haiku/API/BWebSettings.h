@@ -56,6 +56,9 @@ public:
                                     const BString& username = "",
                                     const BString& password = "");
 
+    void                        SetDownloadPath(const BString& path);
+    BString                     DownloadPath() const;
+
 private:
     B_DISABLE_COPY(BWebSettings);
 

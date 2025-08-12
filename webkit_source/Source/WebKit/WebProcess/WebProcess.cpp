@@ -1049,6 +1049,28 @@ bool WebProcess::dispatchMessage(IPC::Connection& connection, IPC::Decoder& deco
             downcast<WebSharedWorkerContextManagerConnection>(*contextManagerConnection).didReceiveMessage(connection, decoder);
         return true;
     }
+
+    if (decoder.messageName() == Messages::WebProcess::CancelDownload::name()) {
+        auto& castedDecoder = static_cast<IPC::Decoder&>(decoder);
+        auto [downloadID] = castedDecoder.take<DownloadID>();
+        cancelDownload(downloadID);
+        return true;
+    }
+
+    if (decoder.messageName() == Messages::WebProcess::ResumeDownload::name()) {
+        auto& castedDecoder = static_cast<IPC::Decoder&>(decoder);
+        auto [downloadID, path] = castedDecoder.take<DownloadID, String>();
+        resumeDownload(downloadID, path);
+        return true;
+    }
+
+    if (decoder.messageName() == Messages::WebProcess::ClearDownloadResumeData::name()) {
+        auto& castedDecoder = static_cast<IPC::Decoder&>(decoder);
+        auto [downloadID] = castedDecoder.take<DownloadID>();
+        clearDownloadResumeData(downloadID);
+        return true;
+    }
+
     return false;
 }
 
@@ -2613,6 +2635,33 @@ void WebProcess::setResourceMonitorContentRuleListAsync(WebCompiledContentRuleLi
     completionHandler();
 }
 #endif
+
+void WebProcess::cancelDownload(DownloadID downloadID)
+{
+    if (auto* connection = existingNetworkProcessConnection()) {
+        auto sendResult = connection->connection().sendSync(Messages::NetworkProcess::CancelDownload(downloadID), 0);
+        if (sendResult.succeeded()) {
+            auto [resumeData] = sendResult.takeReply();
+            if (!resumeData.empty())
+                m_downloadResumeData.set(downloadID, Vector<uint8_t>(resumeData));
+        }
+    }
+}
+
+void WebProcess::resumeDownload(DownloadID downloadID, const String& path)
+{
+    if (auto* connection = existingNetworkProcessConnection()) {
+        if (m_downloadResumeData.contains(downloadID)) {
+            auto resumeData = m_downloadResumeData.take(downloadID);
+            connection->connection().send(Messages::NetworkProcess::ResumeDownload(sessionID(), downloadID, resumeData, path, { }, false, { }), 0);
+        }
+    }
+}
+
+void WebProcess::clearDownloadResumeData(DownloadID downloadID)
+{
+    m_downloadResumeData.remove(downloadID);
+}
 
 } // namespace WebKit
 

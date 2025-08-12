@@ -47,6 +47,10 @@
 #include <WebCore/UserGestureTokenIdentifier.h>
 #include <pal/HysteresisActivity.h>
 #include <pal/SessionID.h>
+#include <WebCore/FrameIdentifier.h>
+#include <WebCore/PageIdentifier.h>
+#include <WebCore/ProcessIdentifier.h>
+#include "DownloadID.h"
 #include <wtf/Forward.h>
 #include <wtf/HashCountedSet.h>
 #include <wtf/HashSet.h>
@@ -671,6 +675,10 @@ private:
 
     void platformInitializeProcess(const AuxiliaryProcessInitializationParameters&);
 
+    void cancelDownload(DownloadID);
+    void resumeDownload(DownloadID, const String&);
+    void clearDownloadResumeData(DownloadID);
+
     // IPC::Connection::Client
     void didReceiveMessage(IPC::Connection&, IPC::Decoder&) override;
     void didClose(IPC::Connection&) final;
@@ -932,6 +940,7 @@ private:
 #if ENABLE(INITIALIZE_ACCESSIBILITY_ON_DEMAND)
     bool m_shouldInitializeAccessibility { false };
 #endif
+    HashMap<DownloadID, Vector<uint8_t>> m_downloadResumeData;
 };
 
 } // namespace WebKit
