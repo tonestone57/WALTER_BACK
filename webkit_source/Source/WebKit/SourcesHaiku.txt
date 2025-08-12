@@ -76,3 +76,4 @@ NetworkProcess/haiku/NetworkProcessMainHaiku.cpp
 GPUProcess/haiku/GPUProcessHaiku.cpp
 GPUProcess/haiku/GPUProcessMainHaiku.cpp
 WebProcess/StorageNamespaceProviderHaiku.cpp
+haiku/WebProcess/WebEditorClient.cpp
