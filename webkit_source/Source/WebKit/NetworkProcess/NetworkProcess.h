@@ -561,6 +561,9 @@ private:
 #if USE(CURL)
     void setNetworkProxySettings(PAL::SessionID, WebCore::CurlProxySettings&&);
 #endif
+#if PLATFORM(HAIKU)
+    void setNetworkProxySettings();
+#endif
 
 #if PLATFORM(MAC) || PLATFORM(MACCATALYST)
     static void setSharedHTTPCookieStorage(const Vector<uint8_t>& identifier);

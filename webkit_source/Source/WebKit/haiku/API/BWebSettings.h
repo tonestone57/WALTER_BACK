@@ -22,25 +22,45 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef _B_WEB_SETTINGS_H_
+#define _B_WEB_SETTINGS_H_
 
-#pragma once
+#include <Referenceable.h>
+#include <String.h>
 
-#include "NetworkProcess.h"
+class BFont;
+class BWebPage;
 
 namespace WebKit {
+class WebPreferences;
+}
 
-class NetworkProcessHaiku final : public NetworkProcess {
+class BWebSettings : public BReferenceable {
 public:
-    NetworkProcessHaiku();
-    ~NetworkProcessHaiku() = default;
+                                BWebSettings(BWebView& view);
+    virtual						~BWebSettings();
 
-    static NetworkProcessHaiku& singleton();
+    void						SetSerifFont(const BFont& font);
+    void						SetSansSerifFont(const BFont& font);
+    void						SetFixedFont(const BFont& font);
+    void						SetStandardFont(const BFont& font);
 
-public:
-    void setNetworkProxySettings();
+    void						SetDefaultStandardFontSize(float size);
+    void						SetDefaultFixedFontSize(float size);
+
+    void						SetJavascriptEnabled(bool enable);
+
+    void                        SetProxyInfo(const BString& host = "",
+                                    uint32 port = 0,
+                                    int32 type = 0, // BProxyType
+                                    const BString& username = "",
+                                    const BString& password = "");
 
 private:
-    void platformInitialize(const AuxiliaryProcessCreationParameters&) final;
+    B_DISABLE_COPY(BWebSettings);
+
+    BWebPage&                   m_page;
+    WebKit::WebPreferences&     m_preferences;
 };
 
-} // namespace WebKit
+#endif // _B_WEB_SETTINGS_H_

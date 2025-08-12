@@ -26,16 +26,27 @@
 #include "config.h"
 #include "IconLoadingClientHaiku.h"
 
+#include "BWebIconDatabase.h"
 #include "WebPageProxy.h"
 #include <WebCore/ShareableBitmap.h>
 #include <WebCore/BitmapImage.h>
+#include <Bitmap.h>
 
 namespace WebKit {
 
-void IconLoadingClientHaiku::didLoadIcon(WebPageProxy&, const WebCore::ShareableBitmap::Handle& handle)
+void IconLoadingClientHaiku::didLoadIcon(WebPageProxy& page, const WebCore::ShareableBitmap::Handle& handle)
 {
-    if (auto icon = WebCore::ShareableBitmap::create(handle))
-        m_favicon = WebCore::BitmapImage::create(icon->createPlatformImage().leakRef());
+    if (auto iconBitmap = WebCore::ShareableBitmap::create(handle)) {
+        m_favicon = WebCore::BitmapImage::create(iconBitmap->createPlatformImage().leakRef());
+
+        BWebIconDatabase* db = BWebIconDatabase::Default();
+        if (!db)
+            return;
+
+        BBitmap* icon = new BBitmap(iconBitmap->createPlatformImage().leakRef());
+        db->SetIconForURL(page.pageLoadState().url(), icon);
+        delete icon;
+    }
 }
 
 } // namespace WebKit

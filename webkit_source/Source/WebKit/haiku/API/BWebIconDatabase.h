@@ -22,25 +22,36 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef _B_WEB_ICON_DATABASE_H_
+#define _B_WEB_ICON_DATABASE_H_
 
-#pragma once
+#include <Handler.h>
+#include <String.h>
+#include <sqlite3.h>
 
-#include "NetworkProcess.h"
+class BBitmap;
 
-namespace WebKit {
-
-class NetworkProcessHaiku final : public NetworkProcess {
+class BWebIconDatabase : public BHandler {
 public:
-    NetworkProcessHaiku();
-    ~NetworkProcessHaiku() = default;
+    static BWebIconDatabase*    Default();
 
-    static NetworkProcessHaiku& singleton();
+    void                        SetPath(const BString& path);
+    BString                     Path() const;
 
-public:
-    void setNetworkProxySettings();
+    BBitmap*                    IconForURL(const BString& url);
+    void                        SetIconForURL(const BString& url, const BBitmap* icon);
+    void                        Clear();
 
 private:
-    void platformInitialize(const AuxiliaryProcessCreationParameters&) final;
+                                BWebIconDatabase();
+    virtual						~BWebIconDatabase();
+
+    B_DISABLE_COPY(BWebIconDatabase);
+
+    static BWebIconDatabase*    sDefault;
+
+    sqlite3*                    m_db;
+    BString                     m_path;
 };
 
-} // namespace WebKit
+#endif // _B_WEB_ICON_DATABASE_H_

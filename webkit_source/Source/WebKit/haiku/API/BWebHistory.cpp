@@ -23,24 +23,59 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include "BWebHistory.h"
 
-#include "NetworkProcess.h"
+#include "WebBackForwardList.h"
+#include "WebBackForwardListItem.h"
 
-namespace WebKit {
+BWebHistory::BWebHistory(WebKit::WebBackForwardList& list)
+    : fList(list)
+{
+}
 
-class NetworkProcessHaiku final : public NetworkProcess {
-public:
-    NetworkProcessHaiku();
-    ~NetworkProcessHaiku() = default;
+BWebHistory::~BWebHistory()
+{
+}
 
-    static NetworkProcessHaiku& singleton();
+int32_t BWebHistory::CountItems() const
+{
+    return fList.entries().size();
+}
 
-public:
-    void setNetworkProxySettings();
+BReference<BWebHistoryItem> BWebHistory::ItemAt(int32_t index) const
+{
+    WebKit::WebBackForwardListItem* item = fList.itemAtIndex(index);
+    if (!item)
+        return nullptr;
+    return new BWebHistoryItem(*item);
+}
 
-private:
-    void platformInitialize(const AuxiliaryProcessCreationParameters&) final;
-};
+BReference<BWebHistoryItem> BWebHistory::CurrentItem() const
+{
+    WebKit::WebBackForwardListItem* item = fList.currentItem();
+    if (!item)
+        return nullptr;
+    return new BWebHistoryItem(*item);
+}
 
-} // namespace WebKit
+
+BWebHistoryItem::BWebHistoryItem(WebKit::WebBackForwardListItem& item)
+    : fItem(item)
+    , fUrl(item.url().utf8().data())
+    , fTitle(item.title().utf8().data())
+{
+}
+
+BWebHistoryItem::~BWebHistoryItem()
+{
+}
+
+const BString& BWebHistoryItem::URL() const
+{
+    return fUrl;
+}
+
+const BString& BWebHistoryItem::Title() const
+{
+    return fTitle;
+}

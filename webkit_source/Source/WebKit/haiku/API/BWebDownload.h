@@ -22,25 +22,54 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef _B_WEB_DOWNLOAD_H_
+#define _B_WEB_DOWNLOAD_H_
 
-#pragma once
+#include <Referenceable.h>
+#include <String.h>
+#include <Path.h>
 
-#include "NetworkProcess.h"
+class BWebDownloadClient;
+class BWebPage;
 
 namespace WebKit {
+class WebDownloadProxy;
+}
 
-class NetworkProcessHaiku final : public NetworkProcess {
+class BWebDownload : public BReferenceable {
 public:
-    NetworkProcessHaiku();
-    ~NetworkProcessHaiku() = default;
+    virtual						~BWebDownload();
 
-    static NetworkProcessHaiku& singleton();
+    void						Cancel();
 
-public:
-    void setNetworkProxySettings();
+    void						SetClient(BWebDownloadClient* client);
+
+    const BString&				URL() const;
+    const BPath&				Path() const;
+    const BString&				Filename() const;
+
+    off_t						CurrentSize() const;
+    off_t						ExpectedSize() const;
 
 private:
-    void platformInitialize(const AuxiliaryProcessCreationParameters&) final;
+    friend class BWebPage;
+    friend class WebKit::WebDownloadProxy;
+
+                                BWebDownload(WebKit::WebDownloadProxy& proxy);
+
+private:
+    WebKit::WebDownloadProxy&   fProxy;
+    BWebDownloadClient*         fClient;
+    BString                     fUrl;
 };
 
-} // namespace WebKit
+class BWebDownloadClient {
+public:
+    virtual void				DownloadStarted(BWebDownload* download) = 0;
+    virtual void				DownloadProgress(BWebDownload* download, off_t bytesReceived, off_t totalBytes) = 0;
+    virtual void				DownloadFinished(BWebDownload* download) = 0;
+    virtual void				DownloadFailed(BWebDownload* download) = 0;
+    virtual void				DownloadCancelled(BWebDownload* download) = 0;
+};
+
+#endif // _B_WEB_DOWNLOAD_H_

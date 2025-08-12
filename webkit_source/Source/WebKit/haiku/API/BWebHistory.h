@@ -15,32 +15,57 @@
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
  * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL APPLE INC. OR ITS CONTRIBUTORS
  * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * ARISING IN ANY WAY OUT of THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef _B_WEB_HISTORY_H_
+#define _B_WEB_HISTORY_H_
 
-#pragma once
+#include <Referenceable.h>
+#include <String.h>
 
-#include "NetworkProcess.h"
+class BWebHistoryItem;
+class BWebPage;
 
 namespace WebKit {
+class WebBackForwardList;
+}
 
-class NetworkProcessHaiku final : public NetworkProcess {
+class BWebHistory : public BReferenceable {
 public:
-    NetworkProcessHaiku();
-    ~NetworkProcessHaiku() = default;
+                                BWebHistory(WebKit::WebBackForwardList& list);
+    virtual						~BWebHistory();
+private:
+    B_DISABLE_COPY(BWebHistory);
 
-    static NetworkProcessHaiku& singleton();
+    int32_t						CountItems() const;
+    BReference<BWebHistoryItem>	ItemAt(int32_t index) const;
 
-public:
-    void setNetworkProxySettings();
+    BReference<BWebHistoryItem>	CurrentItem() const;
 
 private:
-    void platformInitialize(const AuxiliaryProcessCreationParameters&) final;
+    WebKit::WebBackForwardList&	fList;
 };
 
-} // namespace WebKit
+class BWebHistoryItem : public BReferenceable {
+public:
+                                BWebHistoryItem(WebKit::WebBackForwardListItem& item);
+    virtual						~BWebHistoryItem();
+private:
+    B_DISABLE_COPY(BWebHistoryItem);
+
+    const BString&				URL() const;
+    const BString&				Title() const;
+
+private:
+    WebKit::WebBackForwardListItem& fItem;
+    BString                     fUrl;
+    BString                     fTitle;
+};
+
+#endif // _B_WEB_HISTORY_H_

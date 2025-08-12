@@ -25,6 +25,9 @@
 
 #include "BWebView.h"
 
+#include "BWebHistory.h"
+#include "BWebSettings.h"
+#include "WebBackForwardList.h"
 #include "BWebPage.h"
 #include "WebContext.h"
 #include "WebPageGroup.h"
@@ -39,6 +42,7 @@ BWebView::BWebView(const char* name)
 {
     m_webView = std::make_unique<WebKit::WebView>(m_page);
     m_webPage = new BWebPage(this);
+    m_settings = new BWebSettings(*this);
     SetLayout(new BGroupLayout(B_HORIZONTAL));
     AddChild(BGroupLayoutBuilder(B_HORIZONTAL).Add(m_webView.get()));
 }
@@ -46,6 +50,7 @@ BWebView::BWebView(const char* name)
 BWebView::~BWebView()
 {
 	delete m_webPage;
+    delete m_settings;
 }
 
 BWebPage* BWebView::WebPage() const
@@ -53,9 +58,24 @@ BWebPage* BWebView::WebPage() const
     return m_webPage;
 }
 
-void BWebView::LoadURL(const char* url)
+BWebSettings* BWebView::Settings() const
 {
-    m_page.loadUrl(WTF::String::fromUTF8(url));
+    return m_settings;
+}
+
+BReference<BWebHistory> BWebView::History()
+{
+    return new BWebHistory(m_page.backForwardList());
+}
+
+bool BWebView::CanGoBack()
+{
+    return m_page.backForwardList().backItem() != nullptr;
+}
+
+bool BWebView::CanGoForward()
+{
+    return m_page.backForwardList().forwardItem() != nullptr;
 }
 
 void BWebView::GoBack()
@@ -66,6 +86,11 @@ void BWebView::GoBack()
 void BWebView::GoForward()
 {
     m_page.goForward();
+}
+
+void BWebView::LoadURL(const char* url)
+{
+    m_page.loadUrl(WTF::String::fromUTF8(url));
 }
 
 void BWebView::Reload()

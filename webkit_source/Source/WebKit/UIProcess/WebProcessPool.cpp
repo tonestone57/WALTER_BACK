@@ -75,6 +75,7 @@
 #include "WebContextSupplement.h"
 #include "WebFrameProxy.h"
 #include "WebGeolocationManagerProxy.h"
+#include "haiku/WebGeolocationProviderHaiku.h"
 #include "WebInspectorUtilities.h"
 #include "WebKit2Initialize.h"
 #include "WebKitServiceNames.h"
@@ -307,8 +308,12 @@ WebProcessPool::WebProcessPool(API::ProcessPoolConfiguration& configuration)
 #endif
 
     // NOTE: These sub-objects must be initialized after m_messageReceiverMap..
-    addSupplement<WebGeolocationManagerProxy>();
+    auto& geolocationManager = addSupplement<WebGeolocationManagerProxy>();
     addSupplement<WebNotificationManagerProxy>();
+
+#if PLATFORM(HAIKU)
+    geolocationManager.setProvider(makeUnique<WebGeolocationProviderHaiku>(geolocationManager));
+#endif
 
     processPools().append(*this);
 

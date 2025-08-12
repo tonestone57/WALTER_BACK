@@ -34,6 +34,10 @@
 #include <File.h>
 #include <Path.h>
 
+#include "BWebDownload.h"
+
+class BWebDownload;
+
 namespace API {
 class Data;
 }
@@ -51,11 +55,18 @@ class WebPageProxy;
 
 class WebDownloadProxy : public API::ObjectImpl<API::Object::Type::Download> {
 public:
-    static Ref<WebDownloadProxy> create(WebPageProxy&, DownloadID, const WebCore::ResourceRequest&, const String& suggestedFilename = { });
+    static Ref<WebDownloadProxy> create(BWebDownload&, WebPageProxy&, DownloadID, const WebCore::ResourceRequest&, const String& suggestedFilename = { });
     virtual ~WebDownloadProxy();
 
     DownloadID downloadID() const { return m_downloadID; }
     WebPageProxy* page() const { return m_page; }
+    BWebDownload* bdownload() const { return m_bdownload; }
+
+    const WebCore::ResourceRequest& request() const { return m_request; }
+    const BPath& path() const { return m_path; }
+    const BString& suggestedFilename() const { return m_suggestedFilename; }
+    uint64_t bytesReceived() const { return m_bytesReceived; }
+    uint64_t expectedBytes() const { return m_response.expectedContentLength(); }
 
     void cancel();
     void resume();
@@ -68,7 +79,7 @@ public:
     void didCancel(const IPC::DataReference&);
 
 private:
-    WebDownloadProxy(WebPageProxy&, DownloadID, const WebCore::ResourceRequest&, const String& suggestedFilename);
+    WebDownloadProxy(BWebDownload&, WebPageProxy&, DownloadID, const WebCore::ResourceRequest&, const String& suggestedFilename);
 
     WebProcessProxy& process();
     void platformCancel();
@@ -76,6 +87,7 @@ private:
 
     DownloadID m_downloadID;
     RefPtr<WebPageProxy> m_page;
+    BWebDownload* m_bdownload;
     WebCore::ResourceRequest m_request;
     WebCore::ResourceResponse m_response;
     BString m_suggestedFilename;

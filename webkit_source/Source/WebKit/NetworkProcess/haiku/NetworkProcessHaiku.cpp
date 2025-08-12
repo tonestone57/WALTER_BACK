@@ -47,4 +47,14 @@ void NetworkProcessHaiku::platformInitialize(const AuxiliaryProcessCreationParam
     // TODO: Implement
 }
 
+void NetworkProcessHaiku::setNetworkProxySettings()
+{
+    BUrlContext* context = BUrlProtocolRoster::Default()->Context();
+    if (context)
+        context->AcquireReference();
+    BUrlProtocolRoster::SetDefaultContext(new BUrlContext());
+    if (context)
+        context->ReleaseReference();
+}
+
 } // namespace WebKit

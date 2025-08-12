@@ -30,10 +30,13 @@
 #include <memory>
 
 #include "BWebPage.h"
+#include "BWebHistory.h"
 
 class BMessage;
 
 namespace WebKit {
+class BWebHistory;
+class BWebSettings;
 class WebPageProxy;
 class WebView;
 }
@@ -44,8 +47,6 @@ public:
     virtual ~BWebView();
 
     void LoadURL(const char* url);
-    void GoBack();
-    void GoForward();
     void Reload();
     void StopLoading();
 
@@ -63,11 +64,19 @@ public:
 
     void SetDarkMode(bool dark);
 
+    // History
+    BReference<BWebHistory> History();
+    bool CanGoBack();
+    bool CanGoForward();
+    void GoBack();
+    void GoForward();
+
     virtual void MouseMoved(BPoint where, uint32 transit, const BMessage* dragMessage);
     virtual void MessageReceived(BMessage* message);
     virtual void FrameResized(float newWidth, float newHeight);
 
     BWebPage* WebPage() const;
+    BWebSettings* Settings() const;
 
     WebKit::WebPageProxy& page() const { return m_page; }
 
@@ -75,6 +84,7 @@ private:
     std::unique_ptr<WebKit::WebView> m_webView;
     WebKit::WebPageProxy& m_page;
     BWebPage* m_webPage;
+    BWebSettings* m_settings;
 };
 
 #endif // B_WEB_VIEW_H

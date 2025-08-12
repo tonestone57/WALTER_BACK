@@ -25,22 +25,31 @@
 
 #pragma once
 
-#include "NetworkProcess.h"
+#include "APIGeolocationProvider.h"
+#include <Geolocation.h>
+#include <thread>
 
 namespace WebKit {
 
-class NetworkProcessHaiku final : public NetworkProcess {
-public:
-    NetworkProcessHaiku();
-    ~NetworkProcessHaiku() = default;
+class WebGeolocationManagerProxy;
 
-    static NetworkProcessHaiku& singleton();
-
+class WebGeolocationProviderHaiku final : public API::GeolocationProvider {
 public:
-    void setNetworkProxySettings();
+    WebGeolocationProviderHaiku(WebGeolocationManagerProxy&);
+    virtual ~WebGeolocationProviderHaiku();
 
 private:
-    void platformInitialize(const AuxiliaryProcessCreationParameters&) final;
+    void startUpdating(WebGeolocationManagerProxy&) override;
+    void stopUpdating(WebGeolocationManagerProxy&) override;
+    void setEnableHighAccuracy(WebGeolocationManagerProxy&, bool) override;
+
+    void locationThread();
+
+    WebGeolocationManagerProxy& m_manager;
+    BPrivate::Network::BGeolocation m_geolocation;
+    std::thread m_thread;
+    bool m_running;
+    bool m_enableHighAccuracy;
 };
 
 } // namespace WebKit

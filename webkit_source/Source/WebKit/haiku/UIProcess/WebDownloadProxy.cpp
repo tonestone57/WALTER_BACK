@@ -41,14 +41,15 @@
 
 namespace WebKit {
 
-Ref<WebDownloadProxy> WebDownloadProxy::create(WebPageProxy& page, DownloadID downloadID, const WebCore::ResourceRequest& request, const String& suggestedFilename)
+Ref<WebDownloadProxy> WebDownloadProxy::create(BWebDownload& bdownload, WebPageProxy& page, DownloadID downloadID, const WebCore::ResourceRequest& request, const String& suggestedFilename)
 {
-    return adoptRef(*new WebDownloadProxy(page, downloadID, request, suggestedFilename));
+    return adoptRef(*new WebDownloadProxy(bdownload, page, downloadID, request, suggestedFilename));
 }
 
-WebDownloadProxy::WebDownloadProxy(WebPageProxy& page, DownloadID downloadID, const WebCore::ResourceRequest& request, const String& suggestedFilename)
+WebDownloadProxy::WebDownloadProxy(BWebDownload& bdownload, WebPageProxy& page, DownloadID downloadID, const WebCore::ResourceRequest& request, const String& suggestedFilename)
     : m_downloadID(downloadID)
     , m_page(page)
+    , m_bdownload(&bdownload)
     , m_request(request)
     , m_suggestedFilename(suggestedFilename)
 {
@@ -123,8 +124,8 @@ void WebDownloadProxy::didReceiveResponse(const WebCore::ResourceResponse& respo
         return;
     }
 
-    if (auto* uiClient = m_page->uiClient())
-        uiClient->didStartDownload(m_page.get(), *this);
+    if (m_bdownload->client())
+        m_bdownload->client()->DownloadStarted(m_bdownload);
 }
 
 void WebDownloadProxy::didReceiveData(const IPC::DataReference& data, uint64_t)
@@ -132,28 +133,28 @@ void WebDownloadProxy::didReceiveData(const IPC::DataReference& data, uint64_t)
     m_file.Write(data.data(), data.size());
     m_bytesReceived += data.size();
 
-    if (auto* uiClient = m_page->uiClient())
-        uiClient->didReceiveDownloadData(m_page.get(), *this, data.size());
+    if (m_bdownload->client())
+        m_bdownload->client()->DownloadProgress(m_bdownload, m_bytesReceived, 0); // TODO: expected size
 }
 
 void WebDownloadProxy::didFinish()
 {
     platformDidFinish();
-    if (auto* uiClient = m_page->uiClient())
-        uiClient->didFinishDownload(m_page.get(), *this);
+    if (m_bdownload->client())
+        m_bdownload->client()->DownloadFinished(m_bdownload);
 }
 
 void WebDownloadProxy::didFail(const WebCore::ResourceError& error, const IPC::DataReference&)
 {
     platformDidFinish();
-    if (auto* uiClient = m_page->uiClient())
-        uiClient->didFailDownload(m_page.get(), *this, error);
+    if (m_bdownload->client())
+        m_bdownload->client()->DownloadFailed(m_bdownload);
 }
 
 void WebDownloadProxy::didCancel(const IPC::DataReference&)
 {
-    if (auto* uiClient = m_page->uiClient())
-        uiClient->didCancelDownload(m_page.get(), *this);
+    if (m_bdownload->client())
+        m_bdownload->client()->DownloadCancelled(m_bdownload);
 }
 
 void WebDownloadProxy::platformCancel()

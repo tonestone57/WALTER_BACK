@@ -23,24 +23,53 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include "BWebDownload.h"
 
-#include "NetworkProcess.h"
+#include "WebDownloadProxy.h"
+#include <WebCore/ResourceRequest.h>
 
-namespace WebKit {
+BWebDownload::BWebDownload(WebKit::WebDownloadProxy& proxy)
+    : fProxy(proxy)
+    , fClient(nullptr)
+    , fUrl(fProxy.request().url().string().utf8().data())
+{
+}
 
-class NetworkProcessHaiku final : public NetworkProcess {
-public:
-    NetworkProcessHaiku();
-    ~NetworkProcessHaiku() = default;
+BWebDownload::~BWebDownload()
+{
+}
 
-    static NetworkProcessHaiku& singleton();
+void BWebDownload::Cancel()
+{
+    fProxy.cancel();
+}
 
-public:
-    void setNetworkProxySettings();
+void BWebDownload::SetClient(BWebDownloadClient* client)
+{
+    fClient = client;
+}
 
-private:
-    void platformInitialize(const AuxiliaryProcessCreationParameters&) final;
-};
+const BString& BWebDownload::URL() const
+{
+    return fUrl;
+}
 
-} // namespace WebKit
+const BPath& BWebDownload::Path() const
+{
+    return fProxy.path();
+}
+
+const BString& BWebDownload::Filename() const
+{
+    return fProxy.suggestedFilename();
+}
+
+off_t BWebDownload::CurrentSize() const
+{
+    return fProxy.bytesReceived();
+}
+
+off_t BWebDownload::ExpectedSize() const
+{
+    return fProxy.expectedBytes();
+}
