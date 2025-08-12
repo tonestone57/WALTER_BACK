@@ -39,6 +39,10 @@
 #include "SoupCookiePersistentStorageType.h"
 #endif
 
+#if PLATFORM(HAIKU)
+#include <NetworkKit/NetworkCookieJar.h>
+#endif
+
 OBJC_CLASS NSHTTPCookieStorage;
 
 namespace WebCore {
@@ -99,6 +103,10 @@ private:
     void stopObservingCookieChanges(PAL::SessionID);
 
     WeakRef<NetworkProcess> m_process;
+
+#if PLATFORM(HAIKU)
+    HashMap<PAL::SessionID, BPrivate::Network::BNetworkCookieJar> m_cookieJars;
+#endif
 };
 
 #if PLATFORM(COCOA)
