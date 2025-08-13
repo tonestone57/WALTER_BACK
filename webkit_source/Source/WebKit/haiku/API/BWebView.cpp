@@ -105,6 +105,7 @@ void BWebView::StopLoading()
 }
 
 #include "PrintInfo.h"
+#include "WebPrintOperationProxy.h"
 
 void BWebView::Print(const BMessage* settings, float availablePaperWidth, float availablePaperHeight)
 {
@@ -114,9 +115,8 @@ void BWebView::Print(const BMessage* settings, float availablePaperWidth, float 
     if (settings)
         printInfo.printSettings = std::make_unique<BMessage>(*settings);
 
-    m_page.print(printInfo, [](WebKit::CallbackBase::Error) {
-        // FIXME: Handle completion
-    });
+    auto printOperation = WebKit::WebPrintOperationProxy::create(m_page, printInfo);
+    printOperation->start();
 }
 
 void BWebView::GetContentsAsString(BFile& file)
