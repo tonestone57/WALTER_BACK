@@ -42,7 +42,16 @@ class WebView;
 #include "FileChooserSettings.h"
 #include <Handler.h>
 
+namespace WebCore {
+    class UndoStep;
+}
+
 class WebContextMenuProxy;
+
+struct UndoStepInfo {
+    uint64_t id;
+    String title;
+};
 
 class WebPageProxyHaiku final : public WebPageProxy, public BHandler {
 public:
@@ -70,6 +79,12 @@ public:
 
     void findString(const String&, OptionSet<FindOptions>, unsigned maxMatchCount);
 
+    bool canUndo() const;
+    bool canRedo() const;
+
+    void undo();
+    void redo();
+
 private:
     // WebPageProxy
     void showContextMenu(FrameInfoData&&, ContextMenuContextData&&, const UserData&) override;
@@ -91,6 +106,10 @@ private:
     void setWindowRect(const WebCore::FloatRect&);
     void getWindowRect(CompletionHandler<void(WebCore::FloatRect)>&&);
 
+    void registerUndoStep(uint64_t, const String&);
+    void registerRedoStep(uint64_t, const String&);
+    void clearUndoRedo();
+
     // WebPageProxy
     void didUpdateBackForwardList(WebFrameProxy*, API::BackForwardListItem*, const Vector<Ref<API::BackForwardListItem>>&, const Vector<Ref<API::BackForwardListItem>>&) override;
     void didFinishLoadForFrame(WebCore::FrameIdentifier, FrameInfoData&&, WebCore::ResourceRequest&&, std::optional<WebCore::NavigationIdentifier>, bool, const UserData&) override;
@@ -111,6 +130,9 @@ private:
 
     // WebContextMenuProxy::Client
     void contextMenuItemSelected(const WebContextMenuItemData&) override;
+
+    Vector<UndoStepInfo> m_undoStack;
+    Vector<UndoStepInfo> m_redoStack;
 };
 
 } // namespace WebKit

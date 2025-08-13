@@ -27,7 +27,9 @@
 
 #include <WebCore/EditorClient.h>
 #include <WebCore/TextChecking.h>
+#include <WebCore/UndoStep.h>
 #include <wtf/Forward.h>
+#include <wtf/HashMap.h>
 
 namespace WebKit {
 
@@ -37,6 +39,10 @@ class WebEditorClient final : public WebCore::EditorClient {
 public:
     WebEditorClient(WebPage* page);
     ~WebEditorClient() = default;
+
+    WebCore::UndoStep* undoStep(uint64_t);
+    void addUndoStep(uint64_t, Ref<WebCore::UndoStep>);
+    void removeUndoStep(uint64_t);
 
 private:
     bool shouldDeleteRange(const std::optional<WebCore::SimpleRange>&) override;
@@ -135,6 +141,8 @@ private:
     bool performTwoStepDrop(WebCore::DocumentFragment&, const WebCore::SimpleRange& destination, bool isMove) override;
 
     WebPage* m_page;
+    HashMap<uint64_t, RefPtr<WebCore::UndoStep>> m_undoSteps;
+    uint64_t m_nextUndoStepID { 0 };
 };
 
 } // namespace WebKit

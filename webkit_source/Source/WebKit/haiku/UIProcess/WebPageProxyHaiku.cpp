@@ -108,6 +108,31 @@ void WebPageProxyHaiku::getWindowRect(CompletionHandler<void(WebCore::FloatRect)
     completionHandler(rect);
 }
 
+void WebPageProxyHaiku::updateUndoRedoState()
+{
+    // TODO: Notify the client so it can update menu items.
+}
+
+void WebPageProxyHaiku::registerUndoStep(uint64_t id, const String& title)
+{
+    m_undoStack.append({ id, title });
+    m_redoStack.clear();
+    updateUndoRedoState();
+}
+
+void WebPageProxyHaiku::registerRedoStep(uint64_t id, const String& title)
+{
+    m_redoStack.append({ id, title });
+    updateUndoRedoState();
+}
+
+void WebPageProxyHaiku::clearUndoRedo()
+{
+    m_undoStack.clear();
+    m_redoStack.clear();
+    updateUndoRedoState();
+}
+
 void WebPageProxyHaiku::didReceiveTitleForFrame(WebCore::FrameIdentifier frameID, const String& title, const UserData&)
 {
     if (mainFrame() && mainFrame()->frameID() == frameID) {
@@ -263,6 +288,34 @@ void WebPageProxyHaiku::resetZoomFactor()
 void WebPageProxyHaiku::findString(const String& string, OptionSet<FindOptions> options, unsigned maxMatchCount)
 {
     WebPageProxy::findString(string, options, maxMatchCount);
+}
+
+bool WebPageProxyHaiku::canUndo() const
+{
+    return !m_undoStack.isEmpty();
+}
+
+bool WebPageProxyHaiku::canRedo() const
+{
+    return !m_redoStack.isEmpty();
+}
+
+void WebPageProxyHaiku::undo()
+{
+    if (m_undoStack.isEmpty())
+        return;
+
+    UndoStepInfo step = m_undoStack.takeLast();
+    send(Messages::WebPage::Undo(step.id));
+}
+
+void WebPageProxyHaiku::redo()
+{
+    if (m_redoStack.isEmpty())
+        return;
+
+    UndoStepInfo step = m_redoStack.takeLast();
+    send(Messages::WebPage::Redo(step.id));
 }
 
 #include <Entry.h>

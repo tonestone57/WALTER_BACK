@@ -29,7 +29,10 @@
 #include "WebPageCreationParameters.h"
 #include "WebInspectorClientHaiku.h"
 #include "DownloadManager.h"
+#include "WebEditorClient.h"
 #include <WebCore/DatabaseTracker.h>
+#include <WebCore/Editor.h>
+#include <WebCore/Frame.h>
 #include <WebCore/InspectorController.h>
 #include <WebCore/Page.h>
 #include <WebCore/Settings.h>
@@ -75,6 +78,22 @@ void WebPageHaiku::preferencesDidChange()
     if (!preferences().localStoragePath().isEmpty()) {
         WebCore::DatabaseTracker::setDatabaseDirectoryPath(preferences().localStoragePath());
         m_page->settings().setLocalStorageEnabled(true);
+    }
+}
+
+void WebPageHaiku::undo(uint64_t stepID)
+{
+    if (auto* editorClient = static_cast<WebEditorClient*>(m_page->editorClient())) {
+        if (auto* undoStep = editorClient->undoStep(stepID))
+            undoStep->unapply();
+    }
+}
+
+void WebPageHaiku::redo(uint64_t stepID)
+{
+    if (auto* editorClient = static_cast<WebEditorClient*>(m_page->editorClient())) {
+        if (auto* undoStep = editorClient->undoStep(stepID))
+            undoStep->reapply();
     }
 }
 

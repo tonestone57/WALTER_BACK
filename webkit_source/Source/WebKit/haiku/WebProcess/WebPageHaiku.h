@@ -38,6 +38,9 @@ public:
 
     DownloadManager& downloadManager() { return *m_downloadManager; }
 
+    void undo(uint64_t);
+    void redo(uint64_t);
+
 private:
     void platformInitialize(const WebPageCreationParameters&) final;
     void platformDetach() final;

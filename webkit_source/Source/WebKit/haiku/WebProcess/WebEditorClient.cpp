@@ -26,13 +26,33 @@
 #include "WebEditorClient.h"
 
 #include "WebPage.h"
+#include "WebPageProxyMessages.h"
 #include <WebCore/NotImplemented.h>
+#include <WebCore/UndoStep.h>
+#include <WebCore/KeyboardEvent.h>
+#include <WebCore/PlatformKeyboardEvent.h>
+#include <WebCore/WindowsKeyboardCodes.h>
 
 namespace WebKit {
 
 WebEditorClient::WebEditorClient(WebPage* page)
     : m_page(page)
 {
+}
+
+WebCore::UndoStep* WebEditorClient::undoStep(uint64_t id)
+{
+    return m_undoSteps.get(id);
+}
+
+void WebEditorClient::addUndoStep(uint64_t id, Ref<WebCore::UndoStep> step)
+{
+    m_undoSteps.set(id, WTFMove(step));
+}
+
+void WebEditorClient::removeUndoStep(uint64_t id)
+{
+    m_undoSteps.remove(id);
 }
 
 bool WebEditorClient::shouldDeleteRange(const std::optional<WebCore::SimpleRange>&)
@@ -194,19 +214,24 @@ void WebEditorClient::didUpdateComposition()
     notImplemented();
 }
 
-void WebEditorClient::registerUndoStep(WebCore::UndoStep&)
+void WebEditorClient::registerUndoStep(WebCore::UndoStep& step)
 {
-    notImplemented();
+    uint64_t stepID = ++m_nextUndoStepID;
+    m_undoSteps.set(stepID, &step);
+    m_page->send(Messages::WebPageProxy::RegisterUndoStep(stepID, step.title()));
 }
 
-void WebEditorClient::registerRedoStep(WebCore::UndoStep&)
+void WebEditorClient::registerRedoStep(WebCore::UndoStep& step)
 {
-    notImplemented();
+    uint64_t stepID = ++m_nextUndoStepID;
+    m_undoSteps.set(stepID, &step);
+    m_page->send(Messages::WebPageProxy::RegisterRedoStep(stepID, step.title()));
 }
 
 void WebEditorClient::clearUndoRedoOperations()
 {
-    notImplemented();
+    m_undoSteps.clear();
+    m_page->send(Messages::WebPageProxy::ClearUndoRedo());
 }
 
 bool WebEditorClient::canCopyCut(WebCore::LocalFrame*, bool defaultValue) const
@@ -223,29 +248,34 @@ bool WebEditorClient::canPaste(WebCore::LocalFrame*, bool defaultValue) const
 
 bool WebEditorClient::canUndo() const
 {
-    notImplemented();
     return false;
 }
 
 bool WebEditorClient::canRedo() const
 {
-    notImplemented();
     return false;
 }
 
 void WebEditorClient::undo()
 {
-    notImplemented();
+    // This is called by WebCore commands. We don't want to use it, as the
+    // undo/redo state is managed in the UI process.
 }
 
 void WebEditorClient::redo()
 {
-    notImplemented();
+    // This is called by WebCore commands. We don't want to use it, as the
+    // undo/redo state is managed in the UI process.
 }
 
-void WebEditorClient::handleKeyboardEvent(WebCore::KeyboardEvent&)
+void WebEditorClient::handleKeyboardEvent(WebCore::KeyboardEvent& event)
 {
-    notImplemented();
+    const WebCore::PlatformKeyboardEvent* platformEvent = event.underlyingPlatformEvent();
+    if (!platformEvent || platformEvent->type() == WebCore::PlatformEvent::Type::KeyUp)
+        return;
+
+    // TODO: Port the logic from the legacy client here.
+    // For now, we will just pass the event on.
 }
 
 void WebEditorClient::handleInputMethodKeydown(WebCore::KeyboardEvent&)
