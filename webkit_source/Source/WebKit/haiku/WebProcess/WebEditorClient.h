@@ -141,8 +141,9 @@ private:
     bool performTwoStepDrop(WebCore::DocumentFragment&, const WebCore::SimpleRange& destination, bool isMove) override;
 
     WebPage* m_page;
-    HashMap<uint64_t, RefPtr<WebCore::UndoStep>> m_undoSteps;
-    uint64_t m_nextUndoStepID { 0 };
+    Deque<RefPtr<WebCore::UndoStep>> m_undoStack;
+    Deque<RefPtr<WebCore::UndoStep>> m_redoStack;
+    bool m_isInRedo { false };
 };
 
 } // namespace WebKit

@@ -93,6 +93,7 @@ private:
     void runJavaScriptConfirm(WebFrameProxy&, FrameInfoData&&, const String&, CompletionHandler<void(bool)>&&) override;
     void runJavaScriptPrompt(WebFrameProxy&, FrameInfoData&&, const String&, const String&, CompletionHandler<void(const String&)>&&) override;
     void runAuthenticationPanel(WebFrameProxy&, FrameInfoData&&, WebCore::AuthenticationChallenge&, CompletionHandler<void(WebCore::Credential, WebCore::ShouldContinueWithoutCredential)>&&) override;
+    void createNewPage(WebCore::WindowFeatures, const WebCore::ResourceRequest&, CompletionHandler<void(std::optional<WebKit::WebPageProxyIdentifier>)>&&);
     RefPtr<WebPageProxy> createNewPage(WebCore::WindowFeatures&&) override;
     Ref<WebPageProxy> createInspectorPage() override;
     void createView();
@@ -105,6 +106,11 @@ private:
 
     void setWindowRect(const WebCore::FloatRect&);
     void getWindowRect(CompletionHandler<void(WebCore::FloatRect)>&&);
+    void setFocus(bool);
+    void setToolbarsVisible(bool);
+    void toolbarsAreVisible(CompletionHandler<void(bool)>&&);
+    void setStatusbarVisible(bool);
+    void statusbarIsVisible(CompletionHandler<void(bool)>&&);
 
     void registerUndoStep(uint64_t, const String&);
     void registerRedoStep(uint64_t, const String&);

@@ -32,6 +32,7 @@
 #include <WebCore/KeyboardEvent.h>
 #include <WebCore/PlatformKeyboardEvent.h>
 #include <WebCore/WindowsKeyboardCodes.h>
+#include <WebCore/Editor.h>
 
 namespace WebKit {
 
@@ -40,20 +41,6 @@ WebEditorClient::WebEditorClient(WebPage* page)
 {
 }
 
-WebCore::UndoStep* WebEditorClient::undoStep(uint64_t id)
-{
-    return m_undoSteps.get(id);
-}
-
-void WebEditorClient::addUndoStep(uint64_t id, Ref<WebCore::UndoStep> step)
-{
-    m_undoSteps.set(id, WTFMove(step));
-}
-
-void WebEditorClient::removeUndoStep(uint64_t id)
-{
-    m_undoSteps.remove(id);
-}
 
 bool WebEditorClient::shouldDeleteRange(const std::optional<WebCore::SimpleRange>&)
 {
@@ -216,22 +203,23 @@ void WebEditorClient::didUpdateComposition()
 
 void WebEditorClient::registerUndoStep(WebCore::UndoStep& step)
 {
-    uint64_t stepID = ++m_nextUndoStepID;
-    m_undoSteps.set(stepID, &step);
-    m_page->send(Messages::WebPageProxy::RegisterUndoStep(stepID, step.title()));
+    if (!m_isInRedo)
+        m_redoStack.clear();
+    m_undoStack.append(&step);
+    m_page->send(Messages::WebPageProxy::UndoStateChanged(canUndo(), canRedo()));
 }
 
 void WebEditorClient::registerRedoStep(WebCore::UndoStep& step)
 {
-    uint64_t stepID = ++m_nextUndoStepID;
-    m_undoSteps.set(stepID, &step);
-    m_page->send(Messages::WebPageProxy::RegisterRedoStep(stepID, step.title()));
+    m_redoStack.append(&step);
+    m_page->send(Messages::WebPageProxy::UndoStateChanged(canUndo(), canRedo()));
 }
 
 void WebEditorClient::clearUndoRedoOperations()
 {
-    m_undoSteps.clear();
-    m_page->send(Messages::WebPageProxy::ClearUndoRedo());
+    m_undoStack.clear();
+    m_redoStack.clear();
+    m_page->send(Messages::WebPageProxy::UndoStateChanged(false, false));
 }
 
 bool WebEditorClient::canCopyCut(WebCore::LocalFrame*, bool defaultValue) const
@@ -248,25 +236,35 @@ bool WebEditorClient::canPaste(WebCore::LocalFrame*, bool defaultValue) const
 
 bool WebEditorClient::canUndo() const
 {
-    return false;
+    return !m_undoStack.isEmpty();
 }
 
 bool WebEditorClient::canRedo() const
 {
-    return false;
+    return !m_redoStack.isEmpty();
 }
 
 void WebEditorClient::undo()
 {
-    // This is called by WebCore commands. We don't want to use it, as the
-    // undo/redo state is managed in the UI process.
+    if (canUndo()) {
+        RefPtr<WebCore::UndoStep> step = m_undoStack.takeLast();
+        step->unapply();
+    }
 }
 
 void WebEditorClient::redo()
 {
-    // This is called by WebCore commands. We don't want to use it, as the
-    // undo/redo state is managed in the UI process.
+    if (canRedo()) {
+        RefPtr<WebCore::UndoStep> step = m_redoStack.takeLast();
+        m_isInRedo = true;
+        step->reapply();
+        m_isInRedo = false;
+    }
 }
+
+#include <WebCore/FocusController.h>
+#include <WebCore/FrameSelection.h>
+#include <WebCore/Page.h>
 
 void WebEditorClient::handleKeyboardEvent(WebCore::KeyboardEvent& event)
 {
@@ -274,8 +272,146 @@ void WebEditorClient::handleKeyboardEvent(WebCore::KeyboardEvent& event)
     if (!platformEvent || platformEvent->type() == WebCore::PlatformEvent::Type::KeyUp)
         return;
 
-    // TODO: Port the logic from the legacy client here.
-    // For now, we will just pass the event on.
+    WebCore::LocalFrame* frame = m_page->corePage()->focusController().focusedOrMainFrame();
+    if (!frame || !frame->document())
+        return;
+
+    if (!frame->selection().isRange() && !frame->editor().canEdit())
+        return;
+
+    bool handled = true;
+    switch (platformEvent->windowsVirtualKeyCode()) {
+    case VK_BACK:
+        frame->editor().deleteWithDirection(WebCore::SelectionDirection::Backward,
+            platformEvent->controlKey() ? WebCore::TextGranularity::WordGranularity
+                : WebCore::TextGranularity::CharacterGranularity,
+            false, true);
+        break;
+    case VK_DELETE:
+        frame->editor().deleteWithDirection(WebCore::SelectionDirection::Forward,
+            platformEvent->controlKey() ? WebCore::TextGranularity::WordGranularity
+                : WebCore::TextGranularity::CharacterGranularity,
+            false, true);
+        break;
+    case VK_LEFT:
+        frame->selection().modify(platformEvent->shiftKey()
+                ? WebCore::FrameSelection::Alteration::Extend : WebCore::FrameSelection::Alteration::Move,
+            WebCore::SelectionDirection::Left,
+            platformEvent->controlKey() ? WebCore::TextGranularity::WordGranularity
+                : WebCore::TextGranularity::CharacterGranularity,
+            WebCore::UserTriggered::Yes);
+        break;
+    case VK_RIGHT:
+        frame->selection().modify(platformEvent->shiftKey() ? WebCore::FrameSelection::Alteration::Extend
+                : WebCore::FrameSelection::Alteration::Move,
+            WebCore::SelectionDirection::Right,
+            platformEvent->controlKey() ? WebCore::TextGranularity::WordGranularity
+                : WebCore::TextGranularity::CharacterGranularity,
+            WebCore::UserTriggered::Yes);
+        break;
+    case VK_UP:
+        frame->selection().modify(platformEvent->shiftKey() ? WebCore::FrameSelection::Alteration::Extend
+                : WebCore::FrameSelection::Alteration::Move,
+            WebCore::SelectionDirection::Backward,
+            platformEvent->controlKey() ? WebCore::TextGranularity::ParagraphGranularity
+                : WebCore::TextGranularity::LineGranularity,
+            WebCore::UserTriggered::Yes);
+        break;
+    case VK_DOWN:
+        frame->selection().modify(platformEvent->shiftKey() ? WebCore::FrameSelection::Alteration::Extend
+                : WebCore::FrameSelection::Alteration::Move,
+            WebCore::SelectionDirection::Forward,
+            platformEvent->controlKey() ? WebCore::TextGranularity::ParagraphGranularity
+                : WebCore::TextGranularity::LineGranularity,
+            WebCore::UserTriggered::Yes);
+        break;
+    case VK_HOME:
+        if (platformEvent->shiftKey() && platformEvent->controlKey())
+            frame->editor().command("MoveToBeginningOfDocumentAndModifySelection"_s).execute();
+        else if (platformEvent->shiftKey())
+            frame->editor().command("MoveToBeginningOfLineAndModifySelection"_s).execute();
+        else if (platformEvent->controlKey())
+            frame->editor().command("MoveToBeginningOfDocument"_s).execute();
+        else
+            frame->editor().command("MoveToBeginningOfLine"_s).execute();
+        break;
+    case VK_END:
+        if (platformEvent->shiftKey() && platformEvent->controlKey())
+            frame->editor().command("MoveToEndOfDocumentAndModifySelection"_s).execute();
+        else if (platformEvent->shiftKey())
+            frame->editor().command("MoveToEndOfLineAndModifySelection"_s).execute();
+        else if (platformEvent->controlKey())
+            frame->editor().command("MoveToEndOfDocument"_s).execute();
+        else
+            frame->editor().command("MoveToEndOfLine"_s).execute();
+        break;
+    case VK_PRIOR:  // PageUp
+        if (platformEvent->shiftKey())
+            frame->editor().command("MovePageUpAndModifySelection"_s).execute();
+        else
+            frame->editor().command("MovePageUp"_s).execute();
+        break;
+    case VK_NEXT:  // PageDown
+        if (platformEvent->shiftKey())
+            frame->editor().command("MovePageDownAndModifySelection"_s).execute();
+        else
+            frame->editor().command("MovePageDown"_s).execute();
+        break;
+    case VK_RETURN:
+        if (platformEvent->shiftKey())
+            frame->editor().command("InsertLineBreak"_s).execute();
+        else
+            frame->editor().command("InsertNewline"_s).execute();
+        break;
+    case VK_TAB:
+        handled = false;
+        break;
+    default:
+        if (!platformEvent->controlKey() && !platformEvent->altKey() && !platformEvent->text().isEmpty()) {
+            if (platformEvent->text().length() == 1) {
+                UChar ch = platformEvent->text()[0];
+                if (ch < ' ')
+                    break;
+            }
+            frame->editor().insertText(platformEvent->text(), event);
+        } else if (platformEvent->controlKey()) {
+            switch (platformEvent->windowsVirtualKeyCode()) {
+            case VK_B:
+                frame->editor().command("ToggleBold"_s).execute();
+                break;
+            case VK_I:
+                frame->editor().command("ToggleItalic"_s).execute();
+                break;
+            case VK_A:
+                frame->editor().command("SelectAll"_s).execute();
+                break;
+            case VK_C:
+                frame->editor().command("Copy"_s).execute();
+                break;
+            case VK_V:
+                frame->editor().command("Paste"_s).execute();
+                break;
+            case VK_X:
+                frame->editor().command("Cut"_s).execute();
+                break;
+            case VK_Y:
+            case VK_Z:
+                if (platformEvent->shiftKey())
+                    redo();
+                else
+                    undo();
+                break;
+            default:
+                handled = false;
+                break;
+            }
+        } else
+            handled = false;
+        break;
+    }
+
+    if (handled)
+        event.setDefaultHandled();
 }
 
 void WebEditorClient::handleInputMethodKeydown(WebCore::KeyboardEvent&)

@@ -74,7 +74,7 @@ void WebFrameLoaderClientHaiku::dispatchDecidePolicyForNewWindowAction(
 {
     if (action.mouseEventData() && action.mouseEventData()->button == MouseButton::Middle) {
         if (auto* page = m_frame->page()) {
-            page->process().send(Messages::WebPageProxy::RequestNewWindow(request), page->identifier());
+            page->process().send(Messages::WebPageProxy::CreateNewPage({ }, request), page->identifier());
         }
         policyFunction(PolicyAction::Ignore, nullptr);
         return;
@@ -91,7 +91,9 @@ void WebFrameLoaderClientHaiku::dispatchWillSendRequest(WebCore::DocumentLoader&
 
 void WebFrameLoaderClientHaiku::platformDispatchOnloadEvents()
 {
-    // TODO: Implement
+    if (m_frame)
+        if (auto* page = m_frame->page())
+            page->send(Messages::WebPageProxy::DispatchOnloadEvents());
 }
 
 void WebFrameLoaderClientHaiku::platformCreatePlugin(const Plugin::Parameters&, CompletionHandler<void(RefPtr<Widget>&&)>&& completionHandler)

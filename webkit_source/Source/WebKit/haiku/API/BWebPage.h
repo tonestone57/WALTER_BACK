@@ -78,6 +78,7 @@ public:
     virtual void StatusChanged(const BString& status, BWebView* view) override;
     virtual void NavigationCapabilitiesChanged(bool canGoBackward,
         bool canGoForward, bool canStop, BWebView* view) override;
+    virtual void UndoRedoStateChanged(BWebView* view) override;
     virtual void UpdateGlobalHistory(const BString& url) override;
     virtual bool AuthenticationChallenge(BString message,
                         BString& inOutUser, BString& inOutPassword,

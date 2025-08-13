@@ -108,9 +108,43 @@ void WebPageProxyHaiku::getWindowRect(CompletionHandler<void(WebCore::FloatRect)
     completionHandler(rect);
 }
 
+void WebPageProxyHaiku::setToolbarsVisible(bool visible)
+{
+    if (auto* webView = static_cast<BWebView*>(view()->Parent()))
+        if (auto* client = webView->Client())
+            client->SetToolBarsVisible(visible, webView);
+}
+
+void WebPageProxyHaiku::toolbarsAreVisible(CompletionHandler<void(bool)>&& completionHandler)
+{
+    bool areVisible = true;
+    if (auto* webView = static_cast<BWebView*>(view()->Parent()))
+        if (auto* client = webView->Client())
+            areVisible = client->AreToolBarsVisible(webView);
+    completionHandler(areVisible);
+}
+
+void WebPageProxyHaiku::setStatusbarVisible(bool visible)
+{
+    if (auto* webView = static_cast<BWebView*>(view()->Parent()))
+        if (auto* client = webView->Client())
+            client->SetStatusBarVisible(visible, webView);
+}
+
+void WebPageProxyHaiku::statusbarIsVisible(CompletionHandler<void(bool)>&& completionHandler)
+{
+    bool isVisible = true;
+    if (auto* webView = static_cast<BWebView*>(view()->Parent()))
+        if (auto* client = webView->Client())
+            isVisible = client->IsStatusBarVisible(webView);
+    completionHandler(isVisible);
+}
+
 void WebPageProxyHaiku::updateUndoRedoState()
 {
-    // TODO: Notify the client so it can update menu items.
+    if (auto* webView = static_cast<BWebView*>(view()->Parent()))
+        if (auto* client = webView->Client())
+            client->UndoRedoStateChanged(webView);
 }
 
 void WebPageProxyHaiku::registerUndoStep(uint64_t id, const String& title)
@@ -156,12 +190,47 @@ Ref<WebPageProxy> WebPageProxyHaiku::createInspectorPage()
     return WebPageProxy::createInspectorPage();
 }
 
-RefPtr<WebPageProxy> WebPageProxyHaiku::createNewPage(WebCore::WindowFeatures&&)
+void WebPageProxyHaiku::createNewPage(WebCore::WindowFeatures windowFeatures, const WebCore::ResourceRequest& request, CompletionHandler<void(std::optional<WebKit::WebPageProxyIdentifier>)>&& completionHandler)
+{
+    auto newPage = createNewPage(WTFMove(windowFeatures));
+    if (!newPage) {
+        completionHandler(std::nullopt);
+        return;
+    }
+
+    newPage->loadRequest(request);
+    completionHandler(newPage->identifier());
+}
+
+RefPtr<WebPageProxy> WebPageProxyHaiku::createNewPage(WebCore::WindowFeatures&& features)
 {
     if (auto* webView = static_cast<BWebView*>(view()->Parent())) {
         if (auto* client = webView->Client()) {
-            if (auto* newView = client->CreateNewWindow())
-                return &newView->page();
+            BRect windowFrame;
+            if (features.x || features.y || features.width || features.height) {
+                if (BWindow* window = webView->Window())
+                    windowFrame = window->Frame().OffsetByCopy(10, 10);
+            }
+
+            if (features.x)
+                windowFrame.OffsetTo(*features.x, windowFrame.top);
+            if (features.y)
+                windowFrame.OffsetTo(windowFrame.left, *features.y);
+            if (features.width)
+                windowFrame.right = windowFrame.left + *features.width - 1;
+            if (features.height)
+                windowFrame.bottom = windowFrame.top + *features.height - 1;
+
+            client->NewPageCreated(nullptr, windowFrame,
+                features.dialog.value_or(false),
+                features.resizable.value_or(true),
+                true /* activate */);
+
+            // FIXME: The client should return the new view, but the hook is void.
+            // This requires a larger refactoring of the client interface.
+            // For now, we assume the last created page is the one we want.
+            if (auto* newView = client->LastCreatedWindow())
+                 return &newView->page();
         }
     }
     return nullptr;

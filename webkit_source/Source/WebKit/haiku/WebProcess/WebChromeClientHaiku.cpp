@@ -32,6 +32,7 @@
 #include <WebCore/ContextMenu.h>
 #include <WebCore/FrameLoader.h>
 #include <WebCore/WindowFeatures.h>
+#include <WebCore/NavigationAction.h>
 
 #include "WebContextMenuItemData.h"
 #include "ContextMenuContextData.h"
@@ -59,12 +60,12 @@ FloatRect WebChromeClientHaiku::windowRect() const
 
 void WebChromeClientHaiku::focus()
 {
-    // TODO: Implement
+    m_page.process().send(Messages::WebPageProxy::SetFocus(true), m_page.identifier());
 }
 
 void WebChromeClientHaiku::unfocus()
 {
-    // TODO: Implement
+    m_page.process().send(Messages::WebPageProxy::SetFocus(false), m_page.identifier());
 }
 
 void WebChromeClientHaiku::runJavaScriptAlert(LocalFrame&, const String&)
@@ -128,9 +129,24 @@ void WebChromeClientHaiku::isPlayingAudioDidChange(bool)
     // TODO: Implement
 }
 
-RefPtr<Page> WebChromeClientHaiku::createWindow(LocalFrame&, const String&, const WindowFeatures&, const NavigationAction&)
+RefPtr<Page> WebChromeClientHaiku::createWindow(LocalFrame&, const String&, const WindowFeatures& windowFeatures, const NavigationAction& navigationAction)
 {
-    // TODO: Implement
+    auto& page = m_page;
+    auto& process = page.process();
+
+    auto newPageProxyIdentifier = process.sendSync(
+        Messages::WebPageProxy::CreateNewPage(windowFeatures, navigationAction.resourceRequest()),
+        page.identifier())->newWebPageProxyIdentifier();
+
+    if (!newPageProxyIdentifier)
+        return nullptr;
+
+    // FIXME: This is not the right way to get the WebPage.
+    // It should be created by the UI process and we should get a message back.
+    // For now, we assume it exists.
+    if (auto* webPage = WebProcess::singleton().webPage(*newPageProxyIdentifier))
+        return webPage->corePage();
+
     return nullptr;
 }
 

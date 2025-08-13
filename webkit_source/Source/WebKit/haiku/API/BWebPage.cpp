@@ -253,6 +253,12 @@ void BWebPage::NavigationCapabilitiesChanged(bool canGoBackward,
         window->NavigationCapabilitiesChanged(canGoBackward, canGoForward, canStop, view);
 }
 
+void BWebPage::UndoRedoStateChanged(BWebView* view)
+{
+    if (BWebWindow* window = static_cast<BWebWindow*>(fWebView->Window()))
+        window->UndoRedoStateChanged(view);
+}
+
 void BWebPage::UpdateGlobalHistory(const BString& url)
 {
     if (BWebWindow* window = static_cast<BWebWindow*>(fWebView->Window()))

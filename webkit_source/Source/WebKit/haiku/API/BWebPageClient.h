@@ -50,12 +50,15 @@ public:
     virtual void IconReceived(const BBitmap* icon, BWebView* view) { }
     virtual void ResizeRequested(float width, float height, BWebView* view) { }
     virtual void SetToolBarsVisible(bool flag, BWebView* view) { }
+    virtual bool AreToolBarsVisible(BWebView* view) { return true; }
     virtual void SetStatusBarVisible(bool flag, BWebView* view) { }
+    virtual bool IsStatusBarVisible(BWebView* view) { return true; }
     virtual void SetMenuBarVisible(bool flag, BWebView* view) { }
     virtual void SetResizable(bool flag, BWebView* view) { }
     virtual void StatusChanged(const BString& status, BWebView* view) { }
     virtual void NavigationCapabilitiesChanged(bool canGoBackward,
         bool canGoForward, bool canStop, BWebView* view) { }
+    virtual void UndoRedoStateChanged(BWebView* view) {}
     virtual void UpdateGlobalHistory(const BString& url) { }
     virtual BWebView* CreateInspectorWindow() { return nullptr; }
     virtual bool AuthenticationChallenge(const BString& message, BString& inOutUser,

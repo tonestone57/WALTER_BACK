@@ -54,8 +54,31 @@ void BWebWindow::SetStatusBarVisible(bool flag, BWebView* view) { }
 void BWebWindow::SetMenuBarVisible(bool flag, BWebView* view) { }
 void BWebWindow::SetResizable(bool flag, BWebView* view) { }
 void BWebWindow::StatusChanged(const BString& status, BWebView* view) { }
+#include "BWebView.h"
+#include "UIProcess/WebPageProxyHaiku.h"
+#include <MenuBar.h>
+#include <MenuItem.h>
+
 void BWebWindow::NavigationCapabilitiesChanged(bool canGoBackward,
-    bool canGoForward, bool canStop, BWebView* view) { }
+    bool canGoForward, bool canStop, BWebView* view)
+{
+}
+
+void BWebWindow::UndoRedoStateChanged(BWebView* view)
+{
+    if (!view)
+        return;
+
+    auto& page = static_cast<WebKit::WebPageProxyHaiku&>(view->page());
+
+    if (BMenuBar* menuBar = KeyMenuBar()) {
+        if (BMenuItem* undoItem = menuBar->FindItem("Undo"))
+            undoItem->SetEnabled(page.canUndo());
+        if (BMenuItem* redoItem = menuBar->FindItem("Redo"))
+            redoItem->SetEnabled(page.canRedo());
+    }
+}
+
 void BWebWindow::UpdateGlobalHistory(const BString& url) { }
 bool BWebWindow::AuthenticationChallenge(BString message,
                     BString& inOutUser, BString& inOutPassword,

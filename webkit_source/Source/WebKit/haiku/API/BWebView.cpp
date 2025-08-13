@@ -160,28 +160,44 @@ void BWebView::SetDarkMode(bool dark)
     m_webPage->SetDarkMode(dark);
 }
 
+#include <Window.h>
+#include <Message.h>
+
 void BWebView::MouseDown(BPoint where)
 {
-    // FIXME: Get the button from the message.
-    m_page.handleMouseEvent(WebKit::WebEventFactory::createWebMouseEvent(WebCore::WebEventType::MouseDown,
-        where, where, 0, 0, 0));
+    int32 buttons = 0;
+    if (Window() && Window()->CurrentMessage())
+        Window()->CurrentMessage()->FindInt32("buttons", &buttons);
+
+    m_page.handleMouseEvent(WebKit::WebEventFactory::createWebMouseEvent(this, WebCore::WebEventType::MouseDown,
+        where, buttons, 0));
 }
 
 void BWebView::MouseUp(BPoint where)
 {
-    // FIXME: Get the button from the message.
-    m_page.handleMouseEvent(WebKit::WebEventFactory::createWebMouseEvent(WebCore::WebEventType::MouseUp,
-        where, where, 0, 0, 0));
+    int32 buttons = 0;
+    if (Window() && Window()->CurrentMessage())
+        Window()->CurrentMessage()->FindInt32("buttons", &buttons);
+
+    m_page.handleMouseEvent(WebKit::WebEventFactory::createWebMouseEvent(this, WebCore::WebEventType::MouseUp,
+        where, buttons, 0));
 }
 
 void BWebView::MouseMoved(BPoint where, uint32 transit, const BMessage* dragMessage)
 {
     m_page.handleMouseEvent(WebKit::WebEventFactory::createWebMouseEvent(WebCore::WebEventType::MouseMove,
         where, where, 0, 0, 0));
+    m_webPage->MouseMoved(where, transit, dragMessage);
+}
+
+void BWebView::MessageReceived(BMessage* message)
+{
+    m_webPage->MessageReceived(message);
+    BView::MessageReceived(message);
 }
 
 void BWebView::KeyDown(const char* bytes, int32 numBytes)
 {
-    // FIXME: This is not correct. We need to create a proper WebKeyboardEvent.
-    m_page.handleKeyboardEvent(WebKit::WebKeyboardEvent());
+    BMessage* message = Window()->CurrentMessage();
+    m_page.handleKeyboardEvent(WebKit::WebEventFactory::createWebKeyboardEvent(message));
 }
