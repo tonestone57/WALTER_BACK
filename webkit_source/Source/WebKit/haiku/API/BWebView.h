@@ -78,15 +78,15 @@ public:
     virtual void FrameResized(float newWidth, float newHeight);
 
     BWebPage* WebPage() const;
-    BWebSettings* Settings() const;
+    BReference<BWebSettings> Settings() const;
 
     WebKit::WebPageProxy& page() const { return m_page; }
 
 private:
     std::unique_ptr<WebKit::WebView> m_webView;
     WebKit::WebPageProxy& m_page;
-    BWebPage* m_webPage;
-    BWebSettings* m_settings;
+    std::unique_ptr<BWebPage> m_webPage;
+    BReference<BWebSettings> m_settings;
 };
 
 #endif // B_WEB_VIEW_H

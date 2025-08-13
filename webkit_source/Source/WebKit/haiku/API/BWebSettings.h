@@ -59,6 +59,9 @@ public:
     void                        SetDownloadPath(const BString& path);
     BString                     DownloadPath() const;
 
+    void                        SetLocalStoragePath(const BString& path);
+    BString                     LocalStoragePath() const;
+
 private:
     B_DISABLE_COPY(BWebSettings);
 

@@ -46,6 +46,16 @@ BString BWebSettings::DownloadPath() const
     return BString(m_preferences.downloadPath().utf8().data());
 }
 
+void BWebSettings::SetLocalStoragePath(const BString& path)
+{
+    m_preferences.setLocalStoragePath(String::fromUTF8(path.String()));
+}
+
+BString BWebSettings::LocalStoragePath() const
+{
+    return BString(m_preferences.localStoragePath().utf8().data());
+}
+
 BWebSettings::~BWebSettings()
 {
 }

@@ -37,12 +37,14 @@
 #include <GroupLayout.h>
 #include <GroupLayoutBuilder.h>
 
+#include <memory>
+
 BWebView::BWebView(const char* name)
     : BView(name, B_WILL_DRAW | B_FRAME_EVENTS)
     , m_page(WebKit::WebProcessPool::create()-> createContext()->createWebPage(WebKit::WebPageGroup::create()))
 {
     m_webView = std::make_unique<WebKit::WebView>(m_page);
-    m_webPage = new BWebPage(this);
+    m_webPage = std::make_unique<BWebPage>(this);
     m_settings = new BWebSettings(*this);
     SetLayout(new BGroupLayout(B_HORIZONTAL));
     AddChild(BGroupLayoutBuilder(B_HORIZONTAL).Add(m_webView.get()));
@@ -50,16 +52,14 @@ BWebView::BWebView(const char* name)
 
 BWebView::~BWebView()
 {
-	delete m_webPage;
-    delete m_settings;
 }
 
 BWebPage* BWebView::WebPage() const
 {
-    return m_webPage;
+    return m_webPage.get();
 }
 
-BWebSettings* BWebView::Settings() const
+BReference<BWebSettings> BWebView::Settings() const
 {
     return m_settings;
 }
@@ -71,22 +71,22 @@ BReference<BWebHistory> BWebView::History()
 
 bool BWebView::CanGoBack()
 {
-    return m_page.backForwardList().backItem() != nullptr;
+    return m_webPage->CanGoBack();
 }
 
 bool BWebView::CanGoForward()
 {
-    return m_page.backForwardList().forwardItem() != nullptr;
+    return m_webPage->CanGoForward();
 }
 
 void BWebView::GoBack()
 {
-    m_page.goBack();
+    m_webPage->GoBack();
 }
 
 void BWebView::GoForward()
 {
-    m_page.goForward();
+    m_webPage->GoForward();
 }
 
 void BWebView::LoadURL(const char* url)

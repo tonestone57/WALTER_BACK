@@ -27,9 +27,12 @@
 
 #include <Handler.h>
 #include <String.h>
-#include <sqlite3.h>
 
 class BBitmap;
+
+namespace WebKit {
+class WebIconDatabase;
+}
 
 class BWebIconDatabase : public BHandler {
 public:
@@ -38,7 +41,7 @@ public:
     void                        SetPath(const BString& path);
     BString                     Path() const;
 
-    BBitmap*                    IconForURL(const BString& url);
+    BBitmap*                    IconForURL(const BString& url, bool checkWhileLoading = true);
     void                        SetIconForURL(const BString& url, const BBitmap* icon);
     void                        Clear();
 
@@ -50,8 +53,7 @@ private:
 
     static BWebIconDatabase*    sDefault;
 
-    sqlite3*                    m_db;
-    BString                     m_path;
+    WebKit::WebIconDatabase&    m_database;
 };
 
 #endif // _B_WEB_ICON_DATABASE_H_

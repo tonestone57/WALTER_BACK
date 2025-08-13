@@ -25,11 +25,15 @@
 
 #include "BWebIconDatabase.h"
 
+#include "WebContext.h"
+#include "WebIconDatabase.h"
+#include <WebCore/BitmapImage.h>
+#include <WebCore/NativeImage.h>
+#include <WebCore/ShareableBitmap.h>
 #include <Bitmap.h>
 #include <Directory.h>
 #include <FindDirectory.h>
 #include <Path.h>
-#include <sqlite3.h>
 #include <Message.h>
 
 BWebIconDatabase* BWebIconDatabase::sDefault = nullptr;
@@ -42,7 +46,7 @@ BWebIconDatabase* BWebIconDatabase::Default()
 }
 
 BWebIconDatabase::BWebIconDatabase()
-    : m_db(nullptr)
+    : m_database(WebKit::WebContext::singleton().iconDatabase())
 {
     BPath path;
     if (find_directory(B_USER_SETTINGS_DIRECTORY, &path) == B_OK) {
@@ -53,108 +57,49 @@ BWebIconDatabase::BWebIconDatabase()
 
 BWebIconDatabase::~BWebIconDatabase()
 {
-    if (m_db)
-        sqlite3_close(m_db);
     sDefault = nullptr;
 }
 
 void BWebIconDatabase::SetPath(const BString& path)
 {
-    if (m_db) {
-        sqlite3_close(m_db);
-        m_db = nullptr;
-    }
-
-    m_path = path;
-
-    if (sqlite3_open(path.String(), &m_db) != SQLITE_OK) {
-        // TODO: report error
-        return;
-    }
-
-    // Create table if it doesn't exist
-    const char* createTableSQL = "CREATE TABLE IF NOT EXISTS IconDatabase ("
-                                 "url TEXT NOT NULL ON CONFLICT FAIL UNIQUE ON CONFLICT REPLACE,"
-                                 "icon BLOB);";
-    if (sqlite3_exec(m_db, createTableSQL, NULL, NULL, NULL) != SQLITE_OK) {
-        // TODO: report error
-        return;
-    }
+    m_database.setDatabasePath(path.String());
 }
 
 BString BWebIconDatabase::Path() const
 {
-    return m_path;
+    return m_database.databasePath().utf8().data();
 }
 
-BBitmap* BWebIconDatabase::IconForURL(const BString& url)
+BBitmap* BWebIconDatabase::IconForURL(const BString& url, bool checkWhileLoading)
 {
-    if (!m_db)
+    RefPtr<WebCore::Image> image = m_database.iconForPageURL(url.String(), WebCore::IntSize(16, 16), checkWhileLoading);
+    if (!image)
         return nullptr;
 
-    sqlite3_stmt* statement;
-    const char* getIconSQL = "SELECT icon FROM IconDatabase WHERE url = ?";
-    if (sqlite3_prepare_v2(m_db, getIconSQL, -1, &statement, NULL) != SQLITE_OK) {
-        // TODO: report error
-        return nullptr;
-    }
+    if (auto nativeImage = image->nativeImage())
+        return new BBitmap(nativeImage->platformImage().get());
 
-    sqlite3_bind_text(statement, 1, url.String(), -1, SQLITE_STATIC);
-
-    BBitmap* bitmap = nullptr;
-    if (sqlite3_step(statement) == SQLITE_ROW) {
-        const void* blob = sqlite3_column_blob(statement, 0);
-        int blobSize = sqlite3_column_bytes(statement, 0);
-
-        BMessage msg;
-        if (msg.Unflatten((const char*)blob, blobSize) == B_OK) {
-            bitmap = new BBitmap(&msg);
-        }
-    }
-
-    sqlite3_finalize(statement);
-    return bitmap;
+    return nullptr;
 }
 
 void BWebIconDatabase::SetIconForURL(const BString& url, const BBitmap* icon)
 {
-    if (!m_db)
+    if (!icon)
         return;
 
-    BMessage msg;
-    if (icon->Archive(&msg) != B_OK)
-        return;
+    auto nativeImage = WebCore::NativeImage::create(icon);
+    auto bitmapImage = WebCore::BitmapImage::create(WTFMove(nativeImage));
 
-    char* buffer;
-    ssize_t size;
-    msg.Flatten(&buffer, &size);
+    if (auto sharedBitmap = WebCore::ShareableBitmap::create(bitmapImage->size(), { })) {
+        auto graphicsContext = sharedBitmap->createGraphicsContext();
+        if (graphicsContext)
+            graphicsContext->drawImage(*bitmapImage, WebCore::FloatRect({ }, bitmapImage->size()));
 
-    sqlite3_stmt* statement;
-    const char* setIconSQL = "INSERT OR REPLACE INTO IconDatabase (url, icon) VALUES (?, ?)";
-    if (sqlite3_prepare_v2(m_db, setIconSQL, -1, &statement, NULL) != SQLITE_OK) {
-        // TODO: report error
-        return;
+        m_database.setIconDataForIconURL(sharedBitmap->createHandle(), url.String());
     }
-
-    sqlite3_bind_text(statement, 1, url.String(), -1, SQLITE_STATIC);
-    sqlite3_bind_blob(statement, 2, buffer, size, SQLITE_TRANSIENT);
-
-    if (sqlite3_step(statement) != SQLITE_DONE) {
-        // TODO: report error
-    }
-
-    sqlite3_finalize(statement);
-    delete[] buffer;
 }
 
 void BWebIconDatabase::Clear()
 {
-    if (!m_db)
-        return;
-
-    const char* clearTableSQL = "DELETE FROM IconDatabase;";
-    if (sqlite3_exec(m_db, clearTableSQL, NULL, NULL, NULL) != SQLITE_OK) {
-        // TODO: report error
-        return;
-    }
+    m_database.removeAllIcons();
 }

@@ -41,10 +41,26 @@ WebContextMenuProxyHaiku::WebContextMenuProxyHaiku(WebPageProxy& page, ContextMe
 
 #include "WebPageProxyHaiku.h"
 
+#include "WebContextMenuItemData.h"
+#include <WebCore/ContextMenuContextData.h>
+
 void WebContextMenuProxyHaiku::show()
 {
+    Vector<WebContextMenuItemData> menuItems = m_context.menuItems();
+
+    if (!m_context.linkURL().isEmpty()) {
+        menuItems.insert(0, WebContextMenuItemData(WebCore::ActionType,
+            static_cast<WebCore::ContextMenuAction>(WebCore::ContextMenuAction::LastAPIAction + 2),
+            "Download Linked File"_s, true, false));
+        menuItems.insert(0, WebContextMenuItemData(WebCore::ActionType,
+            static_cast<WebCore::ContextMenuAction>(WebCore::ContextMenuAction::LastAPIAction + 1),
+            "Open Link in New Window"_s, true, false));
+        menuItems.insert(2, WebContextMenuItemData(WebCore::SeparatorType,
+            static_cast<WebCore::ContextMenuAction>(0), String(), false, false));
+    }
+
     BPopUpMenu* menu = new BPopUpMenu("context menu", false, false);
-    for (const auto& item : m_context.menuItems()) {
+    for (const auto& item : menuItems) {
         if (item.type() == WebCore::SeparatorType) {
             menu->AddSeparatorItem();
             continue;
@@ -52,6 +68,7 @@ void WebContextMenuProxyHaiku::show()
         BMessage* message = new BMessage(item.action());
         BMenuItem* menuItem = new BMenuItem(item.title().utf8().data(), message);
         menu->AddItem(menuItem);
+        menuItem->SetEnabled(item.enabled());
     }
 
     WebPageProxyHaiku& page = static_cast<WebPageProxyHaiku&>(m_page.get());
@@ -64,7 +81,7 @@ void WebContextMenuProxyHaiku::show()
     if (selected) {
         if (const BMessage* message = selected->Message()) {
             int32 action = message->what;
-            for (const auto& item : m_context.menuItems()) {
+            for (const auto& item : menuItems) {
                 if (item.action() == action) {
                     m_page->contextMenuItemSelected(item);
                     break;

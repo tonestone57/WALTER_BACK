@@ -42,6 +42,11 @@ public:
     virtual void MouseMoved(BPoint where, uint32 transit, const BMessage* dragMessage);
     virtual void MessageReceived(BMessage* message);
 
+    bool CanGoBack();
+    bool CanGoForward();
+    void GoBack();
+    void GoForward();
+
     void FindString(const char* string, bool forward = true,
                             bool caseSensitive = false, bool wrapSelection = true,
                             bool startInSelection = false);

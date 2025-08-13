@@ -48,6 +48,7 @@ private:
     bool runJavaScriptConfirm(WebCore::LocalFrame&, const String&) final;
     bool runJavaScriptPrompt(WebCore::LocalFrame&, const String&, const String&, String&) final;
     void setStatusbarVisible(bool) final;
+    bool statusbarVisible() const final;
     void setToolbarsVisible(bool) final;
     void setMenubarVisible(bool) final;
     void didCompletePageLoadForMainFrame() final;

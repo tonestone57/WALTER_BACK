@@ -34,19 +34,26 @@
 
 namespace WebKit {
 
+#include <WebCore/NativeImage.h>
+
 void IconLoadingClientHaiku::didLoadIcon(WebPageProxy& page, const WebCore::ShareableBitmap::Handle& handle)
 {
-    if (auto iconBitmap = WebCore::ShareableBitmap::create(handle)) {
-        m_favicon = WebCore::BitmapImage::create(iconBitmap->createPlatformImage().leakRef());
+    RefPtr<WebCore::ShareableBitmap> iconBitmap = WebCore::ShareableBitmap::create(handle);
+    if (!iconBitmap)
+        return;
 
-        BWebIconDatabase* db = BWebIconDatabase::Default();
-        if (!db)
-            return;
+    RefPtr<WebCore::NativeImage> nativeImage = iconBitmap->createPlatformImage();
+    if (!nativeImage)
+        return;
 
-        BBitmap* icon = new BBitmap(iconBitmap->createPlatformImage().leakRef());
-        db->SetIconForURL(page.pageLoadState().url(), icon);
-        delete icon;
-    }
+    m_favicon = WebCore::BitmapImage::create(nativeImage);
+
+    BWebIconDatabase* db = BWebIconDatabase::Default();
+    if (!db)
+        return;
+
+    BBitmap icon(nativeImage->platformImage().get());
+    db->SetIconForURL(page.pageLoadState().url(), &icon);
 }
 
 } // namespace WebKit

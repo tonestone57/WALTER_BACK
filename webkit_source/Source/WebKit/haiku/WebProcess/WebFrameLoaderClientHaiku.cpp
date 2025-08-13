@@ -30,9 +30,12 @@
 #include "WebFrame.h"
 #include "WebPage.h"
 #include "WebPageHaiku.h"
-#include <WebCore/DocumentLoader.h>
+#include "WebPageProxyMessages.h"
+#include <WebCore/DocumentLoader.hh>
 #include <WebCore/FrameLoader.h>
 #include <WebCore/FrameLoaderClient.h>
+#include <WebCore/MouseEvent.h>
+#include <WebCore/NavigationAction.h>
 #include <WebCore/ResourceError.h>
 #include <WebCore/PluginData.h>
 
@@ -63,6 +66,27 @@ void WebFrameLoaderClientHaiku::convertMainResourceLoadToDownload(DocumentLoader
         static_cast<WebPageHaiku*>(page)->downloadManager().startDownload(request);
         documentLoader->cancelMainResourceLoad(pluginWillHandleLoadError(response));
     }
+}
+
+void WebFrameLoaderClientHaiku::dispatchDecidePolicyForNewWindowAction(
+    const NavigationAction& action, const ResourceRequest& request, FormState*,
+    const String& frameName, std::optional<HitTestResult>&&, FramePolicyFunction&& policyFunction)
+{
+    if (action.mouseEventData() && action.mouseEventData()->button == MouseButton::Middle) {
+        if (auto* page = m_frame->page()) {
+            page->process().send(Messages::WebPageProxy::RequestNewWindow(request), page->identifier());
+        }
+        policyFunction(PolicyAction::Ignore, nullptr);
+        return;
+    }
+
+    WebLocalFrameLoaderClient::dispatchDecidePolicyForNewWindowAction(
+        action, request, nullptr, frameName, std::nullopt, WTFMove(policyFunction));
+}
+
+void WebFrameLoaderClientHaiku::dispatchWillSendRequest(WebCore::DocumentLoader& loader, unsigned long identifier, WebCore::ResourceRequest& request, const WebCore::ResourceResponse& response)
+{
+    WebLocalFrameLoaderClient::dispatchWillSendRequest(loader, identifier, request, response);
 }
 
 void WebFrameLoaderClientHaiku::platformDispatchOnloadEvents()

@@ -12,3 +12,16 @@ downloadPath:
       default: '"/boot/home/Downloads"_str'
     WebCore:
       default: '""_str'
+
+localStoragePath:
+  type: String
+  status: embedder
+  humanReadableName: "Local Storage Path"
+  humanReadableDescription: "The path for the local storage database."
+  defaultValue:
+    WebKit:
+      default: '""_str'
+    WebKitLegacy:
+      default: '""_str'
+    WebCore:
+      default: '""_str'

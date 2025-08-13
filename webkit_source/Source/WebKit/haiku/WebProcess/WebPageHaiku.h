@@ -44,6 +44,8 @@ private:
     void platformDidReceiveLoadParameters(const LoadParameters&) final;
     void platformReinitialize() final;
 
+    void preferencesDidChange() final;
+
     std::unique_ptr<DownloadManager> m_downloadManager;
 };
 

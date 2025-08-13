@@ -43,6 +43,7 @@ public:
     void						Cancel();
 
     void						SetClient(BWebDownloadClient* client);
+    void                        SetDestination(const BPath& path);
 
     const BString&				URL() const;
     const BPath&				Path() const;

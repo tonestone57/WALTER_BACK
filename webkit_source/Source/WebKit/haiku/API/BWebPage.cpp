@@ -70,6 +70,26 @@ void BWebPage::MessageReceived(BMessage* message)
     }
 }
 
+bool BWebPage::CanGoBack()
+{
+    return fWebView->page().canGoBack();
+}
+
+bool BWebPage::CanGoForward()
+{
+    return fWebView->page().canGoForward();
+}
+
+void BWebPage::GoBack()
+{
+    fWebView->page().goBack();
+}
+
+void BWebPage::GoForward()
+{
+    fWebView->page().goForward();
+}
+
 void BWebPage::FindString(const char* string, bool forward,
     bool caseSensitive, bool wrapSelection, bool startInSelection)
 {

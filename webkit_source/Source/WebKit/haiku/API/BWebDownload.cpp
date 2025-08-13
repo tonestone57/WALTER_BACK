@@ -49,6 +49,11 @@ void BWebDownload::SetClient(BWebDownloadClient* client)
     fClient = client;
 }
 
+void BWebDownload::SetDestination(const BPath& path)
+{
+    fProxy.setDestination(path.Path());
+}
+
 const BString& BWebDownload::URL() const
 {
     return fUrl;

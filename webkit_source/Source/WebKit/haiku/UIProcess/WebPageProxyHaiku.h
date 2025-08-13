@@ -88,6 +88,9 @@ private:
     // IPC::MessageReceiver
     void didReceiveMessage(IPC::Connection&, IPC::Decoder&) override;
 
+    void setWindowRect(const WebCore::FloatRect&);
+    void getWindowRect(CompletionHandler<void(WebCore::FloatRect)>&&);
+
     // WebPageProxy
     void didUpdateBackForwardList(WebFrameProxy*, API::BackForwardListItem*, const Vector<Ref<API::BackForwardListItem>>&, const Vector<Ref<API::BackForwardListItem>>&) override;
     void didFinishLoadForFrame(WebCore::FrameIdentifier, FrameInfoData&&, WebCore::ResourceRequest&&, std::optional<WebCore::NavigationIdentifier>, bool, const UserData&) override;

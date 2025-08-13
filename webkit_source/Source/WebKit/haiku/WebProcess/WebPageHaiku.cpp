@@ -29,8 +29,12 @@
 #include "WebPageCreationParameters.h"
 #include "WebInspectorClientHaiku.h"
 #include "DownloadManager.h"
+#include <WebCore/DatabaseTracker.h>
 #include <WebCore/InspectorController.h>
 #include <WebCore/Page.h>
+#include <WebCore/Settings.h>
+
+#include "WebPreferences.h"
 
 namespace WebKit {
 
@@ -62,6 +66,16 @@ void WebPageHaiku::platformDidReceiveLoadParameters(const LoadParameters&)
 void WebPageHaiku::platformReinitialize()
 {
     // TODO: Implement
+}
+
+void WebPageHaiku::preferencesDidChange()
+{
+    WebPage::preferencesDidChange();
+
+    if (!preferences().localStoragePath().isEmpty()) {
+        WebCore::DatabaseTracker::setDatabaseDirectoryPath(preferences().localStoragePath());
+        m_page->settings().setLocalStorageEnabled(true);
+    }
 }
 
 } // namespace WebKit

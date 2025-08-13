@@ -47,13 +47,14 @@ WebChromeClientHaiku::WebChromeClientHaiku(WebPage& page)
 
 void WebChromeClientHaiku::setWindowRect(const FloatRect& rect)
 {
-    // TODO: Implement
+    m_page.process().send(Messages::WebPageProxy::SetWindowRect(rect), m_page.identifier());
 }
 
 FloatRect WebChromeClientHaiku::windowRect() const
 {
-    // TODO: Implement
-    return FloatRect();
+    FloatRect rect;
+    m_page.process().sendSync(Messages::WebPageProxy::GetWindowRect(), Messages::WebPageProxy::GetWindowRect::Reply(rect), m_page.identifier());
+    return rect;
 }
 
 void WebChromeClientHaiku::focus()
@@ -83,14 +84,28 @@ bool WebChromeClientHaiku::runJavaScriptPrompt(LocalFrame&, const String&, const
     return false;
 }
 
-void WebChromeClientHaiku::setStatusbarVisible(bool)
+void WebChromeClientHaiku::setStatusbarVisible(bool visible)
 {
-    // TODO: Implement
+    m_page.process().send(Messages::WebPageProxy::SetStatusbarVisible(visible), m_page.identifier());
 }
 
-void WebChromeClientHaiku::setToolbarsVisible(bool)
+bool WebChromeClientHaiku::statusbarVisible() const
 {
-    // TODO: Implement
+    bool isVisible = true;
+    m_page.process().sendSync(Messages::WebPageProxy::StatusbarIsVisible(), Messages::WebPageProxy::StatusbarIsVisible::Reply(isVisible), m_page.identifier());
+    return isVisible;
+}
+
+void WebChromeClientHaiku::setToolbarsVisible(bool visible)
+{
+    m_page.process().send(Messages::WebPageProxy::SetToolbarsVisible(visible), m_page.identifier());
+}
+
+bool WebChromeClientHaiku::toolbarsVisible() const
+{
+    bool isVisible = true;
+    m_page.process().sendSync(Messages::WebPageProxy::ToolbarsAreVisible(), Messages::WebPageProxy::ToolbarsAreVisible::Reply(isVisible), m_page.identifier());
+    return isVisible;
 }
 
 void WebChromeClientHaiku::setMenubarVisible(bool)

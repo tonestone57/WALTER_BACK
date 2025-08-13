@@ -84,6 +84,30 @@ void WebPageProxyHaiku::didReceiveMessage(IPC::Connection& connection, IPC::Deco
 #include "BWebView.h"
 #include "BWebPageClient.h"
 
+#include <Window.h>
+
+void WebPageProxyHaiku::setWindowRect(const WebCore::FloatRect& rect)
+{
+    if (auto* webView = static_cast<BWebView*>(view()->Parent())) {
+        if (BWindow* window = webView->Window()) {
+            // BWindow::MoveTo and ::ResizeTo expect top-left corner and width/height,
+            // but WebCore::FloatRect is a rectangle.
+            window->MoveTo(rect.x(), rect.y());
+            window->ResizeTo(rect.width(), rect.height());
+        }
+    }
+}
+
+void WebPageProxyHaiku::getWindowRect(CompletionHandler<void(WebCore::FloatRect)>&& completionHandler)
+{
+    WebCore::FloatRect rect;
+    if (auto* webView = static_cast<BWebView*>(view()->Parent())) {
+        if (BWindow* window = webView->Window())
+            rect = WebCore::FloatRect(window->Frame());
+    }
+    completionHandler(rect);
+}
+
 void WebPageProxyHaiku::didReceiveTitleForFrame(WebCore::FrameIdentifier frameID, const String& title, const UserData&)
 {
     if (mainFrame() && mainFrame()->frameID() == frameID) {
@@ -327,6 +351,28 @@ void WebPageProxyHaiku::runJavaScriptPrompt(WebFrameProxy&, FrameInfoData&&, con
 
 void WebPageProxyHaiku::contextMenuItemSelected(const WebContextMenuItemData& item)
 {
+    if (item.action() == static_cast<WebCore::ContextMenuAction>(WebCore::ContextMenuAction::LastAPIAction + 1)) {
+        if (m_activeContextMenu) {
+            const URL& linkURL = m_activeContextMenu->context().linkURL();
+            if (!linkURL.isEmpty()) {
+                if (auto* webView = static_cast<BWebView*>(view()->Parent())) {
+                    if (auto* client = webView->Client())
+                        client->NewWindowRequested(linkURL.string(), true);
+                }
+            }
+        }
+        return;
+    }
+
+    if (item.action() == static_cast<WebCore::ContextMenuAction>(WebCore::ContextMenuAction::LastAPIAction + 2)) {
+        if (m_activeContextMenu) {
+            const URL& linkURL = m_activeContextMenu->context().linkURL();
+            if (!linkURL.isEmpty())
+                send(Messages::WebPage::DownloadFile(linkURL, { }));
+        }
+        return;
+    }
+
     if (item.action() == ContextMenuAction::Ignore)
         return;
 
