@@ -107,6 +107,11 @@ void BWebSettings::SetJavascriptEnabled(bool enable)
     m_preferences.setJavaScriptEnabled(enable);
 }
 
+void BWebSettings::SetOfflineWebApplicationCacheEnabled(bool enable)
+{
+    m_preferences.setOfflineWebApplicationCacheEnabled(enable);
+}
+
 void BWebSettings::SetProxyInfo(const BString& host, uint32 port,
     int32 type, const BString& username, const BString& password)
 {

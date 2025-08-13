@@ -26,6 +26,7 @@
 #define B_WEB_PAGE_H
 
 #include "BWebPageClient.h"
+#include "BWebHistory.h"
 #include "WebDragDestination.h"
 #include "WebDragSource.h"
 
@@ -46,6 +47,9 @@ public:
     bool CanGoForward();
     void GoBack();
     void GoForward();
+
+    BReference<BWebHistory> History() const;
+    float EstimatedProgress() const;
 
     void FindString(const char* string, bool forward = true,
                             bool caseSensitive = false, bool wrapSelection = true,

@@ -23,44 +23,37 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-#include "WebDragClientHaiku.h"
+#include "BWebKitInfo.h"
 
-#include "WebPage.h"
+#include <WebKitVersion.h>
+#include <String.h>
 
-namespace WebKit {
-
-WebDragClientHaiku::WebDragClientHaiku(WebPage& page)
-    : m_page(page)
+/*static*/ BString
+BWebKitInfo::HaikuWebKitVersion()
 {
+    return "2.0.0"; // This should be defined in a Haiku-specific version header
 }
 
-void WebDragClientHaiku::willPerformDragDestinationAction(WebCore::DragDestinationAction, WebCore::DragData&)
+/*static*/ BString
+BWebKitInfo::WebKitVersion()
 {
+    return BString() << WEBKIT_MAJOR_VERSION << "." << WEBKIT_MINOR_VERSION << "." << WEBKIT_TINY_VERSION;
 }
 
-void WebDragClientHaiku::willPerformDragSourceAction(WebCore::DragSourceAction, const WebCore::IntPoint&, WebCore::DataTransfer&)
+/*static*/ int
+BWebKitInfo::WebKitMajorVersion()
 {
+    return WEBKIT_MAJOR_VERSION;
 }
 
-OptionSet<WebCore::DragSourceAction> WebDragClientHaiku::dragSourceActionMaskForPoint(const WebCore::IntPoint&)
+/*static*/ int
+BWebKitInfo::WebKitMinorVersion()
 {
-    return { WebCore::DragSourceAction::DHTML, WebCore::DragSourceAction::Image, WebCore::DragSourceAction::Link, WebCore::DragSourceAction::Selection, WebCore::DragSourceAction::Copy };
+    return WEBKIT_MINOR_VERSION;
 }
 
-void WebDragClientHaiku::startDrag(WebCore::DragImageRef dragImage, const WebCore::IntPoint& dragImageOrigin, const WebCore::IntPoint&, WebCore::DataTransfer& dataTransfer, WebCore::Frame&, bool)
+/*static*/ int
+BWebKitInfo::WebKitTinyVersion()
 {
-    RefPtr<WebCore::ShareableBitmap> dragImageBitmap = WebCore::ShareableBitmap::create(dragImage);
-    WebCore::ShareableBitmap::Handle dragImageHandle;
-    if (dragImageBitmap)
-        dragImageBitmap->createHandle(dragImageHandle);
-
-    m_page.startDrag(WebCore::DragData(&dataTransfer, dragImageOrigin, dragImageOrigin, dataTransfer.getDragAndDropData()), dragImageHandle);
+    return WEBKIT_TINY_VERSION;
 }
-
-void WebDragClientHaiku::dragControllerDestroyed()
-{
-    delete this;
-}
-
-} // namespace WebKit

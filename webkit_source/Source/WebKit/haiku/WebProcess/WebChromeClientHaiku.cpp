@@ -109,7 +109,49 @@ bool WebChromeClientHaiku::toolbarsVisible() const
     return isVisible;
 }
 
-void WebChromeClientHaiku::setMenubarVisible(bool)
+void WebChromeClientHaiku::setMenubarVisible(bool visible)
+{
+    m_page.process().send(Messages::WebPageProxy::SetMenubarVisible(visible), m_page.identifier());
+}
+
+bool WebChromeClientHaiku::menubarVisible() const
+{
+    bool isVisible = true;
+    m_page.process().sendSync(Messages::WebPageProxy::MenubarIsVisible(), Messages::WebPageProxy::MenubarIsVisible::Reply(isVisible), m_page.identifier());
+    return isVisible;
+}
+
+void WebChromeClientHaiku::setResizable(bool resizable)
+{
+    m_page.process().send(Messages::WebPageProxy::SetResizable(resizable), m_page.identifier());
+}
+
+void WebChromeClientHaiku::closeWindow()
+{
+    m_page.process().send(Messages::WebPageProxy::ClosePage(), m_page.identifier());
+}
+
+void WebChromeClientHaiku::addMessageToConsole(MessageSource source, MessageLevel level, const String& message, unsigned lineNumber, unsigned columnNumber, const String& sourceID)
+{
+    // TODO: Implement
+}
+
+void WebChromeClientHaiku::mouseDidMoveOverElement(const HitTestResult&, OptionSet<PlatformEventModifier>, const String&, TextDirection)
+{
+    // TODO: Implement
+}
+
+void WebChromeClientHaiku::print(LocalFrame& frame)
+{
+    // TODO: Implement
+}
+
+void WebChromeClientHaiku::runOpenPanel(LocalFrame&, FileChooser& chooser)
+{
+    // TODO: Implement
+}
+
+void WebChromeClientHaiku::exceededDatabaseQuota(LocalFrame&, const String&, DatabaseDetails)
 {
     // TODO: Implement
 }

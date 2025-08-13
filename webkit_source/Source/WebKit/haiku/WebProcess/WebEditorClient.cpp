@@ -44,7 +44,6 @@ WebEditorClient::WebEditorClient(WebPage* page)
 
 bool WebEditorClient::shouldDeleteRange(const std::optional<WebCore::SimpleRange>&)
 {
-    notImplemented();
     return true;
 }
 
@@ -90,37 +89,31 @@ int WebEditorClient::spellCheckerDocumentTag()
 
 bool WebEditorClient::shouldBeginEditing(const WebCore::SimpleRange&)
 {
-    notImplemented();
     return true;
 }
 
 bool WebEditorClient::shouldEndEditing(const WebCore::SimpleRange&)
 {
-    notImplemented();
     return true;
 }
 
 bool WebEditorClient::shouldInsertNode(WebCore::Node&, const std::optional<WebCore::SimpleRange>&, WebCore::EditorInsertAction)
 {
-    notImplemented();
     return true;
 }
 
 bool WebEditorClient::shouldInsertText(const String&, const std::optional<WebCore::SimpleRange>&, WebCore::EditorInsertAction)
 {
-    notImplemented();
     return true;
 }
 
 bool WebEditorClient::shouldChangeSelectedRange(const std::optional<WebCore::SimpleRange>&, const std::optional<WebCore::SimpleRange>&, WebCore::Affinity, bool)
 {
-    notImplemented();
     return true;
 }
 
 bool WebEditorClient::shouldApplyStyle(const WebCore::StyleProperties&, const std::optional<WebCore::SimpleRange>&)
 {
-    notImplemented();
     return true;
 }
 

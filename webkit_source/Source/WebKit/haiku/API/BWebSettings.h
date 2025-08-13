@@ -49,6 +49,7 @@ public:
     void						SetDefaultFixedFontSize(float size);
 
     void						SetJavascriptEnabled(bool enable);
+    void                        SetOfflineWebApplicationCacheEnabled(bool enable);
 
     void                        SetProxyInfo(const BString& host = "",
                                     uint32 port = 0,

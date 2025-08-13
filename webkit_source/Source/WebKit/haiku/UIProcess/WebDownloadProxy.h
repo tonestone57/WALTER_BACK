@@ -72,6 +72,7 @@ public:
     void resume();
     void setDestination(const String&);
 
+    void didStart(const WebCore::ResourceRequest&);
     void didReceiveResponse(const WebCore::ResourceResponse&);
     void didReceiveData(const IPC::DataReference&, uint64_t);
     void didFinish();

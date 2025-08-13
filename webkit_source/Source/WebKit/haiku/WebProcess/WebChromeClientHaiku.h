@@ -50,7 +50,20 @@ private:
     void setStatusbarVisible(bool) final;
     bool statusbarVisible() const final;
     void setToolbarsVisible(bool) final;
+    bool toolbarsVisible() const final;
     void setMenubarVisible(bool) final;
+    bool menubarVisible() const final;
+    void setResizable(bool) final;
+    void closeWindow() final;
+
+    void addMessageToConsole(WebCore::MessageSource, WebCore::MessageLevel, const String&, unsigned, unsigned, const String&) final;
+
+    void mouseDidMoveOverElement(const WebCore::HitTestResult&, OptionSet<WebCore::PlatformEventModifier>, const WTF::String&, WebCore::TextDirection) final;
+    void print(WebCore::LocalFrame&) final;
+
+    void runOpenPanel(WebCore::LocalFrame&, WebCore::FileChooser&) final;
+    void exceededDatabaseQuota(WebCore::LocalFrame&, const String&, WebCore::DatabaseDetails) final;
+
     void didCompletePageLoadForMainFrame() final;
     void didFinishLoading() final;
     void isPlayingAudioDidChange(bool) final;

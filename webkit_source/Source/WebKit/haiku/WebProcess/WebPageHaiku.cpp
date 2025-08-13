@@ -26,10 +26,14 @@
 #include "config.h"
 #include "WebPageHaiku.h"
 
-#include "WebPageCreationParameters.h"
-#include "WebInspectorClientHaiku.h"
 #include "DownloadManager.h"
+#include "WebChromeClientHaiku.h"
+#include "WebContextMenuClientHaiku.h"
+#include "WebDragClientHaiku.h"
 #include "WebEditorClient.h"
+#include "WebFrameLoaderClientHaiku.h"
+#include "WebInspectorClientHaiku.h"
+#include "WebPageCreationParameters.h"
 #include <WebCore/DatabaseTracker.h>
 #include <WebCore/Editor.h>
 #include <WebCore/Frame.h>
@@ -42,7 +46,9 @@
 namespace WebKit {
 
 WebPageHaiku::WebPageHaiku(WebPageCreationParameters&& parameters)
-    : WebPage(WTFMove(parameters))
+    : WebPage(WTFMove(parameters),
+        std::make_unique<WebChromeClientHaiku>(*this),
+        std::make_unique<WebFrameLoaderClientHaiku>(*this))
     , m_downloadManager(std::make_unique<DownloadManager>(*this))
 {
 }
@@ -54,6 +60,8 @@ WebPageHaiku::~WebPageHaiku()
 void WebPageHaiku::platformInitialize(const WebPageCreationParameters&)
 {
     m_page->inspectorController().setInspectorClient(std::make_unique<WebInspectorClientHaiku>(*this));
+    m_page->setContextMenuClient(std::make_unique<WebContextMenuClientHaiku>(this));
+    m_page->setDragClient(std::make_unique<WebDragClientHaiku>(*this));
 }
 
 void WebPageHaiku::platformDetach()

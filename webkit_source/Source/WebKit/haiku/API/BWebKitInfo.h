@@ -22,61 +22,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef _B_WEB_KIT_INFO_H_
+#define _B_WEB_KIT_INFO_H_
 
-#include "BWebDownload.h"
+#include <String.h>
 
-#include "WebDownloadProxy.h"
-#include <WebCore/ResourceRequest.h>
+class BWebKitInfo {
+public:
+    static BString HaikuWebKitVersion();
+    static BString WebKitVersion();
+    static int WebKitMajorVersion();
+    static int WebKitMinorVersion();
+    static int WebKitTinyVersion();
+};
 
-BWebDownload::BWebDownload(WebKit::WebDownloadProxy& proxy)
-    : fProxy(proxy)
-    , fClient(nullptr)
-    , fUrl(fProxy.request().url().string().utf8().data())
-    , fPath(fProxy.path().string().utf8().data())
-    , fFilename(fProxy.suggestedFilename().string().utf8().data())
-{
-}
-
-BWebDownload::~BWebDownload()
-{
-}
-
-void BWebDownload::Cancel()
-{
-    fProxy.cancel();
-}
-
-void BWebDownload::SetClient(BWebDownloadClient* client)
-{
-    fClient = client;
-}
-
-void BWebDownload::SetDestination(const BPath& path)
-{
-    fProxy.setDestination(path.Path());
-}
-
-const BString& BWebDownload::URL() const
-{
-    return fUrl;
-}
-
-const BPath& BWebDownload::Path() const
-{
-    return fPath;
-}
-
-const BString& BWebDownload::Filename() const
-{
-    return fFilename;
-}
-
-off_t BWebDownload::CurrentSize() const
-{
-    return fProxy.bytesReceived();
-}
-
-off_t BWebDownload::ExpectedSize() const
-{
-    return fProxy.expectedBytes();
-}
+#endif // _B_WEB_KIT_INFO_H_

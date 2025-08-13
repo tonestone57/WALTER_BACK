@@ -62,6 +62,8 @@ private:
     WebKit::WebDownloadProxy&   fProxy;
     BWebDownloadClient*         fClient;
     BString                     fUrl;
+    BPath                       fPath;
+    BString                     fFilename;
 };
 
 class BWebDownloadClient {

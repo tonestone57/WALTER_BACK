@@ -82,6 +82,12 @@ void WebDownloadProxy::setDestination(const String& destination)
     m_path.SetTo(destination.utf8().data());
 }
 
+void WebDownloadProxy::didStart(const WebCore::ResourceRequest&)
+{
+    if (m_bdownload && m_bdownload->client())
+        m_bdownload->client()->DownloadStarted(m_bdownload);
+}
+
 void WebDownloadProxy::didReceiveResponse(const WebCore::ResourceResponse& response)
 {
     m_response = response;
@@ -122,9 +128,6 @@ void WebDownloadProxy::didReceiveResponse(const WebCore::ResourceResponse& respo
         didFail(WebCore::ResourceError(String(), 0, URL(), "Failed to create download file"), { });
         return;
     }
-
-    if (m_bdownload->client())
-        m_bdownload->client()->DownloadStarted(m_bdownload);
 }
 
 void WebDownloadProxy::didReceiveData(const IPC::DataReference& data, uint64_t)

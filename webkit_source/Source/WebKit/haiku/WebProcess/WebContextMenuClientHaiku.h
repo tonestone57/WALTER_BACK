@@ -23,44 +23,28 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-#include "WebDragClientHaiku.h"
+#pragma once
 
-#include "WebPage.h"
+#include <WebCore/ContextMenuClient.h>
 
 namespace WebKit {
 
-WebDragClientHaiku::WebDragClientHaiku(WebPage& page)
-    : m_page(page)
-{
-}
+class WebPage;
 
-void WebDragClientHaiku::willPerformDragDestinationAction(WebCore::DragDestinationAction, WebCore::DragData&)
-{
-}
+class WebContextMenuClientHaiku final : public WebCore::ContextMenuClient {
+public:
+    WebContextMenuClientHaiku(WebPage* page);
+    ~WebContextMenuClientHaiku() = default;
 
-void WebDragClientHaiku::willPerformDragSourceAction(WebCore::DragSourceAction, const WebCore::IntPoint&, WebCore::DataTransfer&)
-{
-}
+    void downloadURL(const URL& url) override;
+    void searchWithGoogle(const WebCore::LocalFrame* frame) override;
+    void lookUpInDictionary(WebCore::LocalFrame*) override;
+    void speak(const String&) override;
+    bool isSpeaking() const override;
+    void stopSpeaking() override;
 
-OptionSet<WebCore::DragSourceAction> WebDragClientHaiku::dragSourceActionMaskForPoint(const WebCore::IntPoint&)
-{
-    return { WebCore::DragSourceAction::DHTML, WebCore::DragSourceAction::Image, WebCore::DragSourceAction::Link, WebCore::DragSourceAction::Selection, WebCore::DragSourceAction::Copy };
-}
-
-void WebDragClientHaiku::startDrag(WebCore::DragImageRef dragImage, const WebCore::IntPoint& dragImageOrigin, const WebCore::IntPoint&, WebCore::DataTransfer& dataTransfer, WebCore::Frame&, bool)
-{
-    RefPtr<WebCore::ShareableBitmap> dragImageBitmap = WebCore::ShareableBitmap::create(dragImage);
-    WebCore::ShareableBitmap::Handle dragImageHandle;
-    if (dragImageBitmap)
-        dragImageBitmap->createHandle(dragImageHandle);
-
-    m_page.startDrag(WebCore::DragData(&dataTransfer, dragImageOrigin, dragImageOrigin, dataTransfer.getDragAndDropData()), dragImageHandle);
-}
-
-void WebDragClientHaiku::dragControllerDestroyed()
-{
-    delete this;
-}
+private:
+    WebPage* m_page;
+};
 
 } // namespace WebKit

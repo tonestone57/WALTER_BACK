@@ -85,9 +85,23 @@ void BWebPage::GoBack()
     fWebView->page().goBack();
 }
 
+#include "WebBackForwardList.h"
+
 void BWebPage::GoForward()
 {
     fWebView->page().goForward();
+}
+
+BReference<BWebHistory> BWebPage::History() const
+{
+    if (auto* list = fWebView->page().backForwardList())
+        return new BWebHistory(*list);
+    return nullptr;
+}
+
+float BWebPage::EstimatedProgress() const
+{
+    return fWebView->page().estimatedProgress();
 }
 
 void BWebPage::FindString(const char* string, bool forward,
