@@ -27,22 +27,23 @@
 #include "FindClientHaiku.h"
 
 #include "WebPageProxy.h"
+#include <stdio.h>
 
 namespace WebKit {
 
 void FindClientHaiku::didFindString(WebPageProxy&, const String&, unsigned, bool, unsigned)
 {
-    // TODO: Implement
+    fprintf(stderr, "Found string\n");
 }
 
 void FindClientHaiku::didFailToFindString(WebPageProxy&, const String&)
 {
-    // TODO: Implement
+    fprintf(stderr, "String not found\n");
 }
 
-void FindClientHaiku::didCountStringMatches(WebPageProxy&, const String&, unsigned)
+void FindClientHaiku::didCountStringMatches(WebPageProxy&, const String&, unsigned matchCount)
 {
-    // TODO: Implement
+    fprintf(stderr, "Found %d matches\n", matchCount);
 }
 
 } // namespace WebKit

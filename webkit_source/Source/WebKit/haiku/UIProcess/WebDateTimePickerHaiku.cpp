@@ -27,38 +27,119 @@
 #include "WebDateTimePickerHaiku.h"
 
 #include "WebPageProxy.h"
+#include <Button.h>
+#include <DateTime.h>
+#include <DatePicker.h>
+#include <LayoutBuilder.h>
+#include <Looper.h>
+#include <TimeSpinner.h>
+#include <Window.h>
 
 namespace WebKit {
+
+constexpr uint32 kMsgOk = 'ok';
+constexpr uint32 kMsgCancel = 'cncl';
+
+class DateTimePickerWindow : public BWindow {
+public:
+    DateTimePickerWindow(WebDateTimePickerHaiku* dateTimePicker)
+        : BWindow(BRect(100, 100, 400, 400), "Date/Time Picker", B_TITLED_WINDOW, 0)
+        , m_dateTimePicker(dateTimePicker)
+    {
+    }
+
+    virtual void Quit() override
+    {
+        m_dateTimePicker->endPicker();
+        BWindow::Quit();
+    }
+
+private:
+    WebDateTimePickerHaiku* m_dateTimePicker;
+};
+
 
 WebDateTimePickerHaiku::WebDateTimePickerHaiku(WebPageProxy& page, WebDateTimePicker::Client& client, const WebCore::IntRect& rect)
     : WebDateTimePicker(page, client, rect)
 {
+    be_app_looper->AddHandler(this);
 }
 
-#include <Button.h>
-#include <DatePicker.h>
-#include <LayoutBuilder.h>
-#include <TimeSpinner.h>
-#include <Window.h>
+WebDateTimePickerHaiku::~WebDateTimePickerHaiku()
+{
+    be_app_looper->RemoveHandler(this);
+}
 
 void WebDateTimePickerHaiku::showDateTimePicker()
 {
-    BWindow* window = new BWindow(BRect(100, 100, 400, 400), "Date/Time Picker", B_TITLED_WINDOW, 0);
-    BDatePicker* datePicker = new BDatePicker("date_picker", new BMessage('dtch'));
-    BTimeSpinner* timeSpinner = new BTimeSpinner("time_spinner", new BMessage('tmch'));
-    BButton* okButton = new BButton("ok", "OK", new BMessage('ok'));
-    BLayoutBuilder::Group<>(window, B_VERTICAL, B_USE_DEFAULT_SPACING)
-        .SetInsets(B_USE_WINDOW_INSETS)
-        .Add(datePicker)
-        .Add(timeSpinner)
+    m_window = new DateTimePickerWindow(this);
+
+    BLayoutBuilder::Group<> builder(B_VERTICAL, B_USE_DEFAULT_SPACING);
+    builder.SetInsets(B_USE_WINDOW_INSETS);
+
+    auto type = m_client.parameters().type;
+
+    if (type == WebCore::InputType::Date || type == WebCore::InputType::DatetimeLocal) {
+        m_datePicker = new BDatePicker("date_picker");
+        builder.Add(m_datePicker);
+    }
+    if (type == WebCore::InputType::Time || type == WebCore::InputType::DatetimeLocal) {
+        m_timeSpinner = new BTimeSpinner("time_spinner");
+        builder.Add(m_timeSpinner);
+    }
+
+    BButton* okButton = new BButton("ok", "OK", new BMessage(kMsgOk));
+    BButton* cancelButton = new BButton("cancel", "Cancel", new BMessage(kMsgCancel));
+
+    builder.AddGroup(B_HORIZONTAL, B_USE_DEFAULT_SPACING)
+        .AddGlue()
+        .Add(cancelButton)
         .Add(okButton)
     .End();
-    window->Show();
+
+    m_window->AddChild(builder.View());
+
+    okButton->SetTarget(this);
+    cancelButton->SetTarget(this);
+
+    // TODO: Set initial value from m_client.initialValue()
+
+    m_window->Show();
 }
 
 void WebDateTimePickerHaiku::endPicker()
 {
-    // TODO: Implement
+    if (m_window) {
+        m_window->Lock();
+        m_window->Quit();
+        m_window = nullptr;
+    }
+    m_client.didEndChooser();
+}
+
+void WebDateTimePickerHaiku::MessageReceived(BMessage* message)
+{
+    switch (message->what) {
+    case kMsgOk: {
+        String value;
+        if (m_datePicker && m_timeSpinner) {
+            BDateTime dt(m_datePicker->Date(), m_timeSpinner->Time());
+            value = dt.ToString(B_FULL_DATE_FORMAT " " B_MEDIUM_TIME_FORMAT);
+        } else if (m_datePicker) {
+            value = BDate(m_datePicker->Date()).ToString();
+        } else if (m_timeSpinner) {
+            value = BTime(m_timeSpinner->Time()).ToString();
+        }
+        m_client.didChooseValue(value);
+        endPicker();
+        break;
+    }
+    case kMsgCancel:
+        endPicker();
+        break;
+    default:
+        BHandler::MessageReceived(message);
+    }
 }
 
 } // namespace WebKit

@@ -26,17 +26,28 @@
 #pragma once
 
 #include "WebDateTimePicker.h"
+#include <Handler.h>
+
+class BWindow;
+class BDatePicker;
+class BTimeSpinner;
 
 namespace WebKit {
 
-class WebDateTimePickerHaiku final : public WebDateTimePicker {
+class WebDateTimePickerHaiku final : public WebDateTimePicker, public BHandler {
 public:
     WebDateTimePickerHaiku(WebPageProxy&, WebDateTimePicker::Client&, const WebCore::IntRect&);
-    virtual ~WebDateTimePickerHaiku() = default;
+    virtual ~WebDateTimePickerHaiku();
 
 private:
     void showDateTimePicker() override;
     void endPicker() override;
+
+    void MessageReceived(BMessage*) override;
+
+    BWindow* m_window { nullptr };
+    BDatePicker* m_datePicker { nullptr };
+    BTimeSpinner* m_timeSpinner { nullptr };
 };
 
 } // namespace WebKit

@@ -31,7 +31,6 @@ namespace WebKit {
 
 String WebDatabaseProviderHaiku::indexedDatabaseDirectoryPath() const
 {
-    notImplemented();
     return String();
 }
 

@@ -36,6 +36,9 @@
 
 #include "WebContextMenuItemData.h"
 #include "ContextMenuContextData.h"
+#include "WebOpenPanelResultListener.h"
+#include <WebCore/FileChooser.h>
+#include <WebCore/Frame.h>
 
 namespace WebKit {
 
@@ -68,15 +71,16 @@ void WebChromeClientHaiku::unfocus()
     m_page.process().send(Messages::WebPageProxy::SetFocus(false), m_page.identifier());
 }
 
-void WebChromeClientHaiku::runJavaScriptAlert(LocalFrame&, const String&)
+void WebChromeClientHaiku::runJavaScriptAlert(LocalFrame& frame, const String& message)
 {
-    // TODO: Implement
+    m_page.sendSync(Messages::WebPageProxy::RunJavaScriptAlert(frame.frameID(), frame.info(), message), Messages::WebPageProxy::RunJavaScriptAlert::Reply());
 }
 
-bool WebChromeClientHaiku::runJavaScriptConfirm(LocalFrame&, const String&)
+bool WebChromeClientHaiku::runJavaScriptConfirm(LocalFrame& frame, const String& message)
 {
-    // TODO: Implement
-    return false;
+    bool result = false;
+    m_page.sendSync(Messages::WebPageProxy::RunJavaScriptConfirm(frame.frameID(), frame.info(), message), Messages::WebPageProxy::RunJavaScriptConfirm::Reply(result));
+    return result;
 }
 
 bool WebChromeClientHaiku::runJavaScriptPrompt(LocalFrame&, const String&, const String&, String&)
@@ -133,7 +137,7 @@ void WebChromeClientHaiku::closeWindow()
 
 void WebChromeClientHaiku::addMessageToConsole(MessageSource source, MessageLevel level, const String& message, unsigned lineNumber, unsigned columnNumber, const String& sourceID)
 {
-    // TODO: Implement
+    m_page.send(Messages::WebPageProxy::AddMessageToConsole(source, level, message, lineNumber, columnNumber, sourceID));
 }
 
 void WebChromeClientHaiku::mouseDidMoveOverElement(const HitTestResult&, OptionSet<PlatformEventModifier>, const String&, TextDirection)
@@ -146,9 +150,15 @@ void WebChromeClientHaiku::print(LocalFrame& frame)
     // TODO: Implement
 }
 
-void WebChromeClientHaiku::runOpenPanel(LocalFrame&, FileChooser& chooser)
+void WebChromeClientHaiku::runOpenPanel(LocalFrame& frame, FileChooser& chooser)
 {
-    // TODO: Implement
+    if (m_page.activeOpenPanelResultListener())
+        return;
+
+    Ref<WebOpenPanelResultListener> listener = WebOpenPanelResultListener::create(m_page, chooser);
+    m_page.setActiveOpenPanelResultListener(listener.ptr());
+
+    m_page.send(Messages::WebPageProxy::RunOpenPanel(frame.frameID(), frame.info(), chooser.settings()), listener->listenerID());
 }
 
 void WebChromeClientHaiku::exceededDatabaseQuota(LocalFrame&, const String&, DatabaseDetails)

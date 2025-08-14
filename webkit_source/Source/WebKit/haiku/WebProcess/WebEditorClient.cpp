@@ -552,8 +552,50 @@ void WebEditorClient::toggleAutomaticSpellingCorrection()
 
 WebCore::TextCheckerClient* WebEditorClient::textChecker()
 {
+    return this;
+}
+
+bool WebEditorClient::shouldEraseMarkersAfterChangeSelection(WebCore::TextCheckingType) const
+{
     notImplemented();
-    return nullptr;
+    return true;
+}
+
+void WebEditorClient::ignoreWordInSpellDocument(const String&)
+{
+    notImplemented();
+}
+
+void WebEditorClient::learnWord(const String&)
+{
+    notImplemented();
+}
+
+void WebEditorClient::checkSpellingOfString(StringView text, int* misspellingLocation, int* misspellingLength)
+{
+    if (!m_page)
+        return;
+
+    int32_t location = 0;
+    int32_t length = 0;
+    m_page->sendSync(Messages::WebPageProxy::CheckSpellingOfString(text.toString()), Messages::WebPageProxy::CheckSpellingOfString::Reply(location, length));
+    *misspellingLocation = location;
+    *misspellingLength = length;
+}
+
+void WebEditorClient::checkGrammarOfString(StringView, Vector<WebCore::GrammarDetail>&, int*, int*)
+{
+    notImplemented();
+}
+
+void WebEditorClient::getGuessesForWord(const String&, const String&, const WebCore::VisibleSelection&, Vector<String>&)
+{
+    notImplemented();
+}
+
+void WebEditorClient::requestCheckingOfString(WebCore::TextCheckingRequest&, const WebCore::VisibleSelection&)
+{
+    notImplemented();
 }
 
 void WebEditorClient::updateSpellingUIWithGrammarString(const String&, const WebCore::GrammarDetail&)

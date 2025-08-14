@@ -27,29 +27,75 @@
 #include "WebColorPickerHaiku.h"
 
 #include "WebPageProxy.h"
+#include <ColorControl.h>
+#include <Looper.h>
+#include <Window.h>
 
 namespace WebKit {
+
+class ColorPickerWindow : public BWindow {
+public:
+    ColorPickerWindow(WebColorPickerHaiku* colorPicker)
+        : BWindow(BRect(100, 100, 400, 400), "Color Picker", B_TITLED_WINDOW, 0)
+        , m_colorPicker(colorPicker)
+    {
+    }
+
+    virtual void Quit() override
+    {
+        m_colorPicker->endPicker();
+        BWindow::Quit();
+    }
+
+private:
+    WebColorPickerHaiku* m_colorPicker;
+};
+
 
 WebColorPickerHaiku::WebColorPickerHaiku(WebPageProxy& page, const WebCore::Color& color, const WebCore::IntRect& rect)
     : WebColorPicker(page, color, rect)
 {
+    be_app_looper->AddHandler(this);
 }
 
-#include <ColorControl.h>
-#include <Window.h>
+WebColorPickerHaiku::~WebColorPickerHaiku()
+{
+    be_app_looper->RemoveHandler(this);
+}
 
 void WebColorPickerHaiku::showColorPicker(const WebCore::Color& color)
 {
-    BWindow* window = new BWindow(BRect(100, 100, 400, 400), "Color Picker", B_TITLED_WINDOW, 0);
+    m_window = new ColorPickerWindow(this);
     BColorControl* colorControl = new BColorControl(BPoint(10, 10), B_CELLS_32x8, 8, "color_control", new BMessage('clch'));
-    window->AddChild(colorControl);
+    m_window->AddChild(colorControl);
+    colorControl->SetTarget(this);
     colorControl->SetValue(color.rgb());
-    window->Show();
+    m_window->Show();
 }
 
 void WebColorPickerHaiku::endPicker()
 {
-    // TODO: Implement
+    if (m_window) {
+        m_window->Lock();
+        m_window->Quit();
+        m_window = nullptr;
+    }
+    m_page->didEndColorPicker();
+}
+
+void WebColorPickerHaiku::MessageReceived(BMessage* message)
+{
+    switch (message->what) {
+    case 'clch': {
+        if (BColorControl* colorControl = dynamic_cast<BColorControl*>(message->FindView("source"))) {
+            rgb_color c = colorControl->ValueAsColor();
+            m_page->didChooseColor(WebCore::Color(c.red, c.green, c.blue, c.alpha));
+        }
+        break;
+    }
+    default:
+        BHandler::MessageReceived(message);
+    }
 }
 
 } // namespace WebKit

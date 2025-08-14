@@ -41,12 +41,6 @@ private:
     void dispatchDecidePolicyForNewWindowAction(const WebCore::NavigationAction&, const WebCore::ResourceRequest&, WebCore::FormState*, const WTF::String&, std::optional<WebCore::HitTestResult>&&, WebCore::FramePolicyFunction&&) final;
     void dispatchWillSendRequest(WebCore::DocumentLoader&, unsigned long, WebCore::ResourceRequest&, const WebCore::ResourceResponse&) final;
 
-    void dispatchDidStartProvisionalLoad() final;
-    void dispatchDidReceiveTitle(const WebCore::StringWithDirection&) final;
-    void dispatchDidFinishLoad() final;
-    void dispatchDidFailProvisionalLoad(const WebCore::ResourceError&) final;
-    void dispatchDidFailLoad(const WebCore::ResourceError&) final;
-
     void platformDispatchOnloadEvents() final;
     void platformCreatePlugin(const WebCore::Plugin::Parameters&, CompletionHandler<void(RefPtr<WebCore::Widget>&&)>&&) final;
     bool platformCanHandleRequest(const WebCore::ResourceRequest&) const final;

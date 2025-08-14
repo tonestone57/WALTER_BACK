@@ -26,17 +26,24 @@
 #pragma once
 
 #include "WebColorPicker.h"
+#include <Handler.h>
+
+class BWindow;
 
 namespace WebKit {
 
-class WebColorPickerHaiku final : public WebColorPicker {
+class WebColorPickerHaiku final : public WebColorPicker, public BHandler {
 public:
     WebColorPickerHaiku(WebPageProxy&, const WebCore::Color&, const WebCore::IntRect&);
-    virtual ~WebColorPickerHaiku() = default;
+    virtual ~WebColorPickerHaiku();
 
 private:
     void showColorPicker(const WebCore::Color&) override;
     void endPicker() override;
+
+    void MessageReceived(BMessage*) override;
+
+    BWindow* m_window { nullptr };
 };
 
 } // namespace WebKit

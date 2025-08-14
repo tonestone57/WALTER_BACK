@@ -31,12 +31,10 @@ namespace WebKit {
 
 void WebHistoryItemClientHaiku::historyItemChanged(const WebCore::HistoryItem&)
 {
-    notImplemented();
 }
 
 void WebHistoryItemClientHaiku::clearChildren(const WebCore::HistoryItem&) const
 {
-    notImplemented();
 }
 
 } // namespace WebKit

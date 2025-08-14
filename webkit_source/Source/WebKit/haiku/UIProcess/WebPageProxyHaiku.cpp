@@ -74,9 +74,33 @@ const String& WebPageProxyHaiku::mainFrameTitle() const
     return m_mainFrameTitle;
 }
 
+#include <WebCore/MessageLevel.h>
+#include <WebCore/MessageSource.h>
+
 void WebPageProxyHaiku::didReceiveMessage(IPC::Connection& connection, IPC::Decoder& decoder)
 {
+    if (decoder.messageName() == Messages::WebPageProxy::AddMessageToConsole::name()) {
+        IPC::handleMessage<Messages::WebPageProxy::AddMessageToConsole>(connection, decoder, this, &WebPageProxyHaiku::addMessageToConsole);
+        return;
+    }
+
     WebPageProxy::didReceiveMessage(connection, decoder);
+}
+
+#include <TextCheck.h>
+
+void WebPageProxyHaiku::addMessageToConsole(WebCore::MessageSource source, WebCore::MessageLevel level, const String& message, uint64_t lineNumber, uint64_t columnNumber, const String& sourceID)
+{
+    fprintf(stderr, "JS: %s:%" PRIu64 ":%" PRIu64 " %s\n", sourceID.utf8().data(), lineNumber, columnNumber, message.utf8().data());
+}
+
+void WebPageProxyHaiku::checkSpellingOfString(const String& text, CompletionHandler<void(int32_t, int32_t)>&& completionHandler)
+{
+    int32_t misspellingOffset = -1;
+    int32_t misspellingLength = 0;
+    if (gTextCheck)
+        gTextCheck->FindMisspelledWord(text.utf8().data(), &misspellingOffset, &misspellingLength);
+    completionHandler(misspellingOffset, misspellingLength);
 }
 
 #include "FrameInfoData.h"

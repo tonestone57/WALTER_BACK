@@ -104,6 +104,8 @@ private:
     // IPC::MessageReceiver
     void didReceiveMessage(IPC::Connection&, IPC::Decoder&) override;
 
+    void addMessageToConsole(WebCore::MessageSource, WebCore::MessageLevel, const String&, uint64_t, uint64_t, const String&);
+    void checkSpellingOfString(const String&, CompletionHandler<void(int32_t, int32_t)>&&) override;
     void setWindowRect(const WebCore::FloatRect&);
     void getWindowRect(CompletionHandler<void(WebCore::FloatRect)>&&);
     void setFocus(bool);

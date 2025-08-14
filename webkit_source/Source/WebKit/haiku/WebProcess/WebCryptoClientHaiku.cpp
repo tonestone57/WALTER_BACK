@@ -31,13 +31,11 @@ namespace WebKit {
 
 std::optional<Vector<uint8_t>> WebCryptoClientHaiku::serializeAndWrapCryptoKey(WebCore::CryptoKeyData&&) const
 {
-    notImplemented();
     return std::nullopt;
 }
 
 std::optional<Vector<uint8_t>> WebCryptoClientHaiku::unwrapCryptoKey(const Vector<uint8_t>&) const
 {
-    notImplemented();
     return std::nullopt;
 }
 

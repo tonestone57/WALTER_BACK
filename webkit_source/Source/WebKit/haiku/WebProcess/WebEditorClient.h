@@ -35,7 +35,7 @@ namespace WebKit {
 
 class WebPage;
 
-class WebEditorClient final : public WebCore::EditorClient {
+class WebEditorClient final : public WebCore::EditorClient, public WebCore::TextCheckerClient {
 public:
     WebEditorClient(WebPage* page);
     ~WebEditorClient() = default;
@@ -45,6 +45,7 @@ public:
     void removeUndoStep(uint64_t);
 
 private:
+    // WebCore::EditorClient
     bool shouldDeleteRange(const std::optional<WebCore::SimpleRange>&) override;
     bool smartInsertDeleteEnabled() override;
     bool isSelectTrailingWhitespaceEnabled() const override;
@@ -131,6 +132,15 @@ private:
 #endif
 
     WebCore::TextCheckerClient* textChecker() override;
+
+    // WebCore::TextCheckerClient
+    bool shouldEraseMarkersAfterChangeSelection(WebCore::TextCheckingType) const override;
+    void ignoreWordInSpellDocument(const String&) override;
+    void learnWord(const String&) override;
+    void checkSpellingOfString(StringView, int* misspellingLocation, int* misspellingLength) override;
+    void checkGrammarOfString(StringView, Vector<WebCore::GrammarDetail>&, int* badGrammarLocation, int* badGrammarLength) override;
+    void getGuessesForWord(const String& word, const String& context, const WebCore::VisibleSelection&, Vector<String>& guesses) override;
+    void requestCheckingOfString(WebCore::TextCheckingRequest&, const WebCore::VisibleSelection& currentSelection) override;
 
     void updateSpellingUIWithGrammarString(const String&, const WebCore::GrammarDetail& detail) override;
     void updateSpellingUIWithMisspelledWord(const String&) override;

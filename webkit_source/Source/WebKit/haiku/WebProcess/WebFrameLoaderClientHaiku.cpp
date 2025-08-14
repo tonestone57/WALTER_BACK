@@ -114,29 +114,4 @@ ResourceError WebFrameLoaderClientHaiku::platformBlockedError(const ResourceRequ
     return ResourceError();
 }
 
-void WebFrameLoaderClientHaiku::dispatchDidStartProvisionalLoad()
-{
-    WebLocalFrameLoaderClient::dispatchDidStartProvisionalLoad();
-}
-
-void WebFrameLoaderClientHaiku::dispatchDidReceiveTitle(const StringWithDirection& title)
-{
-    WebLocalFrameLoaderClient::dispatchDidReceiveTitle(title);
-}
-
-void WebFrameLoaderClientHaiku::dispatchDidFinishLoad()
-{
-    WebLocalFrameLoaderClient::dispatchDidFinishLoad();
-}
-
-void WebFrameLoaderClientHaiku::dispatchDidFailProvisionalLoad(const ResourceError& error)
-{
-    WebLocalFrameLoaderClient::dispatchDidFailProvisionalLoad(error);
-}
-
-void WebFrameLoaderClientHaiku::dispatchDidFailLoad(const ResourceError& error)
-{
-    WebLocalFrameLoaderClient::dispatchDidFailLoad(error);
-}
-
 } // namespace WebKit

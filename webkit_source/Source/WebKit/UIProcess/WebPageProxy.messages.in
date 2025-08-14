@@ -93,6 +93,7 @@ messages -> WebPageProxy {
 #if ENABLE(WEB_PAGE_SPATIAL_BACKDROP)
     [EnabledBy=WebPageSpatialBackdropEnabled] SpatialBackdropSourceChanged(struct std::optional<WebCore::SpatialBackdropSource> spatialBackdropSource)
 #endif
+    AddMessageToConsole(enum:uint8_t WebCore::MessageSource source, enum:uint8_t WebCore::MessageLevel level, String message, uint64_t lineNumber, uint64_t columnNumber, String sourceID)
     PageExtendedBackgroundColorDidChange(WebCore::Color backgroundColor)
     SampledPageTopColorChanged(WebCore::Color sampledPageTopColor)
     SetCanShortCircuitHorizontalWheelEvents(bool canShortCircuitHorizontalWheelEvents)
