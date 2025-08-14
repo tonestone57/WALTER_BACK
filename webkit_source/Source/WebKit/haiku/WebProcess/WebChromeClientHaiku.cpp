@@ -140,9 +140,16 @@ void WebChromeClientHaiku::addMessageToConsole(MessageSource source, MessageLeve
     m_page.send(Messages::WebPageProxy::AddMessageToConsole(source, level, message, lineNumber, columnNumber, sourceID));
 }
 
-void WebChromeClientHaiku::mouseDidMoveOverElement(const HitTestResult&, OptionSet<PlatformEventModifier>, const String&, TextDirection)
+void WebChromeClientHaiku::mouseDidMoveOverElement(const HitTestResult& result, OptionSet<PlatformEventModifier>, const String& tooltip, TextDirection)
 {
-    // TODO: Implement
+    // FIXME: This message does not exist yet.
+    // m_page.send(Messages::WebPageProxy::MouseDidMoveOverElement(result, tooltip));
+}
+
+void WebChromeClientHaiku::setCursor(const WebCore::Cursor& cursor)
+{
+    // FIXME: This message does not exist yet.
+    // m_page.send(Messages::WebPageProxy::SetCursor(cursor));
 }
 
 void WebChromeClientHaiku::print(LocalFrame& frame)

@@ -41,3 +41,6 @@ haiku/WebProcess/WebNavigatorContentUtilsClientHaiku.cpp
 haiku/WebProcess/WebCryptoClientHaiku.cpp
 haiku/WebProcess/WebDatabaseProviderHaiku.cpp
 haiku/WebProcess/WebHistoryItemClientHaiku.cpp
+haiku/API/BWebFrame.cpp
+haiku/API/BWebCookieJar.cpp
+haiku/NetworkProcess/WebSocketTaskHaiku.cpp

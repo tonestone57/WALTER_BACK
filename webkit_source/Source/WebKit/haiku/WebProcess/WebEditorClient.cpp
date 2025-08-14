@@ -131,10 +131,12 @@ void WebEditorClient::didBeginEditing()
 
 void WebEditorClient::respondToChangedContents()
 {
+    m_page->send(Messages::WebPageProxy::EditorStateChanged());
 }
 
 void WebEditorClient::respondToChangedSelection(WebCore::LocalFrame*)
 {
+    m_page->send(Messages::WebPageProxy::EditorStateChanged());
 }
 
 void WebEditorClient::didEndUserTriggeredSelectionChanges()

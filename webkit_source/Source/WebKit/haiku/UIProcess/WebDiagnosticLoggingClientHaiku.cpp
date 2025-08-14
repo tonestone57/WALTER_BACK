@@ -23,40 +23,55 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "config.h"
 #include "WebDiagnosticLoggingClientHaiku.h"
 
 #include <WebCore/NotImplemented.h>
+#include <WebCore/Settings.h>
+#include <stdio.h>
 
 namespace WebKit {
 
-void WebDiagnosticLoggingClientHaiku::logDiagnosticMessage(const String&, const String&, WebCore::ShouldSample)
+using namespace WebCore;
+
+void WebDiagnosticLoggingClientHaiku::logDiagnosticMessage(const String& message, const String& description, WebCore::ShouldSample shouldSample)
 {
-    notImplemented();
+    if (!shouldLogAfterSampling(shouldSample))
+        return;
+    fprintf(stderr, "%s: %s\n", message.utf8().data(), description.utf8().data());
 }
 
-void WebDiagnosticLoggingClientHaiku::logDiagnosticMessageWithResult(const String&, const String&, WebCore::DiagnosticLoggingResultType, WebCore::ShouldSample)
+void WebDiagnosticLoggingClientHaiku::logDiagnosticMessageWithResult(const String& message, const String& description, WebCore::DiagnosticLoggingResultType, WebCore::ShouldSample shouldSample)
 {
-    notImplemented();
+    if (!shouldLogAfterSampling(shouldSample))
+        return;
+    fprintf(stderr, "%s: %s\n", message.utf8().data(), description.utf8().data());
 }
 
-void WebDiagnosticLoggingClientHaiku::logDiagnosticMessageWithValue(const String&, const String&, double, unsigned, WebCore::ShouldSample)
+void WebDiagnosticLoggingClientHaiku::logDiagnosticMessageWithValue(const String& message, const String& description, double value, unsigned, WebCore::ShouldSample shouldSample)
 {
-    notImplemented();
+    if (!shouldLogAfterSampling(shouldSample))
+        return;
+    fprintf(stderr, "%s: %s (%f)\n", message.utf8().data(), description.utf8().data(), value);
 }
 
-void WebDiagnosticLoggingClientHaiku::logDiagnosticMessageWithEnhancedPrivacy(const String&, const String&, WebCore::ShouldSample)
+void WebDiagnosticLoggingClientHaiku::logDiagnosticMessageWithEnhancedPrivacy(const String& message, const String& description, WebCore::ShouldSample shouldSample)
 {
-    notImplemented();
+    if (!shouldLogAfterSampling(shouldSample))
+        return;
+    fprintf(stderr, "%s: %s\n", message.utf8().data(), description.utf8().data());
 }
 
-void WebDiagnosticLoggingClientHaiku::logDiagnosticMessageWithValueDictionary(const String&, const String&, const WebCore::DiagnosticLoggingClient::ValueDictionary&, WebCore::ShouldSample)
+void WebDiagnosticLoggingClientHaiku::logDiagnosticMessageWithValueDictionary(const String& message, const String& description, const WebCore::DiagnosticLoggingClient::ValueDictionary&, WebCore::ShouldSample shouldSample)
 {
-    notImplemented();
+    if (!shouldLogAfterSampling(shouldSample))
+        return;
+    fprintf(stderr, "%s: %s\n", message.utf8().data(), description.utf8().data());
 }
 
-void WebDiagnosticLoggingClientHaiku::logDiagnosticMessageWithDomain(const String&, WebCore::DiagnosticLoggingDomain)
+void WebDiagnosticLoggingClientHaiku::logDiagnosticMessageWithDomain(const String& message, WebCore::DiagnosticLoggingDomain)
 {
-    notImplemented();
+    fprintf(stderr, "%s\n", message.utf8().data());
 }
 
 } // namespace WebKit

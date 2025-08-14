@@ -22,25 +22,32 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef B_WEB_COOKIE_JAR_H
+#define B_WEB_COOKIE_JAR_H
 
-#include "config.h"
-#include "WebDatabaseProviderHaiku.h"
+#include <Referenceable.h>
+#include <String.h>
+#include <Url.h>
 
-#include <WebCore/NotImplemented.h>
+class BInvoker;
 
-#include <FindDirectory.h>
-#include <Path.h>
-
-namespace WebKit {
-
-String WebDatabaseProviderHaiku::indexedDatabaseDirectoryPath() const
-{
-    BPath storagePath;
-    if (find_directory(B_USER_SETTINGS_DIRECTORY, &storagePath) != B_OK)
-        return String();
-
-    storagePath.Append("WebKit/IndexedDB");
-    return String::fromUTF8(storagePath.Path());
+namespace API {
+class HTTPCookieStore;
 }
 
-} // namespace WebKit
+class BWebCookieJar : public BReferenceable {
+public:
+    BWebCookieJar(API::HTTPCookieStore& cookieStore);
+    virtual ~BWebCookieJar();
+
+    void GetCookies(const BUrl& url, BInvoker* completionInvoker) const;
+    void SetCookie(const BString& cookie, const BUrl& url);
+    void DeleteCookie(const BUrl& url, const char* name);
+
+private:
+    B_DISABLE_COPY(BWebCookieJar);
+
+    API::HTTPCookieStore& m_cookieStore;
+};
+
+#endif // B_WEB_COOKIE_JAR_H

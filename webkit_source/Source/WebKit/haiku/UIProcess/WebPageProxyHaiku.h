@@ -129,6 +129,7 @@ private:
     void didStartProgress() override;
     void didChangeProgress(double) override;
     void didFinishProgress() override;
+    void didFailLoad(WebCore::FrameIdentifier, FrameInfoData&&, WebCore::ResourceRequest&&, const WebCore::ResourceError&) override;
 
     std::unique_ptr<WebView> m_view;
     String m_mainFrameTitle;

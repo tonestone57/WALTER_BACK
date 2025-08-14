@@ -37,6 +37,9 @@ class WebPreferences;
 
 class BWebSettings : public BReferenceable {
 public:
+    static	void				SetIconDatabasePath(const BString& path);
+    static	void				SetOfflineWebApplicationCachePath(const BString& path);
+
                                 BWebSettings(BWebView& view);
     virtual						~BWebSettings();
 

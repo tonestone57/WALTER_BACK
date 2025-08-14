@@ -23,9 +23,12 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "config.h"
 #include "WebCryptoClientHaiku.h"
 
 #include <WebCore/NotImplemented.h>
+#include <WebCore/WrappedCryptoKey.h>
+#include <WebCore/SerializedCryptoKeyWrap.h>
 
 namespace WebKit {
 
@@ -34,9 +37,15 @@ std::optional<Vector<uint8_t>> WebCryptoClientHaiku::serializeAndWrapCryptoKey(W
     return std::nullopt;
 }
 
-std::optional<Vector<uint8_t>> WebCryptoClientHaiku::unwrapCryptoKey(const Vector<uint8_t>&) const
+std::optional<Vector<uint8_t>> WebCryptoClientHaiku::unwrapCryptoKey(const Vector<uint8_t>& wrappedKey) const
 {
-    return std::nullopt;
+    auto masterKey = WebCore::defaultWebCryptoMasterKey();
+    if (!masterKey)
+        return std::nullopt;
+    auto readKey = WebCore::readSerializedCryptoKey(wrappedKey);
+    if (!readKey)
+        return std::nullopt;
+    return WebCore::unwrapCryptoKey(*masterKey, *readKey);
 }
 
 } // namespace WebKit

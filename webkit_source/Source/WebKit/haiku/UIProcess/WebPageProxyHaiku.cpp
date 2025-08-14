@@ -336,6 +336,20 @@ double WebPageProxyHaiku::estimatedProgress() const
 void WebPageProxyHaiku::didStartProgress()
 {
     m_estimatedProgress = 0.0;
+    if (auto* webView = static_cast<BWebView*>(view()->Parent())) {
+        if (auto* client = webView->Client())
+            client->LoadNegotiating(mainFrameURL(), webView);
+    }
+}
+
+void WebPageProxyHaiku::didFailLoad(WebCore::FrameIdentifier frameID, FrameInfoData&& frameInfo, WebCore::ResourceRequest&&, const WebCore::ResourceError& error)
+{
+    if (mainFrame() && mainFrame()->frameID() == frameID) {
+        if (auto* webView = static_cast<BWebView*>(view()->Parent())) {
+            if (auto* client = webView->Client())
+                client->LoadFailed(frameInfo.url, webView);
+        }
+    }
 }
 
 void WebPageProxyHaiku::didChangeProgress(double value)

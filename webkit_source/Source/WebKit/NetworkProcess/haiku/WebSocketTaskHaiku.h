@@ -23,24 +23,48 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
-#include "WebDatabaseProviderHaiku.h"
+#pragma once
 
-#include <WebCore/NotImplemented.h>
+#include "WebSocketTask.h"
+#include <wtf/Function.h>
+#include <wtf/MessageQueue.h>
+#include <wtf/StreamBuffer.h>
+#include <wtf/Threading.h>
+#include <wtf/UniqueArray.h>
 
-#include <FindDirectory.h>
-#include <Path.h>
+#include <OS.h>
 
 namespace WebKit {
 
-String WebDatabaseProviderHaiku::indexedDatabaseDirectoryPath() const
-{
-    BPath storagePath;
-    if (find_directory(B_USER_SETTINGS_DIRECTORY, &storagePath) != B_OK)
-        return String();
+class WebSocketTaskHaiku final : public WebSocketTask {
+public:
+    WebSocketTaskHaiku(NetworkSocketChannel&, const WebCore::ResourceRequest&, const String& protocol);
+    virtual ~WebSocketTaskHaiku();
 
-    storagePath.Append("WebKit/IndexedDB");
-    return String::fromUTF8(storagePath.Path());
-}
+private:
+    void sendString(std::span<const uint8_t> text, CompletionHandler<void()>&&) final;
+    void sendData(std::span<const uint8_t> data, CompletionHandler<void()>&&) final;
+    void close(int32_t code, const String& reason) final;
+    void cancel() final;
+    void resume() final;
+
+    void threadEntryPoint();
+    void handleError(status_t);
+    void stopThread();
+    void callOnWorkerThread(Function<void()>&&);
+    void executeTasks();
+
+    static const size_t kReadBufferSize = 4 * 1024;
+
+    RefPtr<Thread> m_workerThread;
+    std::atomic<bool> m_running { true };
+
+    MessageQueue<Function<void()>> m_taskQueue;
+
+    bool m_hasPendingWriteData { false };
+    size_t m_writeBufferSize { 0 };
+    size_t m_writeBufferOffset { 0 };
+    UniqueArray<uint8_t> m_writeBuffer;
+};
 
 } // namespace WebKit

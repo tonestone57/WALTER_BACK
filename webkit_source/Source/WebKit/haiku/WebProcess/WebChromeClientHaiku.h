@@ -59,6 +59,7 @@ private:
     void addMessageToConsole(WebCore::MessageSource, WebCore::MessageLevel, const String&, unsigned, unsigned, const String&) final;
 
     void mouseDidMoveOverElement(const WebCore::HitTestResult&, OptionSet<WebCore::PlatformEventModifier>, const WTF::String&, WebCore::TextDirection) final;
+    void setCursor(const WebCore::Cursor&) final;
     void print(WebCore::LocalFrame&) final;
 
     void runOpenPanel(WebCore::LocalFrame&, WebCore::FileChooser&) final;

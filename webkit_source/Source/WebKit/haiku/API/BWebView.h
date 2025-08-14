@@ -77,6 +77,13 @@ public:
     virtual void MessageReceived(BMessage* message);
     virtual void KeyDown(const char* bytes, int32 numBytes);
     virtual void FrameResized(float newWidth, float newHeight);
+    virtual void AttachedToWindow();
+    virtual void DetachedFromWindow();
+    virtual void WindowActivated(bool active);
+    virtual void Pulse();
+
+    BString MainFrameTitle() const;
+    BString MainFrameURL() const;
 
     BWebPage* WebPage() const;
     BReference<BWebSettings> Settings() const;

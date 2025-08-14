@@ -28,7 +28,19 @@
 #include "BWebView.h"
 #include "BWebPage.h"
 #include "WebPreferences.h"
+#include "WebContext.h"
+#include "WebIconDatabase.h"
 #include <Font.h>
+
+void BWebSettings::SetIconDatabasePath(const BString& path)
+{
+    WebKit::WebContext::singleton().iconDatabase().setDatabasePath(path.String());
+}
+
+void BWebSettings::SetOfflineWebApplicationCachePath(const BString& path)
+{
+    WebKit::WebContext::singleton().setApplicationCacheDirectory(path.String());
+}
 
 BWebSettings::BWebSettings(BWebView& view)
     : m_page(page)

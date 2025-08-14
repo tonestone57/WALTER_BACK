@@ -47,6 +47,22 @@ private:
     void platformCreatePlugin(const WebCore::Plugin::Parameters&, CompletionHandler<void(RefPtr<WebCore::Widget>&&)>&&) override;
     bool platformCanHandleRequest(const WebCore::ResourceRequest&) const override;
     WebCore::ResourceError platformBlockedError(const WebCore::ResourceRequest&) const override;
+
+    // Ported from WebKitLegacy
+    void detachedFromParent() override;
+
+    void dispatchDidReceiveAuthenticationChallenge(WebCore::DocumentLoader&, uint64_t, const WebCore::AuthenticationChallenge&) override;
+    void dispatchDidReceiveTitle(const WebCore::StringWithDirection&) override;
+    void dispatchDidCommitLoad(std::optional<WebCore::HasInsecureContent>, std::optional<WebCore::UsedLegacyTLS>, std::optional<WasPrivateRelayed>) override;
+    void dispatchDidFinishLoad() override;
+    void dispatchDidFailLoad(const WebCore::ResourceError&) override;
+
+    void dispatchDidReceiveIcon() override;
+    void dispatchDidFinishDocumentLoad() override;
+
+    RefPtr<WebCore::LocalFrame> createFrame(const WTF::AtomString&, WebCore::HTMLFrameOwnerElement&) override;
+
+    String userAgent(const WTF::URL&) const override;
 };
 
 } // namespace WebKit

@@ -201,3 +201,41 @@ void BWebView::KeyDown(const char* bytes, int32 numBytes)
     BMessage* message = Window()->CurrentMessage();
     m_page.handleKeyboardEvent(WebKit::WebEventFactory::createWebKeyboardEvent(message));
 }
+
+void BWebView::FrameResized(float newWidth, float newHeight)
+{
+}
+
+BString BWebView::MainFrameTitle() const
+{
+    return m_page.mainFrameTitle();
+}
+
+BString BWebView::MainFrameURL() const
+{
+    return m_page.mainFrameURL();
+}
+
+void BWebView::AttachedToWindow()
+{
+    BView::AttachedToWindow();
+    m_page.viewDidAttachToWindow();
+}
+
+void BWebView::DetachedFromWindow()
+{
+    BView::DetachedFromWindow();
+    m_page.viewDidDetachFromWindow();
+}
+
+void BWebView::WindowActivated(bool active)
+{
+    BView::WindowActivated(active);
+    m_page.viewDidBecomeActive(active);
+}
+
+void BWebView::Pulse()
+{
+    // The pulse is used for animations. We can just forward this to the page proxy.
+    // m_page.pulse(); // This method doesn't exist on WebPageProxy, needs to be added.
+}

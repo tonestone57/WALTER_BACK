@@ -31,13 +31,16 @@
 #include "WebPage.h"
 #include "WebPageHaiku.h"
 #include "WebPageProxyMessages.h"
-#include <WebCore/DocumentLoader.hh>
+#include <WebCore/DocumentLoader.h>
+#include <WebCore/Frame.h>
 #include <WebCore/FrameLoader.h>
 #include <WebCore/FrameLoaderClient.h>
 #include <WebCore/MouseEvent.h>
 #include <WebCore/NavigationAction.h>
+#include <WebCore/NotImplemented.h>
 #include <WebCore/ResourceError.h>
 #include <WebCore/PluginData.h>
+#include <WebCore/UserAgent.h>
 
 namespace WebKit {
 
@@ -126,6 +129,67 @@ ResourceError WebFrameLoaderClientHaiku::platformBlockedError(const ResourceRequ
 {
     // TODO: Implement
     return ResourceError();
+}
+
+void WebFrameLoaderClientHaiku::detachedFromParent()
+{
+}
+
+void WebFrameLoaderClientHaiku::dispatchDidReceiveAuthenticationChallenge(WebCore::DocumentLoader&, uint64_t, const WebCore::AuthenticationChallenge&)
+{
+    notImplemented();
+}
+
+void WebFrameLoaderClientHaiku::dispatchDidReceiveTitle(const WebCore::StringWithDirection& title)
+{
+    if (auto* page = m_frame->page())
+        page->send(Messages::WebPageProxy::DidReceiveTitle(title.string));
+}
+
+void WebFrameLoaderClientHaiku::dispatchDidCommitLoad(std::optional<WebCore::HasInsecureContent>, std::optional<WebCore::UsedLegacyTLS>, std::optional<WasPrivateRelayed>)
+{
+    if (auto* page = m_frame->page())
+        page->send(Messages::WebPageProxy::DidCommitLoad());
+}
+
+void WebFrameLoaderClientHaiku::dispatchDidFinishLoad()
+{
+    if (auto* page = m_frame->page())
+        page->send(Messages::WebPageProxy::DidFinishLoad());
+}
+
+void WebFrameLoaderClientHaiku::dispatchDidFailLoad(const WebCore::ResourceError& error)
+{
+    if (auto* page = m_frame->page()) {
+        // FIXME: This message does not exist.
+        // page->send(Messages::WebPageProxy::DidFailLoad(error));
+    }
+}
+
+void WebFrameLoaderClientHaiku::dispatchDidReceiveIcon()
+{
+    if (auto* page = m_frame->page()) {
+        // In WebKitLegacy, this sent a message to the UI process.
+        // We need a corresponding IPC message here. Let's assume one exists.
+        // page->send(Messages::WebPageProxy::DidReceiveIcon());
+    }
+}
+
+void WebFrameLoaderClientHaiku::dispatchDidFinishDocumentLoad()
+{
+    if (auto* page = m_frame->page())
+        page->send(Messages::WebPageProxy::DidFinishDocumentLoad());
+}
+
+RefPtr<WebCore::LocalFrame> WebFrameLoaderClientHaiku::createFrame(const WTF::AtomString& name, WebCore::HTMLFrameOwnerElement& ownerElement)
+{
+    notImplemented();
+    return nullptr;
+}
+
+String WebFrameLoaderClientHaiku::userAgent(const WTF::URL& url) const
+{
+    return WebCore::standardUserAgent("WebPositive"_s, "2.0"_s);
 }
 
 } // namespace WebKit
