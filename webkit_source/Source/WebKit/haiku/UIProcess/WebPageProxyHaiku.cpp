@@ -103,6 +103,27 @@ void WebPageProxyHaiku::checkSpellingOfString(const String& text, CompletionHand
     completionHandler(misspellingOffset, misspellingLength);
 }
 
+void WebPageProxyHaiku::checkGrammarOfString(const String& text, CompletionHandler<void(Vector<WebCore::GrammarDetail>, int32_t, int32_t)>&& completionHandler)
+{
+    Vector<WebCore::GrammarDetail> details;
+    int32_t badGrammarOffset = -1;
+    int32_t badGrammarLength = 0;
+    // Not implemented in Haiku's BTextCheck
+    completionHandler(details, badGrammarOffset, badGrammarLength);
+}
+
+void WebPageProxyHaiku::getGuessesForWord(const String& word, const String& context, CompletionHandler<void(Vector<String>)>&& completionHandler)
+{
+    Vector<String> guesses;
+    if (gTextCheck) {
+        BStringList suggestions;
+        gTextCheck->GetGuesses(word.utf8().data(), &suggestions);
+        for (int32 i = 0; i < suggestions.CountStrings(); i++)
+            guesses.append(String::fromUTF8(suggestions.StringAt(i).String()));
+    }
+    completionHandler(guesses);
+}
+
 #include "FrameInfoData.h"
 
 #include "BWebView.h"

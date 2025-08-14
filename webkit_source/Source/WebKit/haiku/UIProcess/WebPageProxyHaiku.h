@@ -106,6 +106,8 @@ private:
 
     void addMessageToConsole(WebCore::MessageSource, WebCore::MessageLevel, const String&, uint64_t, uint64_t, const String&);
     void checkSpellingOfString(const String&, CompletionHandler<void(int32_t, int32_t)>&&) override;
+    void checkGrammarOfString(const String&, CompletionHandler<void(Vector<WebCore::GrammarDetail>, int32_t, int32_t)>&&) override;
+    void getGuessesForWord(const String&, const String&, CompletionHandler<void(Vector<String>)>&&) override;
     void setWindowRect(const WebCore::FloatRect&);
     void getWindowRect(CompletionHandler<void(WebCore::FloatRect)>&&);
     void setFocus(bool);

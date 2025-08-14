@@ -102,7 +102,33 @@ void WebDateTimePickerHaiku::showDateTimePicker()
     okButton->SetTarget(this);
     cancelButton->SetTarget(this);
 
-    // TODO: Set initial value from m_client.initialValue()
+    // Set initial value from m_client.initialValue()
+    const String& initialValue = m_client.initialValue();
+    if (!initialValue.isEmpty()) {
+        const char* valueStr = initialValue.utf8().data();
+        if (m_datePicker) {
+            int year, month, day;
+            if (sscanf(valueStr, "%d-%d-%d", &year, &month, &day) == 3) {
+                BDate date(year, month, day);
+                if (date.IsValid())
+                    m_datePicker->SetDate(date);
+            }
+        }
+        if (m_timeSpinner) {
+            const char* timeStr = strchr(valueStr, 'T');
+            if (timeStr)
+                timeStr++;
+            else
+                timeStr = valueStr;
+
+            int hour, minute;
+            if (sscanf(timeStr, "%d:%d", &hour, &minute) == 2) {
+                BTime time(hour, minute, 0);
+                if (time.IsValid())
+                    m_timeSpinner->SetTime(time);
+            }
+        }
+    }
 
     m_window->Show();
 }

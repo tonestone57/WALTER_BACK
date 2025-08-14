@@ -35,6 +35,7 @@
 #include <WebCore/FrameLoader.h>
 #include <WebCore/NotImplemented.h>
 #include <WebCore/Page.h>
+#include <stdio.h>
 #include <WebCore/ResourceRequest.h>
 #include <WebCore/TextIterator.h>
 #include <WebCore/UserGestureIndicator.h>
@@ -71,22 +72,23 @@ void WebContextMenuClientHaiku::searchWithGoogle(const LocalFrame* frame)
 
 void WebContextMenuClientHaiku::lookUpInDictionary(LocalFrame*)
 {
-    notImplemented();
+    fprintf(stderr, "WebContextMenuClientHaiku::lookUpInDictionary: Unimplemented\n");
 }
 
 void WebContextMenuClientHaiku::speak(const String&)
 {
-    notImplemented();
+    fprintf(stderr, "WebContextMenuClientHaiku::speak: Unimplemented\n");
 }
 
 bool WebContextMenuClientHaiku::isSpeaking() const
 {
+    fprintf(stderr, "WebContextMenuClientHaiku::isSpeaking: Unimplemented\n");
     return false;
 }
 
 void WebContextMenuClientHaiku::stopSpeaking()
 {
-    notImplemented();
+    fprintf(stderr, "WebContextMenuClientHaiku::stopSpeaking: Unimplemented\n");
 }
 
 } // namespace WebKit

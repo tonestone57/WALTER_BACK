@@ -583,14 +583,21 @@ void WebEditorClient::checkSpellingOfString(StringView text, int* misspellingLoc
     *misspellingLength = length;
 }
 
-void WebEditorClient::checkGrammarOfString(StringView, Vector<WebCore::GrammarDetail>&, int*, int*)
+void WebEditorClient::checkGrammarOfString(StringView text, Vector<WebCore::GrammarDetail>& details, int* badGrammarLocation, int* badGrammarLength)
 {
-    notImplemented();
+    if (!m_page)
+        return;
+
+    m_page->sendSync(Messages::WebPageProxy::CheckGrammarOfString(text.toString()),
+        Messages::WebPageProxy::CheckGrammarOfString::Reply(details, *badGrammarLocation, *badGrammarLength));
 }
 
-void WebEditorClient::getGuessesForWord(const String&, const String&, const WebCore::VisibleSelection&, Vector<String>&)
+void WebEditorClient::getGuessesForWord(const String& word, const String& context, const WebCore::VisibleSelection&, Vector<String>& guesses)
 {
-    notImplemented();
+    if (!m_page)
+        return;
+
+    m_page->sendSync(Messages::WebPageProxy::GetGuessesForWord(word, context, 0), Messages::WebPageProxy::GetGuessesForWord::Reply(guesses));
 }
 
 void WebEditorClient::requestCheckingOfString(WebCore::TextCheckingRequest&, const WebCore::VisibleSelection&)
