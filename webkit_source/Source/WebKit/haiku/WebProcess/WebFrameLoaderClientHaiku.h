@@ -43,7 +43,6 @@ private:
     void dispatchDecidePolicyForNavigationAction(const WebCore::NavigationAction&, const WebCore::ResourceRequest&, WebCore::FramePolicyFunction&&) override;
     void dispatchWillSendRequest(WebCore::DocumentLoader&, unsigned long, WebCore::ResourceRequest&, const WebCore::ResourceResponse&) override;
 
-    void platformDispatchOnloadEvents() override;
     void platformCreatePlugin(const WebCore::Plugin::Parameters&, CompletionHandler<void(RefPtr<WebCore::Widget>&&)>&&) override;
     bool platformCanHandleRequest(const WebCore::ResourceRequest&) const override;
     WebCore::ResourceError platformBlockedError(const WebCore::ResourceRequest&) const override;
@@ -52,13 +51,7 @@ private:
     void detachedFromParent() override;
 
     void dispatchDidReceiveAuthenticationChallenge(WebCore::DocumentLoader&, uint64_t, const WebCore::AuthenticationChallenge&) override;
-    void dispatchDidReceiveTitle(const WebCore::StringWithDirection&) override;
-    void dispatchDidCommitLoad(std::optional<WebCore::HasInsecureContent>, std::optional<WebCore::UsedLegacyTLS>, std::optional<WasPrivateRelayed>) override;
-    void dispatchDidFinishLoad() override;
     void dispatchDidFailLoad(const WebCore::ResourceError&) override;
-
-    void dispatchDidReceiveIcon() override;
-    void dispatchDidFinishDocumentLoad() override;
 
     RefPtr<WebCore::LocalFrame> createFrame(const WTF::AtomString&, WebCore::HTMLFrameOwnerElement&) override;
 

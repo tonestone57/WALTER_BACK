@@ -31,6 +31,8 @@
 #include "WebSocketTaskSoup.h"
 #elif USE(CURL)
 #include "WebSocketTaskCurl.h"
+#elif PLATFORM(HAIKU)
+#include "haiku/WebSocketTaskHaiku.h"
 #else
 #include <wtf/TZoneMallocInlines.h>
 

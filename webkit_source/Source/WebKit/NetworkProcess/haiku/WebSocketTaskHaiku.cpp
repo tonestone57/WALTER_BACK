@@ -24,10 +24,9 @@
  */
 
 #include "config.h"
-#include "WebSocketTaskHaiku.h"
+#include "haiku/WebSocketTaskHaiku.h"
 
 #include "NetworkSocketChannel.h"
-#include <WebCore/ResourceRequest.h>
 #include <WebCore/SocketStreamError.h>
 #include <wtf/MainThread.h>
 #include <wtf/URL.h>
@@ -39,23 +38,21 @@
 
 namespace WebKit {
 
-WebSocketTaskHaiku::WebSocketTaskHaiku(NetworkSocketChannel& channel, const WebCore::ResourceRequest& request, const String& protocol)
-    : WebSocketTask(channel, request, protocol)
+WebSocketTask::WebSocketTask(NetworkSocketChannel& channel, const WebCore::ResourceRequest& request, const String& protocol)
+    : m_channel(channel)
+    , m_request(request)
+    , m_protocol(protocol)
 {
 }
 
-WebSocketTaskHaiku::~WebSocketTaskHaiku()
+WebSocketTask::~WebSocketTask()
 {
     stopThread();
 }
 
-void WebSocketTaskHaiku::sendString(std::span<const uint8_t> text, CompletionHandler<void()>&& completionHandler)
+void WebSocketTask::sendString(std::span<const uint8_t> text, CompletionHandler<void()>&& completionHandler)
 {
-    // In the legacy implementation, platformSendInternal was called, which then
-    // used callOnWorkerThread. We will replicate that pattern.
     if (m_hasPendingWriteData) {
-        // We could queue this, but for now, let's stick to the legacy behavior
-        // which didn't handle concurrent sends well.
         completionHandler();
         return;
     }
@@ -74,33 +71,32 @@ void WebSocketTaskHaiku::sendString(std::span<const uint8_t> text, CompletionHan
     completionHandler();
 }
 
-void WebSocketTaskHaiku::sendData(std::span<const uint8_t> data, CompletionHandler<void()>&& completionHandler)
+void WebSocketTask::sendData(std::span<const uint8_t> data, CompletionHandler<void()>&& completionHandler)
 {
-    sendString(data, WTFMove(completionHandler)); // The legacy implementation didn't differentiate.
+    sendString(data, WTFMove(completionHandler));
 }
 
-void WebSocketTaskHaiku::close(int32_t, const String&)
+void WebSocketTask::close(int32_t, const String&)
 {
-    // This will trigger the destructor, which calls stopThread.
-    if (m_channel)
-        m_channel->didClose(0, String());
+    if (auto channel = m_channel.get())
+        channel->didClose(0, String());
 }
 
-void WebSocketTaskHaiku::cancel()
+void WebSocketTask::cancel()
 {
     stopThread();
-    if (m_channel)
-        m_channel->didClose(0, String());
+    if (auto channel = m_channel.get())
+        channel->didClose(0, String());
 }
 
-void WebSocketTaskHaiku::resume()
+void WebSocketTask::resume()
 {
     m_workerThread = Thread::create("WebSocket thread"_s, [this, protectedThis = Ref{*this}] {
         threadEntryPoint();
     });
 }
 
-void WebSocketTaskHaiku::threadEntryPoint()
+void WebSocketTask::threadEntryPoint()
 {
     ASSERT(!isMainThread());
 
@@ -118,8 +114,8 @@ void WebSocketTaskHaiku::threadEntryPoint()
     }
 
     callOnMainThread([this, protectedThis = Ref{*this}] {
-        if (m_channel)
-            m_channel->didConnect(String(), String());
+        if (auto channel = m_channel.get())
+            channel->didConnect(String(), String());
     });
 
     while (m_running) {
@@ -154,7 +150,6 @@ void WebSocketTaskHaiku::threadEntryPoint()
                 m_writeBufferOffset = 0;
                 callOnMainThread([this, protectedThis = Ref{*this}] {
                     m_hasPendingWriteData = false;
-                    // In a real implementation, we'd check if there's more data to send.
                 });
             }
         }
@@ -165,15 +160,15 @@ void WebSocketTaskHaiku::threadEntryPoint()
             if (bytesRead <= 0) {
                 m_running = false;
                 callOnMainThread([this, protectedThis = Ref{*this}] {
-                    if (m_channel)
-                        m_channel->didReceiveMessageError("Socket read error"_s);
+                    if (auto channel = m_channel.get())
+                        channel->didReceiveMessageError("Socket read error"_s);
                 });
                 break;
             }
 
             callOnMainThread([this, protectedThis = Ref{*this}, buffer = WTFMove(readBuffer), size = bytesRead] {
-                if (m_channel)
-                    m_channel->didReceiveBinaryData({ buffer.get(), (size_t)size });
+                if (auto channel = m_channel.get())
+                    channel->didReceiveBinaryData({ buffer.get(), (size_t)size });
             });
         }
     }
@@ -181,16 +176,16 @@ void WebSocketTaskHaiku::threadEntryPoint()
     m_writeBuffer = nullptr;
 }
 
-void WebSocketTaskHaiku::handleError(status_t errorCode)
+void WebSocketTask::handleError(status_t errorCode)
 {
     m_running = false;
     callOnMainThread([this, protectedThis = Ref{*this}, errorCode, localizedDescription = strerror(errorCode)] {
-        if (m_channel)
-            m_channel->didReceiveMessageError(String::fromUTF8(localizedDescription));
+        if (auto channel = m_channel.get())
+            channel->didReceiveMessageError(String::fromUTF8(localizedDescription));
     });
 }
 
-void WebSocketTaskHaiku::stopThread()
+void WebSocketTask::stopThread()
 {
     if (!m_running.exchange(false))
         return;
@@ -201,13 +196,13 @@ void WebSocketTaskHaiku::stopThread()
     }
 }
 
-void WebSocketTaskHaiku::callOnWorkerThread(Function<void()>&& task)
+void WebSocketTask::callOnWorkerThread(Function<void()>&& task)
 {
     ASSERT(isMainThread());
     m_taskQueue.append(std::make_unique<Function<void()>>(WTFMove(task)));
 }
 
-void WebSocketTaskHaiku::executeTasks()
+void WebSocketTask::executeTasks()
 {
     ASSERT(!isMainThread());
     auto tasks = m_taskQueue.takeAllMessages();

@@ -25,7 +25,9 @@
 
 #pragma once
 
-#include "WebSocketTask.h"
+#include <WebCore/ResourceRequest.h>
+#include <wtf/CanMakeCheckedPtr.h>
+#include <wtf/CanMakeWeakPtr.h>
 #include <wtf/Function.h>
 #include <wtf/MessageQueue.h>
 #include <wtf/StreamBuffer.h>
@@ -36,18 +38,20 @@
 
 namespace WebKit {
 
-class WebSocketTaskHaiku final : public WebSocketTask {
+class NetworkSocketChannel;
+
+class WebSocketTask final : public CanMakeWeakPtr<WebSocketTask>, public CanMakeCheckedPtr<WebSocketTask> {
 public:
-    WebSocketTaskHaiku(NetworkSocketChannel&, const WebCore::ResourceRequest&, const String& protocol);
-    virtual ~WebSocketTaskHaiku();
+    WebSocketTask(NetworkSocketChannel&, const WebCore::ResourceRequest&, const String& protocol);
+    ~WebSocketTask();
+
+    void sendString(std::span<const uint8_t> text, CompletionHandler<void()>&&);
+    void sendData(std::span<const uint8_t> data, CompletionHandler<void()>&&);
+    void close(int32_t code, const String& reason);
+    void cancel();
+    void resume();
 
 private:
-    void sendString(std::span<const uint8_t> text, CompletionHandler<void()>&&) final;
-    void sendData(std::span<const uint8_t> data, CompletionHandler<void()>&&) final;
-    void close(int32_t code, const String& reason) final;
-    void cancel() final;
-    void resume() final;
-
     void threadEntryPoint();
     void handleError(status_t);
     void stopThread();
@@ -55,6 +59,10 @@ private:
     void executeTasks();
 
     static const size_t kReadBufferSize = 4 * 1024;
+
+    WeakRef<NetworkSocketChannel> m_channel;
+    WebCore::ResourceRequest m_request;
+    String m_protocol;
 
     RefPtr<Thread> m_workerThread;
     std::atomic<bool> m_running { true };

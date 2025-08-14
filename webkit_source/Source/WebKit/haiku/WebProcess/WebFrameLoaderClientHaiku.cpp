@@ -106,13 +106,6 @@ void WebFrameLoaderClientHaiku::dispatchWillSendRequest(WebCore::DocumentLoader&
     WebLocalFrameLoaderClient::dispatchWillSendRequest(loader, identifier, request, response);
 }
 
-void WebFrameLoaderClientHaiku::platformDispatchOnloadEvents()
-{
-    if (m_frame)
-        if (auto* page = m_frame->page())
-            page->send(Messages::WebPageProxy::DispatchOnloadEvents());
-}
-
 void WebFrameLoaderClientHaiku::platformCreatePlugin(const Plugin::Parameters&, CompletionHandler<void(RefPtr<Widget>&&)>&& completionHandler)
 {
     // TODO: Implement
@@ -140,45 +133,10 @@ void WebFrameLoaderClientHaiku::dispatchDidReceiveAuthenticationChallenge(WebCor
     notImplemented();
 }
 
-void WebFrameLoaderClientHaiku::dispatchDidReceiveTitle(const WebCore::StringWithDirection& title)
-{
-    if (auto* page = m_frame->page())
-        page->send(Messages::WebPageProxy::DidReceiveTitle(title.string));
-}
-
-void WebFrameLoaderClientHaiku::dispatchDidCommitLoad(std::optional<WebCore::HasInsecureContent>, std::optional<WebCore::UsedLegacyTLS>, std::optional<WasPrivateRelayed>)
-{
-    if (auto* page = m_frame->page())
-        page->send(Messages::WebPageProxy::DidCommitLoad());
-}
-
-void WebFrameLoaderClientHaiku::dispatchDidFinishLoad()
-{
-    if (auto* page = m_frame->page())
-        page->send(Messages::WebPageProxy::DidFinishLoad());
-}
-
 void WebFrameLoaderClientHaiku::dispatchDidFailLoad(const WebCore::ResourceError& error)
 {
-    if (auto* page = m_frame->page()) {
-        // FIXME: This message does not exist.
-        // page->send(Messages::WebPageProxy::DidFailLoad(error));
-    }
-}
-
-void WebFrameLoaderClientHaiku::dispatchDidReceiveIcon()
-{
-    if (auto* page = m_frame->page()) {
-        // In WebKitLegacy, this sent a message to the UI process.
-        // We need a corresponding IPC message here. Let's assume one exists.
-        // page->send(Messages::WebPageProxy::DidReceiveIcon());
-    }
-}
-
-void WebFrameLoaderClientHaiku::dispatchDidFinishDocumentLoad()
-{
-    if (auto* page = m_frame->page())
-        page->send(Messages::WebPageProxy::DidFinishDocumentLoad());
+    // The base class implementation sends the DidFailLoadForFrame message.
+    WebLocalFrameLoaderClient::dispatchDidFailLoad(error);
 }
 
 RefPtr<WebCore::LocalFrame> WebFrameLoaderClientHaiku::createFrame(const WTF::AtomString& name, WebCore::HTMLFrameOwnerElement& ownerElement)

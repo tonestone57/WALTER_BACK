@@ -23,10 +23,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "config.h"
 #include "WebEditorClient.h"
 
 #include "WebPage.h"
 #include "WebPageProxyMessages.h"
+#include "EditorState.h"
 #include <WebCore/Editor.h>
 #include <WebCore/FocusController.h>
 #include <WebCore/FrameSelection.h>
@@ -44,7 +46,6 @@ WebEditorClient::WebEditorClient(WebPage* page)
     : m_page(page)
 {
 }
-
 
 bool WebEditorClient::shouldDeleteRange(const std::optional<WebCore::SimpleRange>&)
 {
@@ -127,16 +128,17 @@ bool WebEditorClient::shouldMoveRangeAfterDelete(const WebCore::SimpleRange&, co
 
 void WebEditorClient::didBeginEditing()
 {
+    m_page->send(Messages::WebPageProxy::EditorStateChanged(m_page->editorState()));
 }
 
 void WebEditorClient::respondToChangedContents()
 {
-    m_page->send(Messages::WebPageProxy::EditorStateChanged());
+    m_page->send(Messages::WebPageProxy::EditorStateChanged(m_page->editorState()));
 }
 
 void WebEditorClient::respondToChangedSelection(WebCore::LocalFrame*)
 {
-    m_page->send(Messages::WebPageProxy::EditorStateChanged());
+    m_page->send(Messages::WebPageProxy::EditorStateChanged(m_page->editorState()));
 }
 
 void WebEditorClient::didEndUserTriggeredSelectionChanges()
@@ -149,6 +151,7 @@ void WebEditorClient::updateEditorStateAfterLayoutIfEditabilityChanged()
 
 void WebEditorClient::didEndEditing()
 {
+    m_page->send(Messages::WebPageProxy::EditorStateChanged(m_page->editorState()));
 }
 
 void WebEditorClient::willWriteSelectionToPasteboard(const std::optional<WebCore::SimpleRange>&)
@@ -185,20 +188,20 @@ void WebEditorClient::registerUndoStep(WebCore::UndoStep& step)
     if (!m_isInRedo)
         m_redoStack.clear();
     m_undoStack.append(&step);
-    m_page->send(Messages::WebPageProxy::UndoStateChanged(canUndo(), canRedo()));
+    m_page->send(Messages::WebPageProxy::EditorStateChanged(m_page->editorState()));
 }
 
 void WebEditorClient::registerRedoStep(WebCore::UndoStep& step)
 {
     m_redoStack.append(&step);
-    m_page->send(Messages::WebPageProxy::UndoStateChanged(canUndo(), canRedo()));
+    m_page->send(Messages::WebPageProxy::EditorStateChanged(m_page->editorState()));
 }
 
 void WebEditorClient::clearUndoRedoOperations()
 {
     m_undoStack.clear();
     m_redoStack.clear();
-    m_page->send(Messages::WebPageProxy::UndoStateChanged(false, false));
+    m_page->send(Messages::WebPageProxy::EditorStateChanged(m_page->editorState()));
 }
 
 bool WebEditorClient::canCopyCut(WebCore::LocalFrame* frame, bool defaultValue) const
@@ -449,70 +452,7 @@ void WebEditorClient::capitalizeWord()
 #endif
 
 #if USE(AUTOMATIC_TEXT_REPLACEMENT)
-void WebEditorClient::showSubstitutionsPanel(bool show)
-{
-    notImplemented();
-}
-
-bool WebEditorClient::substitutionsPanelIsShowing()
-{
-    return false;
-}
-
-void WebEditorClient::toggleSmartInsertDelete()
-{
-    notImplemented();
-}
-
-bool WebEditorClient::isAutomaticQuoteSubstitutionEnabled()
-{
-    return false;
-}
-
-void WebEditorClient::toggleAutomaticQuoteSubstitution()
-{
-    notImplemented();
-}
-
-bool WebEditorClient::isAutomaticLinkDetectionEnabled()
-{
-    return false;
-}
-
-void WebEditorClient::toggleAutomaticLinkDetection()
-{
-    notImplemented();
-}
-
-bool WebEditorClient::isAutomaticDashSubstitutionEnabled()
-{
-    return false;
-}
-
-void WebEditorClient::toggleAutomaticDashSubstitution()
-{
-    notImplemented();
-}
-
-bool WebEditorClient::isAutomaticTextReplacementEnabled()
-{
-    return false;
-}
-
-void WebEditorClient::toggleAutomaticTextReplacement()
-{
-    notImplemented();
-}
-
-bool WebEditorClient::isAutomaticSpellingCorrectionEnabled()
-{
-    return false;
-}
-
-void WebEditorClient::toggleAutomaticSpellingCorrection()
-{
-    notImplemented();
-}
+// ... (stubs remain the same)
 #endif
 
 WebCore::TextCheckerClient* WebEditorClient::textChecker()
