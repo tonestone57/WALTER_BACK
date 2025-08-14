@@ -26,6 +26,7 @@
 #include "config.h"
 #include "WebInspectorClientHaiku.h"
 
+#include "WebInspectorUIProxyMessages.h"
 #include "WebPage.h"
 #include <WebCore/NotImplemented.h>
 
@@ -38,28 +39,33 @@ WebInspectorClientHaiku::WebInspectorClientHaiku(WebPage& page)
 
 void WebInspectorClientHaiku::bringToFront()
 {
-    notImplemented();
+    if (m_page.inspectorProxy())
+        m_page.inspectorProxy()->send(Messages::WebInspectorUIProxy::BringToFront(), 0);
 }
 
 void WebInspectorClientHaiku::didClose()
 {
-    notImplemented();
+    if (m_page.inspectorProxy())
+        m_page.inspectorProxy()->send(Messages::WebInspectorUIProxy::DidClose(), 0);
+    WebInspectorClient::didClose();
 }
 
 bool WebInspectorClientHaiku::isFront()
 {
-    notImplemented();
-    return false;
+    // FIXME: This should be a synchronous call to the UI Process.
+    return true;
 }
 
 void WebInspectorClientHaiku::attach()
 {
-    notImplemented();
+    if (m_page.inspectorProxy())
+        m_page.inspectorProxy()->send(Messages::WebInspectorUIProxy::AttachBottom(), 0);
 }
 
 void WebInspectorClientHaiku::detach()
 {
-    notImplemented();
+    if (m_page.inspectorProxy())
+        m_page.inspectorProxy()->send(Messages::WebInspectorUIProxy::Detach(), 0);
 }
 
 } // namespace WebKit

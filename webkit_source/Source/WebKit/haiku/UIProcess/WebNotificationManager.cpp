@@ -26,33 +26,105 @@
 #include "config.h"
 #include "WebNotificationManager.h"
 
+#include "WebPageProxy.h"
+#include <Application.h>
+#include <Bitmap.h>
+#include <IconUtils.h>
+#include <MimeType.h>
+#include <Notification.h>
 #include <WebCore/NotImplemented.h>
+#include <WebCore/ResourceError.h>
+#include <WebCore/Settings.h>
 
 namespace WebKit {
 
-WebNotificationManagerHaiku::WebNotificationManagerHaiku()
+std::unique_ptr<WebNotificationManager::Provider> WebNotificationManager::Provider::create(WebNotificationManager& manager)
 {
+    return makeUnique<WebNotificationManagerHaiku>(manager);
 }
 
-void WebNotificationManagerHaiku::showNotification(WebPageProxy&, const String&, const String&, const String&, const String&, WebCore::NotificationData&&, CompletionHandler<void(WebCore::NotificationClient::Permission)>&& completionHandler)
+WebNotificationManagerHaiku::WebNotificationManagerHaiku(WebNotificationManager& manager)
+    : m_manager(manager)
 {
-    notImplemented();
-    completionHandler(WebCore::NotificationClient::Permission::Denied);
+    be_app->LockLooper();
+    be_app->AddHandler(this);
+    be_app->UnlockLooper();
+}
+
+WebNotificationManagerHaiku::~WebNotificationManagerHaiku()
+{
+    be_app->LockLooper();
+    be_app->RemoveHandler(this);
+    be_app->UnlockLooper();
+}
+
+void WebNotificationManagerHaiku::showNotification(WebPageProxy& page, const String& title, const String& body, const String& iconURL, const String& tag, WebCore::NotificationData&& data, CompletionHandler<void(WebCore::NotificationClient::Permission)>&& completionHandler)
+{
+    auto permission = m_manager.permissionLevel(page.websiteDataStore(), data.origin);
+    if (permission == WebCore::NotificationClient::Permission::Denied) {
+        completionHandler(permission);
+        return;
+    }
+
+    // TODO: Ask user for permission if it's NotAllowed.
+
+    BNotification notification(B_INFORMATION_NOTIFICATION);
+    notification.setGroup("WebKit");
+    notification.setTitle(title.utf8().data());
+    notification.setContent(body.utf8().data());
+    notification.setNotificationID(tag.utf8().data());
+
+    // TODO: Handle iconURL by fetching and decoding the image.
+    // For now, use a generic icon.
+    BBitmap icon(BRect(0, 0, 31, 31), B_RGBA32);
+    if (BIconUtils::GetVectorIcon("application/x-vnd.Haiku-WebPositive", &icon) != B_OK)
+        BIconUtils::GetVectorIcon("application/octet-stream", &icon);
+    notification.setIcon(&icon);
+
+    notification.SetOnClickApp(be_app_messenger);
+
+    BMessage msg(B_SOME_APP_ACTIVATED);
+    msg.AddString("notificationID", data.notificationID.toString().utf8().data());
+    notification.SetOnClickMessage(&msg);
+
+    notification.Send();
+
+    m_notifications.add(data.notificationID, notification);
+    m_manager.didShowNotification(data.notificationID);
+    completionHandler(WebCore::NotificationClient::Permission::Granted);
 }
 
 void WebNotificationManagerHaiku::cancelNotification(const UUID& notificationID)
 {
-    notImplemented();
+    if (m_notifications.contains(notificationID))
+        m_notifications.remove(notificationID);
 }
 
 void WebNotificationManagerHaiku::clearNotifications(const Vector<UUID>& notificationIDs)
 {
-    notImplemented();
+    for (const auto& id : notificationIDs) {
+        if (m_notifications.contains(id))
+            m_notifications.remove(id);
+    }
 }
 
 void WebNotificationManagerHaiku::didDestroyNotification(const UUID& notificationID)
 {
-    notImplemented();
+    if (m_notifications.contains(notificationID))
+        m_notifications.remove(notificationID);
+}
+
+void WebNotificationManagerHaiku::MessageReceived(BMessage* message)
+{
+    if (message->what == B_SOME_APP_ACTIVATED) {
+        const char* idStr;
+        if (message->FindString("notificationID", &idStr) == B_OK) {
+            if (auto notificationID = UUID::fromString(String::fromUTF8(idStr)))
+                m_manager.didClickNotification(*notificationID);
+        }
+    } else {
+        BHandler::MessageReceived(message);
+    }
 }
 
 } // namespace WebKit

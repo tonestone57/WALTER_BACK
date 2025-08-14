@@ -26,20 +26,30 @@
 #pragma once
 
 #include "WebNotificationManager.h"
+#include <Handler.h>
+#include <Notification.h>
+#include <wtf/HashMap.h>
+#include <wtf/UUID.h>
 
 namespace WebKit {
 
-class WebNotificationManagerHaiku final : public WebNotificationManager::Provider {
+class WebNotificationManagerHaiku final : public WebNotificationManager::Provider, public BHandler {
 public:
-    WebNotificationManagerHaiku();
-    virtual ~WebNotificationManagerHaiku() = default;
+    WebNotificationManagerHaiku(WebNotificationManager&);
+    virtual ~WebNotificationManagerHaiku();
 
 private:
+    // BHandler
+    void MessageReceived(BMessage*) override;
+
     // WebNotificationManager::Provider
     void showNotification(WebPageProxy&, const String&, const String&, const String&, const String&, WebCore::NotificationData&&, CompletionHandler<void(WebCore::NotificationClient::Permission)>&&) override;
     void cancelNotification(const UUID& notificationID) override;
     void clearNotifications(const Vector<UUID>& notificationIDs) override;
     void didDestroyNotification(const UUID& notificationID) override;
+
+    WebNotificationManager& m_manager;
+    HashMap<WTF::UUID, BNotification> m_notifications;
 };
 
 } // namespace WebKit

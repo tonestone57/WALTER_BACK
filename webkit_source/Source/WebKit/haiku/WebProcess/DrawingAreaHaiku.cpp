@@ -136,9 +136,26 @@ void DrawingAreaHaiku::updateRenderingWithForcedRepaintAsync(WebPage&, Completio
     completionHandler();
 }
 
-void DrawingAreaHaiku::setRootCompositingLayer(WebCore::Frame&, WebCore::GraphicsLayer*)
+#if USE(COORDINATED_GRAPHICS)
+#include "LayerTreeHost.h"
+#include <WebCore/PlatformScreen.h>
+#include <app/Application.h>
+#endif
+
+void DrawingAreaHaiku::setRootCompositingLayer(WebCore::Frame&, WebCore::GraphicsLayer* rootLayer)
 {
+#if USE(COORDINATED_GRAPHICS)
+    if (rootLayer) {
+        if (!m_layerTreeHost) {
+            m_layerTreeHost = makeUnique<LayerTreeHost>(m_webPage, be_app->InitialScreenID());
+        }
+        m_layerTreeHost->setRootCompositingLayer(rootLayer);
+    } else {
+        m_layerTreeHost = nullptr;
+    }
+#else
     notImplemented();
+#endif
 }
 
 void DrawingAreaHaiku::triggerRenderingUpdate()

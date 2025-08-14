@@ -33,12 +33,20 @@ namespace WebKit {
 #include <WebCore/Region.h>
 #include <wtf/RunLoop.h>
 
+#if USE(COORDINATED_GRAPHICS)
+#include "LayerTreeHost.h"
+#endif
+
 class DrawingAreaHaiku final : public DrawingArea {
 public:
     DrawingAreaHaiku(WebPage&, const WebPageCreationParameters&);
     virtual ~DrawingAreaHaiku();
 
 private:
+#if USE(COORDINATED_GRAPHICS)
+    void layerTreeHostInitializationCallback();
+#endif
+
     void display();
     void displayTimerFired();
     void scheduleDisplay();
@@ -59,6 +67,10 @@ private:
     WebCore::Region m_dirtyRegion;
     RunLoop::Timer m_displayTimer;
     bool m_isWaitingForDidUpdate { false };
+
+#if USE(COORDINATED_GRAPHICS)
+    std::unique_ptr<LayerTreeHost> m_layerTreeHost;
+#endif
 };
 
 } // namespace WebKit

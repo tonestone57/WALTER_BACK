@@ -26,6 +26,8 @@
 #include "config.h"
 #include "WebFrameProxyHaiku.h"
 
+#include "API/FrameInfo.h"
+#include "WebPageProxy.h"
 #include <WebCore/NotImplemented.h>
 
 namespace WebKit {
@@ -46,35 +48,34 @@ WebFrameProxyHaiku::~WebFrameProxyHaiku()
 
 void WebFrameProxyHaiku::loadURL(const String& url)
 {
-    notImplemented();
+    loadRequest(URL(url));
 }
 
 void WebFrameProxyHaiku::stopLoading()
 {
-    notImplemented();
+    WebFrameProxy::stopLoading();
 }
 
 void WebFrameProxyHaiku::reload()
 {
-    notImplemented();
+    WebFrameProxy::reload();
 }
 
 String WebFrameProxyHaiku::requestedURL() const
 {
-    notImplemented();
-    return String();
+    if (auto provisionalUrl = provisionalURL(); !provisionalUrl.isEmpty())
+        return provisionalUrl.string();
+    return url();
 }
 
 String WebFrameProxyHaiku::url() const
 {
-    notImplemented();
-    return String();
+    return WebFrameProxy::url().string();
 }
 
 String WebFrameProxyHaiku::mimeType() const
 {
-    notImplemented();
-    return String();
+    return WebFrameProxy::mimeType();
 }
 
 bool WebFrameProxyHaiku::canCopy() const
@@ -240,15 +241,12 @@ void WebFrameProxyHaiku::setTitle(const String&)
 
 const String& WebFrameProxyHaiku::title() const
 {
-    notImplemented();
-    static String title;
-    return title;
+    return WebFrameProxy::title();
 }
 
 const char* WebFrameProxyHaiku::name() const
 {
-    notImplemented();
-    return nullptr;
+    return WebFrameProxy::frameName().utf8().data();
 }
 
 JSGlobalContextRef WebFrameProxyHaiku::globalContext() const
