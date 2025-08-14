@@ -27,14 +27,16 @@
 
 #include "WebInspectorProxy.h"
 
+class BWindow;
+
 namespace WebKit {
+
+class WebView;
 
 class WebInspectorProxyHaiku final : public WebInspectorProxy {
 public:
     WebInspectorProxyHaiku(WebPageProxy&);
     virtual ~WebInspectorProxyHaiku();
-
-class BWindow;
 
 private:
     // WebInspectorProxy

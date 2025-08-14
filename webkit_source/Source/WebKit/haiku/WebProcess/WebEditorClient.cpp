@@ -27,12 +27,16 @@
 
 #include "WebPage.h"
 #include "WebPageProxyMessages.h"
-#include <WebCore/NotImplemented.h>
-#include <WebCore/UndoStep.h>
-#include <WebCore/KeyboardEvent.h>
-#include <WebCore/PlatformKeyboardEvent.h>
-#include <WebCore/WindowsKeyboardCodes.h>
 #include <WebCore/Editor.h>
+#include <WebCore/FocusController.h>
+#include <WebCore/FrameSelection.h>
+#include <WebCore/KeyboardEvent.h>
+#include <WebCore/NotImplemented.h>
+#include <WebCore/Page.h>
+#include <WebCore/Pasteboard.h>
+#include <WebCore/PlatformKeyboardEvent.h>
+#include <WebCore/UndoStep.h>
+#include <WebCore/WindowsKeyboardCodes.h>
 
 namespace WebKit {
 
@@ -49,19 +53,16 @@ bool WebEditorClient::shouldDeleteRange(const std::optional<WebCore::SimpleRange
 
 bool WebEditorClient::smartInsertDeleteEnabled()
 {
-    notImplemented();
     return false;
 }
 
 bool WebEditorClient::isSelectTrailingWhitespaceEnabled() const
 {
-    notImplemented();
     return false;
 }
 
 bool WebEditorClient::isContinuousSpellCheckingEnabled()
 {
-    notImplemented();
     return false;
 }
 
@@ -72,7 +73,6 @@ void WebEditorClient::toggleContinuousSpellChecking()
 
 bool WebEditorClient::isGrammarCheckingEnabled()
 {
-    notImplemented();
     return false;
 }
 
@@ -83,7 +83,6 @@ void WebEditorClient::toggleGrammarChecking()
 
 int WebEditorClient::spellCheckerDocumentTag()
 {
-    notImplemented();
     return 0;
 }
 
@@ -119,79 +118,64 @@ bool WebEditorClient::shouldApplyStyle(const WebCore::StyleProperties&, const st
 
 void WebEditorClient::didApplyStyle()
 {
-    notImplemented();
 }
 
 bool WebEditorClient::shouldMoveRangeAfterDelete(const WebCore::SimpleRange&, const WebCore::SimpleRange&)
 {
-    notImplemented();
     return true;
 }
 
 void WebEditorClient::didBeginEditing()
 {
-    notImplemented();
 }
 
 void WebEditorClient::respondToChangedContents()
 {
-    notImplemented();
 }
 
 void WebEditorClient::respondToChangedSelection(WebCore::LocalFrame*)
 {
-    notImplemented();
 }
 
 void WebEditorClient::didEndUserTriggeredSelectionChanges()
 {
-    notImplemented();
 }
 
 void WebEditorClient::updateEditorStateAfterLayoutIfEditabilityChanged()
 {
-    notImplemented();
 }
 
 void WebEditorClient::didEndEditing()
 {
-    notImplemented();
 }
 
 void WebEditorClient::willWriteSelectionToPasteboard(const std::optional<WebCore::SimpleRange>&)
 {
-    notImplemented();
 }
 
 void WebEditorClient::didWriteSelectionToPasteboard()
 {
-    notImplemented();
 }
 
 void WebEditorClient::getClientPasteboardData(const std::optional<WebCore::SimpleRange>&, Vector<std::pair<String, RefPtr<WebCore::SharedBuffer>>>&)
 {
-    notImplemented();
 }
 
 WebCore::DOMPasteAccessResponse WebEditorClient::requestDOMPasteAccess(WebCore::DOMPasteAccessCategory, WebCore::FrameIdentifier, const String& originIdentifier)
 {
-    notImplemented();
     return WebCore::DOMPasteAccessResponse::DeniedForGesture;
 }
 
 void WebEditorClient::discardedComposition(const WebCore::Document&)
 {
-    notImplemented();
 }
 
 void WebEditorClient::canceledComposition()
 {
-    notImplemented();
 }
 
 void WebEditorClient::didUpdateComposition()
 {
-    notImplemented();
 }
 
 void WebEditorClient::registerUndoStep(WebCore::UndoStep& step)
@@ -215,16 +199,14 @@ void WebEditorClient::clearUndoRedoOperations()
     m_page->send(Messages::WebPageProxy::UndoStateChanged(false, false));
 }
 
-bool WebEditorClient::canCopyCut(WebCore::LocalFrame*, bool defaultValue) const
+bool WebEditorClient::canCopyCut(WebCore::LocalFrame* frame, bool defaultValue) const
 {
-    notImplemented();
-    return defaultValue;
+    return !frame->selection().isNone();
 }
 
-bool WebEditorClient::canPaste(WebCore::LocalFrame*, bool defaultValue) const
+bool WebEditorClient::canPaste(WebCore::LocalFrame* frame, bool defaultValue) const
 {
-    notImplemented();
-    return defaultValue;
+    return WebCore::Pasteboard::singleton().hasData();
 }
 
 bool WebEditorClient::canUndo() const
@@ -254,10 +236,6 @@ void WebEditorClient::redo()
         m_isInRedo = false;
     }
 }
-
-#include <WebCore/FocusController.h>
-#include <WebCore/FrameSelection.h>
-#include <WebCore/Page.h>
 
 void WebEditorClient::handleKeyboardEvent(WebCore::KeyboardEvent& event)
 {
@@ -409,48 +387,39 @@ void WebEditorClient::handleKeyboardEvent(WebCore::KeyboardEvent& event)
 
 void WebEditorClient::handleInputMethodKeydown(WebCore::KeyboardEvent&)
 {
-    notImplemented();
 }
 
 void WebEditorClient::textFieldDidBeginEditing(WebCore::Element&)
 {
-    notImplemented();
 }
 
 void WebEditorClient::textFieldDidEndEditing(WebCore::Element&)
 {
-    notImplemented();
 }
 
 void WebEditorClient::textDidChangeInTextField(WebCore::Element&)
 {
-    notImplemented();
 }
 
 bool WebEditorClient::doTextFieldCommandFromEvent(WebCore::Element&, WebCore::KeyboardEvent*)
 {
-    notImplemented();
     return false;
 }
 
 void WebEditorClient::textWillBeDeletedInTextField(WebCore::Element&)
 {
-    notImplemented();
 }
 
 void WebEditorClient::textDidChangeInTextArea(WebCore::Element&)
 {
-    notImplemented();
 }
 
 void WebEditorClient::overflowScrollPositionChanged()
 {
-    notImplemented();
 }
 
 void WebEditorClient::subFrameScrollPositionChanged()
 {
-    notImplemented();
 }
 
 #if PLATFORM(COCOA)
@@ -485,7 +454,6 @@ void WebEditorClient::showSubstitutionsPanel(bool show)
 
 bool WebEditorClient::substitutionsPanelIsShowing()
 {
-    notImplemented();
     return false;
 }
 
@@ -496,7 +464,6 @@ void WebEditorClient::toggleSmartInsertDelete()
 
 bool WebEditorClient::isAutomaticQuoteSubstitutionEnabled()
 {
-    notImplemented();
     return false;
 }
 
@@ -507,7 +474,6 @@ void WebEditorClient::toggleAutomaticQuoteSubstitution()
 
 bool WebEditorClient::isAutomaticLinkDetectionEnabled()
 {
-    notImplemented();
     return false;
 }
 
@@ -518,7 +484,6 @@ void WebEditorClient::toggleAutomaticLinkDetection()
 
 bool WebEditorClient::isAutomaticDashSubstitutionEnabled()
 {
-    notImplemented();
     return false;
 }
 
@@ -529,7 +494,6 @@ void WebEditorClient::toggleAutomaticDashSubstitution()
 
 bool WebEditorClient::isAutomaticTextReplacementEnabled()
 {
-    notImplemented();
     return false;
 }
 
@@ -540,7 +504,6 @@ void WebEditorClient::toggleAutomaticTextReplacement()
 
 bool WebEditorClient::isAutomaticSpellingCorrectionEnabled()
 {
-    notImplemented();
     return false;
 }
 
@@ -557,7 +520,6 @@ WebCore::TextCheckerClient* WebEditorClient::textChecker()
 
 bool WebEditorClient::shouldEraseMarkersAfterChangeSelection(WebCore::TextCheckingType) const
 {
-    notImplemented();
     return true;
 }
 
@@ -622,18 +584,15 @@ void WebEditorClient::showSpellingUI(bool)
 
 bool WebEditorClient::spellingUIIsShowing()
 {
-    notImplemented();
     return false;
 }
 
 void WebEditorClient::setInputMethodState(WebCore::Element*)
 {
-    notImplemented();
 }
 
 bool WebEditorClient::performTwoStepDrop(WebCore::DocumentFragment&, const WebCore::SimpleRange&, bool)
 {
-    notImplemented();
     return false;
 }
 

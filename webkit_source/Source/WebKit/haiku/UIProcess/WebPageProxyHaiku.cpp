@@ -88,10 +88,19 @@ void WebPageProxyHaiku::didReceiveMessage(IPC::Connection& connection, IPC::Deco
 }
 
 #include <TextCheck.h>
+#include <Url.h>
 
 void WebPageProxyHaiku::addMessageToConsole(WebCore::MessageSource source, WebCore::MessageLevel level, const String& message, uint64_t lineNumber, uint64_t columnNumber, const String& sourceID)
 {
     fprintf(stderr, "JS: %s:%" PRIu64 ":%" PRIu64 " %s\n", sourceID.utf8().data(), lineNumber, columnNumber, message.utf8().data());
+}
+
+void WebPageProxyHaiku::launchURL(const URL& url)
+{
+    // This is the proper way to ask the system to open a URL, which will
+    // typically be handled by the Tracker.
+    BUrl burl(url);
+    burl.OpenWithPreferredApplication();
 }
 
 void WebPageProxyHaiku::checkSpellingOfString(const String& text, CompletionHandler<void(int32_t, int32_t)>&& completionHandler)

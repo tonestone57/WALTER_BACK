@@ -68,6 +68,20 @@ void WebFrameLoaderClientHaiku::convertMainResourceLoadToDownload(DocumentLoader
     }
 }
 
+void WebFrameLoaderClientHaiku::dispatchDecidePolicyForNavigationAction(
+    const NavigationAction& action, const ResourceRequest& request,
+    FramePolicyFunction&& policyFunction)
+{
+    if (!request.url().protocolIsInHTTPFamily()) {
+        if (auto* page = m_frame->page())
+            page->send(Messages::WebPageProxy::LaunchURL(request.url()));
+        policyFunction(PolicyAction::Ignore, nullptr);
+        return;
+    }
+
+    WebLocalFrameLoaderClient::dispatchDecidePolicyForNavigationAction(action, request, WTFMove(policyFunction));
+}
+
 void WebFrameLoaderClientHaiku::dispatchDecidePolicyForNewWindowAction(
     const NavigationAction& action, const ResourceRequest& request, FormState*,
     const String& frameName, std::optional<HitTestResult>&&, FramePolicyFunction&& policyFunction)

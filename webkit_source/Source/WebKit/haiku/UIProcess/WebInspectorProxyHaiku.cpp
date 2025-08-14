@@ -7,7 +7,7 @@
  * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
+ *    notice, this list of conditions and a`_s` following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY APPLE INC. AND ITS CONTRIBUTORS ``AS IS''
@@ -26,8 +26,14 @@
 #include "config.h"
 #include "WebInspectorProxyHaiku.h"
 
+#include "API/PageConfiguration.h"
+#include "WebPageGroup.h"
 #include "WebPageProxy.h"
+#include "WebPageProxyHaiku.h"
+#include "WebPreferences.h"
+#include "WebView.h"
 #include <WebCore/NotImplemented.h>
+#include <Window.h>
 
 namespace WebKit {
 
@@ -42,7 +48,21 @@ WebInspectorProxyHaiku::~WebInspectorProxyHaiku()
 
 Ref<WebPageProxy> WebInspectorProxyHaiku::createInspectorPage(Ref<API::PageConfiguration>&& configuration)
 {
-    notImplemented();
+    auto preferences = WebPreferences::create(inspectorURL(), "WebKit2.Inspector", "WebKit2.Inspector");
+    preferences->setDeveloperExtrasEnabled(true);
+    preferences->setJavaScriptEnabled(true);
+    preferences->setPrivateBrowsingEnabled(true);
+    preferences->setLoadsImagesAutomatically(true);
+    preferences->setPluginsEnabled(true);
+    preferences->setLocalStorageEnabled(true);
+
+    auto pageGroup = WebPageGroup::create("inspector", false, false);
+
+    configuration->setProcessPool(&m_page.processPool());
+    configuration->setPageGroup(pageGroup.ptr());
+    configuration->setPreferences(preferences.ptr());
+    configuration->setRelatedPage(&m_page);
+
     return WebInspectorProxy::createInspectorPage(WTFMove(configuration));
 }
 
@@ -60,10 +80,6 @@ String WebInspectorProxyHaiku::inspectorTestPageURL() const
 {
     return "resource:///org/webkit/inspector/UserInterface/Test.html"_s;
 }
-
-#include "WebPageProxyHaiku.h"
-#include "WebView.h"
-#include <Window.h>
 
 void WebInspectorProxyHaiku::platformCreateInspectorWindow()
 {
@@ -100,8 +116,8 @@ void WebInspectorProxyHaiku::platformBringToFront()
 
 void WebInspectorProxyHaiku::platformDidClose()
 {
-    m_inspectorWindow = nullptr;
-    m_inspectorView = nullptr;
+    platformCloseInspectorWindow();
+    WebInspectorProxy::platformDidClose();
 }
 
 bool WebInspectorProxyHaiku::platformIsFront()

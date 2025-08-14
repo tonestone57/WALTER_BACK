@@ -329,6 +329,9 @@ messages -> WebPageProxy {
     IgnoreWord(String word)
     RequestCheckingOfString(WebKit::TextCheckerRequestID requestID, WebCore::TextCheckingRequestData request, int32_t insertionPoint)
 
+    # External URL Handling
+    LaunchURL(URL url)
+
     # Drag and drop messages
 #if PLATFORM(COCOA) && ENABLE(DRAG_SUPPORT)
     StartDrag(struct WebCore::DragItem dragItem, WebCore::ShareableBitmapHandle dragImage, std::optional<WebCore::ElementIdentifier> elementID)

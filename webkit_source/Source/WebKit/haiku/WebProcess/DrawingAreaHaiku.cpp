@@ -61,9 +61,11 @@ void DrawingAreaHaiku::setNeedsDisplayInRect(const WebCore::IntRect& rect)
     scheduleDisplay();
 }
 
-void DrawingAreaHaiku::scroll(const WebCore::IntRect&, const WebCore::IntSize&)
+void DrawingAreaHaiku::scroll(const WebCore::IntRect& scrollRect, const WebCore::IntSize& scrollDelta)
 {
-    // FIXME: Implement this.
+    send(Messages::DrawingAreaProxy::Scroll(scrollRect, scrollDelta));
+    // FIXME: We should compute the exposed region and redraw that.
+    // For now, we redraw everything for simplicity.
     setNeedsDisplay();
 }
 
@@ -119,9 +121,18 @@ void DrawingAreaHaiku::scheduleDisplay()
     m_displayTimer.startOneShot(0_s);
 }
 
+void DrawingAreaHaiku::didUpdate()
+{
+    m_isWaitingForDidUpdate = false;
+    if (!m_dirtyRegion.isEmpty())
+        scheduleDisplay();
+}
+
 void DrawingAreaHaiku::updateRenderingWithForcedRepaintAsync(WebPage&, CompletionHandler<void()>&& completionHandler)
 {
-    notImplemented();
+    // For now, just trigger a display and hope for the best.
+    // A proper implementation would wait for didUpdate.
+    display();
     completionHandler();
 }
 
@@ -132,7 +143,7 @@ void DrawingAreaHaiku::setRootCompositingLayer(WebCore::Frame&, WebCore::Graphic
 
 void DrawingAreaHaiku::triggerRenderingUpdate()
 {
-    notImplemented();
+    scheduleDisplay();
 }
 
 } // namespace WebKit

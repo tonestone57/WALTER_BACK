@@ -52,6 +52,7 @@ private:
 
     void setRootCompositingLayer(WebCore::Frame&, WebCore::GraphicsLayer*) override;
     void triggerRenderingUpdate() override;
+    void didUpdate() override;
 
     void sendUpdate(const WebCore::IntRect&);
 

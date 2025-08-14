@@ -105,6 +105,7 @@ private:
     void didReceiveMessage(IPC::Connection&, IPC::Decoder&) override;
 
     void addMessageToConsole(WebCore::MessageSource, WebCore::MessageLevel, const String&, uint64_t, uint64_t, const String&);
+    void launchURL(const URL&);
     void checkSpellingOfString(const String&, CompletionHandler<void(int32_t, int32_t)>&&) override;
     void checkGrammarOfString(const String&, CompletionHandler<void(Vector<WebCore::GrammarDetail>, int32_t, int32_t)>&&) override;
     void getGuessesForWord(const String&, const String&, CompletionHandler<void(Vector<String>)>&&) override;

@@ -25,26 +25,28 @@
 
 #pragma once
 
-#include "WebLocalFrameLoaderClient.h"
+#include <WebCore/FrameLoaderClient.h>
+#include <WebKit/WebLocalFrameLoaderClient.h>
 
 namespace WebKit {
+
+class WebFrame;
 
 class WebFrameLoaderClientHaiku final : public WebLocalFrameLoaderClient {
 public:
     WebFrameLoaderClientHaiku(WebFrame&);
-    virtual ~WebFrameLoaderClientHaiku() = default;
 
 private:
-    void startDownload(const WebCore::ResourceRequest&, const String& suggestedName = String(), WebCore::FromDownloadAttribute = WebCore::FromDownloadAttribute::No) final;
-    void convertMainResourceLoadToDownload(WebCore::DocumentLoader*, const WebCore::ResourceRequest&, const WebCore::ResourceResponse&) final;
+    void startDownload(const WebCore::ResourceRequest&, const String& suggestedName, WebCore::FromDownloadAttribute) override;
+    void convertMainResourceLoadToDownload(WebCore::DocumentLoader*, const WebCore::ResourceRequest&, const WebCore::ResourceResponse&) override;
+    void dispatchDecidePolicyForNewWindowAction(const WebCore::NavigationAction&, const WebCore::ResourceRequest&, WebCore::FormState*, const String&, std::optional<WebCore::HitTestResult>&&, WebCore::FramePolicyFunction&&) override;
+    void dispatchDecidePolicyForNavigationAction(const WebCore::NavigationAction&, const WebCore::ResourceRequest&, WebCore::FramePolicyFunction&&) override;
+    void dispatchWillSendRequest(WebCore::DocumentLoader&, unsigned long, WebCore::ResourceRequest&, const WebCore::ResourceResponse&) override;
 
-    void dispatchDecidePolicyForNewWindowAction(const WebCore::NavigationAction&, const WebCore::ResourceRequest&, WebCore::FormState*, const WTF::String&, std::optional<WebCore::HitTestResult>&&, WebCore::FramePolicyFunction&&) final;
-    void dispatchWillSendRequest(WebCore::DocumentLoader&, unsigned long, WebCore::ResourceRequest&, const WebCore::ResourceResponse&) final;
-
-    void platformDispatchOnloadEvents() final;
-    void platformCreatePlugin(const WebCore::Plugin::Parameters&, CompletionHandler<void(RefPtr<WebCore::Widget>&&)>&&) final;
-    bool platformCanHandleRequest(const WebCore::ResourceRequest&) const final;
-    WebCore::ResourceError platformBlockedError(const WebCore::ResourceRequest&) const final;
+    void platformDispatchOnloadEvents() override;
+    void platformCreatePlugin(const WebCore::Plugin::Parameters&, CompletionHandler<void(RefPtr<WebCore::Widget>&&)>&&) override;
+    bool platformCanHandleRequest(const WebCore::ResourceRequest&) const override;
+    WebCore::ResourceError platformBlockedError(const WebCore::ResourceRequest&) const override;
 };
 
 } // namespace WebKit

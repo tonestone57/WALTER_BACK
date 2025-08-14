@@ -26,10 +26,16 @@
 #include "config.h"
 #include "StorageNamespaceProviderHaiku.h"
 
-#include <WebCore/NotImplemented.h>
 #include <WebCore/Page.h>
 #include <WebCore/SecurityOrigin.h>
+#include <WebCore/StorageArea.h>
 #include <WebCore/StorageNamespace.h>
+#include <WebCore/StorageTracker.h>
+#include <WebCore/NotImplemented.h>
+
+#include <Directory.h>
+#include <FindDirectory.h>
+#include <Path.h>
 
 namespace WebKit {
 
@@ -46,22 +52,49 @@ StorageNamespaceProviderHaiku::~StorageNamespaceProviderHaiku()
 {
 }
 
-Ref<WebCore::StorageNamespace> StorageNamespaceProviderHaiku::createLocalStorageNamespace(unsigned quota, PAL::SessionID)
+static WTF::String storagePath()
 {
-    notImplemented();
-    return nullptr;
+    static WTF::String path = [] {
+        BPath settingsPath;
+        if (find_directory(B_USER_SETTINGS_DIRECTORY, &settingsPath) != B_OK)
+            return WTF::String();
+
+        settingsPath.Append("WebKit/LocalStorage");
+        create_directory(settingsPath.Path(), 0755);
+        return settingsPath.Path();
+    }();
+    return path;
+}
+
+Ref<WebCore::StorageNamespace> StorageNamespaceProviderHaiku::createLocalStorageNamespace(unsigned quota, PAL::SessionID sessionID)
+{
+    if (!sessionID.isEphemeral())
+        return WebCore::StorageNamespace::create(storagePath(), quota);
+
+    // For ephemeral sessions, treat it like transient storage.
+    return WebCore::StorageNamespace::create(nullptr, quota);
 }
 
 Ref<WebCore::StorageNamespace> StorageNamespaceProviderHaiku::createTransientLocalStorageNamespace(WebCore::SecurityOrigin&, unsigned quota, PAL::SessionID)
 {
-    notImplemented();
-    return nullptr;
+    // Transient storage is in-memory only.
+    return WebCore::StorageNamespace::create(nullptr, quota);
 }
 
-RefPtr<WebCore::StorageNamespace> StorageNamespaceProviderHaiku::sessionStorageNamespace(const WebCore::SecurityOrigin&, WebCore::Page&, ShouldCreateNamespace)
+RefPtr<WebCore::StorageNamespace> StorageNamespaceProviderHaiku::sessionStorageNamespace(const WebCore::SecurityOrigin&, WebCore::Page& page, ShouldCreateNamespace shouldCreate)
 {
-    notImplemented();
-    return nullptr;
+    if (shouldCreate == ShouldCreateNamespace::No) {
+        if (m_sessionStorageNamespace)
+            return m_sessionStorageNamespace;
+        return nullptr;
+    }
+
+    if (m_sessionStorageNamespace)
+        return m_sessionStorageNamespace;
+
+    // Session storage is in-memory and has no quota.
+    m_sessionStorageNamespace = WebCore::StorageNamespace::create(nullptr, WebCore::StorageArea::noQuota);
+    return m_sessionStorageNamespace;
 }
 
 } // namespace WebKit
