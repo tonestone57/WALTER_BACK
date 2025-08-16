@@ -29,7 +29,13 @@
 #include <String.h>
 
 class BFont;
-class BWebPage;
+class BWebView;
+
+enum BProxyType {
+    B_PROXY_TYPE_NONE,
+    B_PROXY_TYPE_HTTP,
+    B_PROXY_TYPE_SOCKS5
+};
 
 namespace WebKit {
 class WebPreferences;
@@ -56,7 +62,7 @@ public:
 
     void                        SetProxyInfo(const BString& host = "",
                                     uint32 port = 0,
-                                    int32 type = 0, // BProxyType
+                                    BProxyType type = B_PROXY_TYPE_NONE,
                                     const BString& username = "",
                                     const BString& password = "");
 

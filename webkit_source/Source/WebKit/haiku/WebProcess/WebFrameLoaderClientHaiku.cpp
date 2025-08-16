@@ -86,8 +86,8 @@ void WebFrameLoaderClientHaiku::dispatchDecidePolicyForNavigationAction(
 }
 
 void WebFrameLoaderClientHaiku::dispatchDecidePolicyForNewWindowAction(
-    const NavigationAction& action, const ResourceRequest& request, FormState*,
-    const String& frameName, std::optional<HitTestResult>&&, FramePolicyFunction&& policyFunction)
+    const NavigationAction& action, const ResourceRequest& request, FormState* formState,
+    const String& frameName, std::optional<HitTestResult>&& hitTestResult, FramePolicyFunction&& policyFunction)
 {
     if (action.mouseEventData() && action.mouseEventData()->button == MouseButton::Middle) {
         if (auto* page = m_frame->page()) {
@@ -98,7 +98,7 @@ void WebFrameLoaderClientHaiku::dispatchDecidePolicyForNewWindowAction(
     }
 
     WebLocalFrameLoaderClient::dispatchDecidePolicyForNewWindowAction(
-        action, request, nullptr, frameName, std::nullopt, WTFMove(policyFunction));
+        action, request, formState, frameName, WTFMove(hitTestResult), WTFMove(policyFunction));
 }
 
 void WebFrameLoaderClientHaiku::dispatchWillSendRequest(WebCore::DocumentLoader& loader, unsigned long identifier, WebCore::ResourceRequest& request, const WebCore::ResourceResponse& response)
@@ -130,19 +130,14 @@ void WebFrameLoaderClientHaiku::detachedFromParent()
 
 void WebFrameLoaderClientHaiku::dispatchDidReceiveAuthenticationChallenge(WebCore::DocumentLoader&, uint64_t, const WebCore::AuthenticationChallenge&)
 {
-    notImplemented();
+    // TODO: Implement. For now, we do nothing, which will result in the connection failing.
+    // A proper implementation would send a message to the UI process to ask the user for credentials.
 }
 
 void WebFrameLoaderClientHaiku::dispatchDidFailLoad(const WebCore::ResourceError& error)
 {
     // The base class implementation sends the DidFailLoadForFrame message.
     WebLocalFrameLoaderClient::dispatchDidFailLoad(error);
-}
-
-RefPtr<WebCore::LocalFrame> WebFrameLoaderClientHaiku::createFrame(const WTF::AtomString& name, WebCore::HTMLFrameOwnerElement& ownerElement)
-{
-    notImplemented();
-    return nullptr;
 }
 
 String WebFrameLoaderClientHaiku::userAgent(const WTF::URL& url) const

@@ -44,7 +44,7 @@ NetworkProcessHaiku::NetworkProcessHaiku()
 
 void NetworkProcessHaiku::platformInitialize(const AuxiliaryProcessCreationParameters& parameters)
 {
-    // TODO: Implement
+    setNetworkProxySettings();
 }
 
 void NetworkProcessHaiku::setNetworkProxySettings()

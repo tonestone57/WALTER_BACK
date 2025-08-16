@@ -40,8 +40,6 @@ class BWebHistory : public BReferenceable {
 public:
                                 BWebHistory(WebKit::WebBackForwardList& list);
     virtual						~BWebHistory();
-private:
-    B_DISABLE_COPY(BWebHistory);
 
     int32_t						CountItems() const;
     BReference<BWebHistoryItem>	ItemAt(int32_t index) const;
@@ -53,6 +51,7 @@ private:
     int32_t						ForwardListCount() const;
 
 private:
+    B_DISABLE_COPY(BWebHistory);
     WebKit::WebBackForwardList&	fList;
 };
 
@@ -60,11 +59,11 @@ class BWebHistoryItem : public BReferenceable {
 public:
                                 BWebHistoryItem(WebKit::WebBackForwardListItem& item);
     virtual						~BWebHistoryItem();
-private:
-    B_DISABLE_COPY(BWebHistoryItem);
 
     const BString&				URL() const;
     const BString&				Title() const;
+private:
+    B_DISABLE_COPY(BWebHistoryItem);
 
 private:
     WebKit::WebBackForwardListItem& fItem;

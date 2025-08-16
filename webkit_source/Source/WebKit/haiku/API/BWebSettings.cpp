@@ -31,6 +31,11 @@
 #include "WebContext.h"
 #include "WebIconDatabase.h"
 #include <Font.h>
+#include <UrlContext.h>
+#include <UrlProtocolRoster.h>
+#include "NetworkProcessProxy.h"
+#include "WebProcessPool.h"
+#include "NetworkProcessMessages.h"
 
 void BWebSettings::SetIconDatabasePath(const BString& path)
 {
@@ -43,7 +48,7 @@ void BWebSettings::SetOfflineWebApplicationCachePath(const BString& path)
 }
 
 BWebSettings::BWebSettings(BWebView& view)
-    : m_page(page)
+    : m_page(*view.WebPage())
     , m_preferences(view.page().preferences())
 {
 }
@@ -125,8 +130,13 @@ void BWebSettings::SetOfflineWebApplicationCacheEnabled(bool enable)
 }
 
 void BWebSettings::SetProxyInfo(const BString& host, uint32 port,
-    int32 type, const BString& username, const BString& password)
+    BProxyType type, const BString& username, const BString& password)
 {
+    // FIXME: This entire approach is wrong. These settings are applied to the
+    // UI process's BUrlContext, but are not propagated to the NetworkProcess.
+    // The NetworkProcess is then sent a message that tells it to reload the
+    // system-wide settings, ignoring the ones set here completely.
+    // A new IPC message is needed to send these details to the NetworkProcess.
     BUrlContext* context = new BUrlContext();
     context->SetProxy(host, port);
     // TODO: set type, username, password

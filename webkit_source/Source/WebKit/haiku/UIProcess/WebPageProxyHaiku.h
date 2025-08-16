@@ -143,6 +143,9 @@ private:
     // WebContextMenuProxy::Client
     void contextMenuItemSelected(const WebContextMenuItemData&) override;
 
+    // WebPageProxy
+    void editorStateChanged(const WebKit::EditorState&) override;
+
     Vector<UndoStepInfo> m_undoStack;
     Vector<UndoStepInfo> m_redoStack;
 };

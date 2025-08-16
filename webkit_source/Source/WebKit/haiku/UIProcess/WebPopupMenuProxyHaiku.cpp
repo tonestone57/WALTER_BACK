@@ -60,7 +60,7 @@ void WebPopupMenuProxyHaiku::showPopupMenu(const WebCore::IntRect& rect, WebCore
         return;
     }
 
-    BPoint screenLocation = rect.location();
+    BPoint screenLocation(rect.x(), rect.y() + rect.height());
     view->ConvertToScreen(&screenLocation);
 
     BMenuItem* selectedItem = menu.Go(screenLocation, false, true);

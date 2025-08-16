@@ -59,6 +59,7 @@ WebPageHaiku::~WebPageHaiku()
 
 void WebPageHaiku::platformInitialize(const WebPageCreationParameters&)
 {
+    m_page->setEditorClient(std::make_unique<WebEditorClient>(*this));
     m_page->inspectorController().setInspectorClient(std::make_unique<WebInspectorClientHaiku>(*this));
     m_page->setContextMenuClient(std::make_unique<WebContextMenuClientHaiku>(this));
     m_page->setDragClient(std::make_unique<WebDragClientHaiku>(*this));
@@ -89,20 +90,14 @@ void WebPageHaiku::preferencesDidChange()
     }
 }
 
-void WebPageHaiku::undo(uint64_t stepID)
+void WebPageHaiku::undo()
 {
-    if (auto* editorClient = static_cast<WebEditorClient*>(m_page->editorClient())) {
-        if (auto* undoStep = editorClient->undoStep(stepID))
-            undoStep->unapply();
-    }
+    m_page->editor().undo();
 }
 
-void WebPageHaiku::redo(uint64_t stepID)
+void WebPageHaiku::redo()
 {
-    if (auto* editorClient = static_cast<WebEditorClient*>(m_page->editorClient())) {
-        if (auto* undoStep = editorClient->undoStep(stepID))
-            undoStep->reapply();
-    }
+    m_page->editor().redo();
 }
 
 } // namespace WebKit

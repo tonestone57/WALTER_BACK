@@ -126,7 +126,11 @@ void WebDownloadProxy::didReceiveResponse(const WebCore::ResourceResponse& respo
 
 void WebDownloadProxy::didReceiveData(const IPC::DataReference& data, uint64_t)
 {
-    m_file.Write(data.data(), data.size());
+    ssize_t bytesWritten = m_file.Write(data.data(), data.size());
+    if (bytesWritten < 0 || static_cast<size_t>(bytesWritten) != data.size()) {
+        didFail(WebCore::ResourceError(String(), 0, URL(), "Failed to write to download file"_s), { });
+        return;
+    }
     m_bytesReceived += data.size();
 
     if (m_bdownload->client())

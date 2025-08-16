@@ -19,17 +19,18 @@
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT of THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "config.h"
 #include "WebContextMenuProxyHaiku.h"
 
-#include "WebPageProxy.h"
 #include "WebContextMenuItemData.h"
-#include <PopUpMenu.h>
+#include "WebPageProxyHaiku.h"
+#include <WebCore/ContextMenuContextData.h>
 #include <MenuItem.h>
+#include <PopUpMenu.h>
 #include <Window.h>
 
 namespace WebKit {
@@ -38,11 +39,6 @@ WebContextMenuProxyHaiku::WebContextMenuProxyHaiku(WebPageProxy& page, ContextMe
     : WebContextMenuProxy(page, WTFMove(context), userData)
 {
 }
-
-#include "WebPageProxyHaiku.h"
-
-#include "WebContextMenuItemData.h"
-#include <WebCore/ContextMenuContextData.h>
 
 void WebContextMenuProxyHaiku::show()
 {
@@ -89,11 +85,17 @@ void WebContextMenuProxyHaiku::show()
             }
         }
     }
+
+    // Notify the page that the menu has been dismissed. This allows the page
+    // to release this WebContextMenuProxy object.
+    m_page->didDismissContextMenu();
 }
 
 void WebContextMenuProxyHaiku::cancel()
 {
-    // TODO: Implement
+    // BPopUpMenu::Go is synchronous and handles its own dismissal,
+    // so there is nothing to do here. The menu will be dismissed when
+    // show() returns, and didDismissContextMenu() will be called there.
 }
 
 } // namespace WebKit

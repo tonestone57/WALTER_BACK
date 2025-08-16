@@ -19,7 +19,7 @@
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * ARISING IN ANY WAY OUT of THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
@@ -52,22 +52,9 @@ WebSocketTask::~WebSocketTask()
 
 void WebSocketTask::sendString(std::span<const uint8_t> text, CompletionHandler<void()>&& completionHandler)
 {
-    if (m_hasPendingWriteData) {
-        completionHandler();
-        return;
-    }
-
-    m_hasPendingWriteData = true;
     auto writeBuffer = makeUniqueArray<uint8_t>(text.size());
     memcpy(writeBuffer.get(), text.data(), text.size());
-
-    callOnWorkerThread([this, writeBuffer = WTFMove(writeBuffer), writeBufferSize = text.size()]() mutable {
-        ASSERT(!isMainThread());
-        m_writeBuffer = WTFMove(writeBuffer);
-        m_writeBufferSize = writeBufferSize;
-        m_writeBufferOffset = 0;
-    });
-
+    m_writeQueue.append(WTFMove(writeBuffer));
     completionHandler();
 }
 
@@ -78,6 +65,7 @@ void WebSocketTask::sendData(std::span<const uint8_t> data, CompletionHandler<vo
 
 void WebSocketTask::close(int32_t, const String&)
 {
+    // TODO: Perform the WebSocket closing handshake.
     if (auto channel = m_channel.get())
         channel->didClose(0, String());
 }
@@ -121,6 +109,27 @@ void WebSocketTask::threadEntryPoint()
     while (m_running) {
         executeTasks();
 
+        if (!m_writeBuffer) {
+            auto newWrites = m_writeQueue.takeAllMessages();
+            if (!newWrites.isEmpty()) {
+                // For simplicity, coalesce all pending writes into a single buffer.
+                // A more complex implementation might handle them one by one.
+                size_t totalSize = 0;
+                for (const auto& write : newWrites)
+                    totalSize += write->size();
+
+                m_writeBuffer = makeUniqueArray<uint8_t>(totalSize);
+                m_writeBufferSize = totalSize;
+                m_writeBufferOffset = 0;
+
+                size_t currentOffset = 0;
+                for (const auto& write : newWrites) {
+                    memcpy(m_writeBuffer.get() + currentOffset, write->data(), write->size());
+                    currentOffset += write->size();
+                }
+            }
+        }
+
         status_t readable = socket->WaitForReadable(20 * 1000);
         if (readable != B_OK && readable != B_TIMED_OUT) {
             handleError(readable);
@@ -128,7 +137,7 @@ void WebSocketTask::threadEntryPoint()
         }
 
         status_t writable = B_ERROR;
-        if (m_writeBuffer.get() != nullptr) {
+        if (m_writeBuffer) {
             writable = socket->WaitForWritable(20 * 1000);
             if (writable != B_OK && writable != B_TIMED_OUT) {
                 handleError(writable);
@@ -136,7 +145,7 @@ void WebSocketTask::threadEntryPoint()
             }
         }
 
-        if ((writable == B_OK) && m_running) {
+        if ((writable == B_OK) && m_running && m_writeBuffer) {
             auto bytesSent = socket->Write(m_writeBuffer.get() + m_writeBufferOffset, m_writeBufferSize - m_writeBufferOffset);
             if (bytesSent < 0) {
                 handleError(bytesSent);
@@ -148,9 +157,6 @@ void WebSocketTask::threadEntryPoint()
                 m_writeBuffer = nullptr;
                 m_writeBufferSize = 0;
                 m_writeBufferOffset = 0;
-                callOnMainThread([this, protectedThis = Ref{*this}] {
-                    m_hasPendingWriteData = false;
-                });
             }
         }
 

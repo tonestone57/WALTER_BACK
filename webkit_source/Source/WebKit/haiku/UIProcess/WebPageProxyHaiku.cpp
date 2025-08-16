@@ -137,6 +137,7 @@ void WebPageProxyHaiku::getGuessesForWord(const String& word, const String& cont
 
 #include "BWebView.h"
 #include "BWebPageClient.h"
+#include "EditorState.h"
 
 #include <Window.h>
 

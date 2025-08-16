@@ -26,9 +26,12 @@
 #include "config.h"
 #include "WebView.h"
 
-#include "WebPageProxy.h"
 #include "DrawingAreaProxyHaiku.h"
+#include "NativeWebKeyboardEvent.h"
+#include "NativeWebMouseEvent.h"
+#include "WebPageProxy.h"
 #include <WebCore/IntRect.h>
+#include <Window.h>
 
 namespace WebKit {
 
@@ -39,9 +42,6 @@ WebView::WebView(WebPageProxy& page)
     , m_dragDestination(page)
 {
 }
-
-#include "NativeWebMouseEvent.h"
-#include <Window.h>
 
 void WebView::Draw(BRect updateRect)
 {
@@ -63,8 +63,6 @@ void WebView::MouseUp(BPoint where)
     if (message)
         m_page.handleMouseEvent(NativeWebMouseEvent(message, this));
 }
-
-#include "NativeWebKeyboardEvent.h"
 
 void WebView::MouseMoved(BPoint where, uint32 transit, const BMessage* dragMessage)
 {
@@ -90,9 +88,17 @@ void WebView::MouseMoved(BPoint where, uint32 transit, const BMessage* dragMessa
 void WebView::MessageReceived(BMessage* message)
 {
     switch (message->what) {
-    case B_SIMPLE_DATA:
-        m_dragDestination.Drop(message, BPoint());
+    case B_SIMPLE_DATA: {
+        BPoint dropPoint;
+        // The message should contain the drop point in view coordinates.
+        if (message->FindPoint("be:drop_point", &dropPoint) != B_OK) {
+            // As a fallback, get the mouse position at the time of the drop.
+            uint32 buttons;
+            GetMouse(&dropPoint, &buttons, false);
+        }
+        m_dragDestination.Drop(message, dropPoint);
         break;
+    }
     default:
         BView::MessageReceived(message);
     }

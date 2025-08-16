@@ -51,7 +51,7 @@ public:
     void StopLoading();
 
     void Print(const BMessage* settings, float availablePaperWidth, float availablePaperHeight);
-    void GetContentsAsString(BFile& file);
+    void SaveContentsToFile(BFile& file);
     void ShowInspector();
 
     void FindString(const char* string, bool forward = true,
@@ -71,11 +71,7 @@ public:
     void GoBack();
     void GoForward();
 
-    virtual void MouseDown(BPoint where);
-    virtual void MouseUp(BPoint where);
-    virtual void MouseMoved(BPoint where, uint32 transit, const BMessage* dragMessage);
     virtual void MessageReceived(BMessage* message);
-    virtual void KeyDown(const char* bytes, int32 numBytes);
     virtual void FrameResized(float newWidth, float newHeight);
     virtual void AttachedToWindow();
     virtual void DetachedFromWindow();
@@ -88,9 +84,9 @@ public:
     BWebPage* WebPage() const;
     BReference<BWebSettings> Settings() const;
 
+private:
     WebKit::WebPageProxy& page() const { return m_page; }
 
-private:
     std::unique_ptr<WebKit::WebView> m_webView;
     WebKit::WebPageProxy& m_page;
     std::unique_ptr<BWebPage> m_webPage;

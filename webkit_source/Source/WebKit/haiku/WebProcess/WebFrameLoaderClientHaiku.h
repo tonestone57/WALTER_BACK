@@ -53,8 +53,6 @@ private:
     void dispatchDidReceiveAuthenticationChallenge(WebCore::DocumentLoader&, uint64_t, const WebCore::AuthenticationChallenge&) override;
     void dispatchDidFailLoad(const WebCore::ResourceError&) override;
 
-    RefPtr<WebCore::LocalFrame> createFrame(const WTF::AtomString&, WebCore::HTMLFrameOwnerElement&) override;
-
     String userAgent(const WTF::URL&) const override;
 };
 

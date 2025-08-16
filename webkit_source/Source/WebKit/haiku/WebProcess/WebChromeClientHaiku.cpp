@@ -83,10 +83,11 @@ bool WebChromeClientHaiku::runJavaScriptConfirm(LocalFrame& frame, const String&
     return result;
 }
 
-bool WebChromeClientHaiku::runJavaScriptPrompt(LocalFrame&, const String&, const String&, String&)
+bool WebChromeClientHaiku::runJavaScriptPrompt(LocalFrame& frame, const String& message, const String& defaultValue, String& result)
 {
-    // TODO: Implement
-    return false;
+    bool ok = false;
+    m_page.sendSync(Messages::WebPageProxy::RunJavaScriptPrompt(frame.frameID(), frame.info(), message, defaultValue), Messages::WebPageProxy::RunJavaScriptPrompt::Reply(ok, result));
+    return ok;
 }
 
 void WebChromeClientHaiku::setStatusbarVisible(bool visible)

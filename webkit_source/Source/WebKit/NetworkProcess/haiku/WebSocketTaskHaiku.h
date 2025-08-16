@@ -68,8 +68,8 @@ private:
     std::atomic<bool> m_running { true };
 
     MessageQueue<Function<void()>> m_taskQueue;
+    MessageQueue<UniqueArray<uint8_t>> m_writeQueue;
 
-    bool m_hasPendingWriteData { false };
     size_t m_writeBufferSize { 0 };
     size_t m_writeBufferOffset { 0 };
     UniqueArray<uint8_t> m_writeBuffer;
