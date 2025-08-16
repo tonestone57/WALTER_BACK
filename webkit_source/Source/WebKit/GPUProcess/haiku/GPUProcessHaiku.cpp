@@ -32,10 +32,7 @@ namespace WebKit {
 
 GPUProcessHaiku& GPUProcessHaiku::singleton()
 {
-    // FIXME: This is a memory leak. However, since the GPUProcess is a
-    // singleton that lives for the entire duration of the application, this
-    // is probably not a major issue.
-    static GPUProcessHaiku* process = new GPUProcessHaiku;
+    static std::unique_ptr<GPUProcessHaiku> process = std::make_unique<GPUProcessHaiku>();
     return *process;
 }
 
@@ -47,7 +44,11 @@ GPUProcessHaiku::GPUProcessHaiku()
 
 void GPUProcessHaiku::platformInitialize(const AuxiliaryProcessCreationParameters& parameters)
 {
-    // TODO: Implement
+    // TODO: Implement platform-specific initialization for the GPU process.
+    // This may include:
+    // - Initializing a connection to the app_server.
+    // - Setting up any required graphics or media libraries.
+    // - Handling any GPU-specific sandbox restrictions.
 }
 
 } // namespace WebKit

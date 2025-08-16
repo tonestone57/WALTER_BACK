@@ -25,7 +25,7 @@
  */
 
 #include "config.h"
-#include "WebViewPrivate.h"
+#include "WebView.h"
 
 #include "DrawingAreaProxyHaiku.h"
 #include "NotImplemented.h"
@@ -64,16 +64,12 @@ WebView::~WebView()
     m_page->close();
 }
 
-PassRefPtr<WebView> WebView::create(WebContext* context, WebPageGroup* pageGroup)
+Ref<WebView> WebView::create(WebContext* context, WebPageGroup* pageGroup)
 {
-    return adoptRef(new WebView(context, pageGroup));
+    return adoptRef(*new WebView(context, pageGroup));
 }
 
-void WebView::didChangeContentSize(WebCore::IntSize const&)
-{
-}
-
-std::unique_ptr<WebKit::DrawingAreaProxy> WebView::createDrawingAreaProxy()
+std::unique_ptr<DrawingAreaProxy> WebView::createDrawingAreaProxy()
 {
     return makeUnique<DrawingAreaProxyHaiku>(*m_page, m_page->process());
 }

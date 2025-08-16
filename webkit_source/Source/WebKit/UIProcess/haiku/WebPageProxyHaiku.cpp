@@ -30,6 +30,13 @@
 #include <WebCore/NotImplemented.h>
 #include <WebCore/UserAgent.h>
 
+#include <Directory.h>
+#include <FindDirectory.h>
+#include <Path.h>
+#include <File.h>
+#include <TextIStream.h>
+#include <TextOStream.h>
+
 #include <sys/utsname.h>
 
 namespace WebKit {
@@ -50,12 +57,51 @@ String WebPageProxy::standardUserAgent(const String& applicationNameForUserAgent
 
 void WebPageProxy::saveRecentSearches(IPC::Connection&, const String& name, const Vector<WebCore::RecentSearch>& searchItems)
 {
-    notImplemented();
+    BPath path;
+    if (find_directory(B_USER_SETTINGS_DIRECTORY, &path) != B_OK)
+        return;
+
+    path.Append("WebKit/RecentSearches");
+    BDirectory dir(path.Path());
+    if (!dir.Exists())
+        create_directory(path.Path(), 0755);
+
+    path.Append(name.utf8().data());
+
+    BFile file(path.Path(), B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE);
+    if (file.InitCheck() != B_OK)
+        return;
+
+    BTextOStream stream(&file);
+    for (const auto& item : searchItems)
+        stream << item.searchString.utf8().data() << "\n";
 }
 
-void WebPageProxy::loadRecentSearches(IPC::Connection&, const String& name, CompletionHandler<void(Vector<WebCore::RecentSearch>&&)>&&)
+void WebPageProxy::loadRecentSearches(IPC::Connection&, const String& name, CompletionHandler<void(Vector<WebCore::RecentSearch>&&)>&& completionHandler)
 {
-    notImplemented();
+    BPath path;
+    if (find_directory(B_USER_SETTINGS_DIRECTORY, &path) != B_OK) {
+        completionHandler({ });
+        return;
+    }
+
+    path.Append("WebKit/RecentSearches");
+    path.Append(name.utf8().data());
+
+    BFile file(path.Path(), B_READ_ONLY);
+    if (file.InitCheck() != B_OK) {
+        completionHandler({ });
+        return;
+    }
+
+    BTextIStream stream(&file);
+    Vector<WebCore::RecentSearch> searchItems;
+    String line;
+    while (stream.ReadLine(line) == B_OK) {
+        searchItems.append(WebCore::RecentSearch(line, { }));
+    }
+
+    completionHandler(WTFMove(searchItems));
 }
 
 void WebPageProxy::didUpdateEditorState(const EditorState&, const EditorState&)
