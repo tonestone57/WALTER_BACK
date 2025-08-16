@@ -46,7 +46,7 @@ messages -> NetworkProcess : AuxiliaryProcess WantsAsyncDispatchMessage {
 #endif
 
 #if PLATFORM(HAIKU)
-    SetNetworkProxySettings()
+    SetProxySettings(String host, uint16_t port, uint8_t type, String username, String password)
 #endif
 
     AddWebsiteDataStore(struct WebKit::WebsiteDataStoreParameters websiteDataStoreParameters) AllowedWhenWaitingForSyncReply

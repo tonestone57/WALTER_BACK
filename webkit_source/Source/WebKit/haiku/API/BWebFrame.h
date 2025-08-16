@@ -35,6 +35,8 @@ class BWebFrame {
 public:
     BString URL() const;
     void LoadURL(const BString& url);
+    void LoadData(const BString& data, const BString& mimeType, const BString& encoding, const BString& baseURL);
+    void RunJavaScript(const BString& script);
 
 private:
     friend class BWebView;

@@ -27,6 +27,7 @@
 #include "WebFrameProxyHaiku.h"
 
 #include "API/FrameInfo.h"
+#include "FindOptions.h"
 #include "WebPageProxy.h"
 #include <WebCore/NotImplemented.h>
 
@@ -51,6 +52,22 @@ void WebFrameProxyHaiku::loadURL(const String& url)
     loadRequest(URL(url));
 }
 
+void WebFrameProxyHaiku::loadData(const IPC::DataReference& data, const String& mimeType, const String& encoding, const String& baseURL)
+{
+    if (!m_page)
+        return;
+
+    m_page->process().send(Messages::WebPage::LoadData(data, mimeType, encoding, baseURL), m_page->identifier());
+}
+
+void WebFrameProxyHaiku::loadAlternateHTML(const IPC::DataReference& html, const String& baseURL, const String& unreachableURL)
+{
+    if (!m_page)
+        return;
+
+    m_page->process().send(Messages::WebPage::LoadAlternateHTML(html, baseURL, unreachableURL), m_page->identifier());
+}
+
 void WebFrameProxyHaiku::stopLoading()
 {
     WebFrameProxy::stopLoading();
@@ -59,6 +76,16 @@ void WebFrameProxyHaiku::stopLoading()
 void WebFrameProxyHaiku::reload()
 {
     WebFrameProxy::reload();
+}
+
+void WebFrameProxyHaiku::goBack()
+{
+    WebFrameProxy::goBack();
+}
+
+void WebFrameProxyHaiku::goForward()
+{
+    WebFrameProxy::goForward();
 }
 
 String WebFrameProxyHaiku::requestedURL() const
@@ -180,20 +207,33 @@ String WebFrameProxyHaiku::innerText() const
 
 String WebFrameProxyHaiku::asMarkup() const
 {
-    notImplemented();
-    return String();
+    if (!m_page)
+        return String();
+
+    String markup;
+    if (m_page->process().sendSync(Messages::WebPage::GetFrameMarkup(frameID()), Messages::WebPage::GetFrameMarkup::Reply(markup), m_page->identifier()) != IPC::Error::NoError)
+        return String();
+    return markup;
 }
 
 String WebFrameProxyHaiku::externalRepresentation() const
 {
-    notImplemented();
-    return String();
+    if (!m_page)
+        return String();
+
+    String renderTree;
+    if (m_page->process().sendSync(Messages::WebPage::GetFrameRenderTree(frameID()), Messages::WebPage::GetFrameRenderTree::Reply(renderTree), m_page->identifier()) != IPC::Error::NoError)
+        return String();
+    return renderTree;
 }
 
-bool WebFrameProxyHaiku::findString(const String&, uint32_t)
+bool WebFrameProxyHaiku::findString(const String& string, uint32_t findOptions)
 {
-    notImplemented();
-    return false;
+    if (!m_page)
+        return false;
+
+    m_page->findString(string, OptionSet<FindOptions>::fromRaw(findOptions), 1000);
+    return true;
 }
 
 bool WebFrameProxyHaiku::canIncreaseZoomFactor() const
@@ -247,6 +287,14 @@ const String& WebFrameProxyHaiku::title() const
 const char* WebFrameProxyHaiku::name() const
 {
     return WebFrameProxy::frameName().utf8().data();
+}
+
+void WebFrameProxyHaiku::runJavaScript(const String& script)
+{
+    if (!m_page)
+        return;
+
+    m_page->runJavaScriptInFrame(frameID(), script, nullptr);
 }
 
 JSGlobalContextRef WebFrameProxyHaiku::globalContext() const

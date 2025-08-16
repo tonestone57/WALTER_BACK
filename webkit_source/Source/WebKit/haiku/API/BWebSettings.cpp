@@ -132,16 +132,12 @@ void BWebSettings::SetOfflineWebApplicationCacheEnabled(bool enable)
 void BWebSettings::SetProxyInfo(const BString& host, uint32 port,
     BProxyType type, const BString& username, const BString& password)
 {
-    // FIXME: This entire approach is wrong. These settings are applied to the
-    // UI process's BUrlContext, but are not propagated to the NetworkProcess.
-    // The NetworkProcess is then sent a message that tells it to reload the
-    // system-wide settings, ignoring the ones set here completely.
-    // A new IPC message is needed to send these details to the NetworkProcess.
-    BUrlContext* context = new BUrlContext();
-    context->SetProxy(host, port);
-    // TODO: set type, username, password
-    BUrlProtocolRoster::SetDefaultContext(context);
-
     m_page.page().process().processPool().networkProcess().send(
-        Messages::NetworkProcess::SetNetworkProxySettings(), 0);
+        Messages::NetworkProcess::SetProxySettings(
+            String::fromUTF8(host.String()),
+            port,
+            static_cast<uint8_t>(type),
+            String::fromUTF8(username.String()),
+            String::fromUTF8(password.String())
+        ), 0);
 }

@@ -43,3 +43,16 @@ void BWebFrame::LoadURL(const BString& url)
 {
     fFrame.loadRequest(WTF::URL(WTF::URL(), WTF::String::fromUTF8(url.String())));
 }
+
+void BWebFrame::LoadData(const BString& data, const BString& mimeType, const BString& encoding, const BString& baseURL)
+{
+    fFrame.loadData(IPC::DataReference(reinterpret_cast<const uint8_t*>(data.String()), data.Length()),
+        WTF::String::fromUTF8(mimeType.String()),
+        WTF::String::fromUTF8(encoding.String()),
+        WTF::String::fromUTF8(baseURL.String()));
+}
+
+void BWebFrame::RunJavaScript(const BString& script)
+{
+    fFrame.runJavaScript(WTF::String::fromUTF8(script.String()));
+}

@@ -64,9 +64,22 @@ void DrawingAreaHaiku::setNeedsDisplayInRect(const WebCore::IntRect& rect)
 void DrawingAreaHaiku::scroll(const WebCore::IntRect& scrollRect, const WebCore::IntSize& scrollDelta)
 {
     send(Messages::DrawingAreaProxy::Scroll(scrollRect, scrollDelta));
-    // FIXME: We should compute the exposed region and redraw that.
-    // For now, we redraw everything for simplicity.
-    setNeedsDisplay();
+
+    WebCore::Region exposedRegion;
+    if (abs(scrollDelta.width()) >= scrollRect.width() || abs(scrollDelta.height()) >= scrollRect.height()) {
+        exposedRegion = scrollRect;
+    } else {
+        WebCore::Region scrolledRegion = scrollRect;
+        scrolledRegion.move(scrollDelta);
+        exposedRegion = scrollRect;
+        exposedRegion.subtract(scrolledRegion);
+    }
+
+    if (exposedRegion.isEmpty())
+        return;
+
+    for (const auto& rect : exposedRegion.rects())
+        setNeedsDisplayInRect(rect);
 }
 
 void DrawingAreaHaiku::display()

@@ -52,8 +52,12 @@ void WebInspectorClientHaiku::didClose()
 
 bool WebInspectorClientHaiku::isFront()
 {
-    // FIXME: This should be a synchronous call to the UI Process.
-    return true;
+    if (!m_page.inspectorProxy())
+        return false;
+
+    bool result = false;
+    m_page.inspectorProxy()->sendSync(Messages::WebInspectorUIProxy::IsFront(), Messages::WebInspectorUIProxy::IsFront::Reply(result));
+    return result;
 }
 
 void WebInspectorClientHaiku::attach()

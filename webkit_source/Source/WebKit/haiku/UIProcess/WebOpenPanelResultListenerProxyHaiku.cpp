@@ -38,7 +38,8 @@ WebOpenPanelResultListenerProxyHaiku::WebOpenPanelResultListenerProxyHaiku(WebPa
 
 void WebOpenPanelResultListenerProxyHaiku::didChooseFiles(const Vector<String>& files)
 {
-    notImplemented();
+    if (m_page)
+        WebOpenPanelResultListenerProxy::didChooseFiles(files);
 }
 
 } // namespace WebKit

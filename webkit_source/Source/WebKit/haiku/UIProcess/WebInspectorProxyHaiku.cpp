@@ -46,6 +46,11 @@ WebInspectorProxyHaiku::~WebInspectorProxyHaiku()
 {
 }
 
+void WebInspectorProxyHaiku::isFront(CompletionHandler<void(bool)>&& completionHandler)
+{
+    completionHandler(platformIsFront());
+}
+
 Ref<WebPageProxy> WebInspectorProxyHaiku::createInspectorPage(Ref<API::PageConfiguration>&& configuration)
 {
     auto preferences = WebPreferences::create(inspectorURL(), "WebKit2.Inspector", "WebKit2.Inspector");

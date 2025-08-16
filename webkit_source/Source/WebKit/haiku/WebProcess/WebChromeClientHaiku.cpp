@@ -141,16 +141,14 @@ void WebChromeClientHaiku::addMessageToConsole(MessageSource source, MessageLeve
     m_page.send(Messages::WebPageProxy::AddMessageToConsole(source, level, message, lineNumber, columnNumber, sourceID));
 }
 
-void WebChromeClientHaiku::mouseDidMoveOverElement(const HitTestResult& result, OptionSet<PlatformEventModifier>, const String& tooltip, TextDirection)
+void WebChromeClientHaiku::mouseDidMoveOverElement(const HitTestResult& result, OptionSet<PlatformEventModifier> modifiers, const String&, TextDirection)
 {
-    // FIXME: This message does not exist yet.
-    // m_page.send(Messages::WebPageProxy::MouseDidMoveOverElement(result, tooltip));
+    m_page.send(Messages::WebPageProxy::MouseDidMoveOverElement(result, modifiers, {}));
 }
 
 void WebChromeClientHaiku::setCursor(const WebCore::Cursor& cursor)
 {
-    // FIXME: This message does not exist yet.
-    // m_page.send(Messages::WebPageProxy::SetCursor(cursor));
+    m_page.send(Messages::WebPageProxy::SetCursor(cursor));
 }
 
 void WebChromeClientHaiku::print(LocalFrame& frame)
@@ -189,24 +187,11 @@ void WebChromeClientHaiku::isPlayingAudioDidChange(bool)
     // TODO: Implement
 }
 
-RefPtr<Page> WebChromeClientHaiku::createWindow(LocalFrame&, const String&, const WindowFeatures& windowFeatures, const NavigationAction& navigationAction)
+RefPtr<Page> WebChromeClientHaiku::createWindow(LocalFrame&, const String&, const WindowFeatures&, const NavigationAction&)
 {
-    auto& page = m_page;
-    auto& process = page.process();
-
-    auto newPageProxyIdentifier = process.sendSync(
-        Messages::WebPageProxy::CreateNewPage(windowFeatures, navigationAction.resourceRequest()),
-        page.identifier())->newWebPageProxyIdentifier();
-
-    if (!newPageProxyIdentifier)
-        return nullptr;
-
-    // FIXME: This is not the right way to get the WebPage.
-    // It should be created by the UI process and we should get a message back.
-    // For now, we assume it exists.
-    if (auto* webPage = WebProcess::singleton().webPage(*newPageProxyIdentifier))
-        return webPage->corePage();
-
+    // The decision to create a new window is handled in the WebFrameLoaderClient
+    // by sending a policy decision request to the UI process.
+    // This method can be a no-op.
     return nullptr;
 }
 

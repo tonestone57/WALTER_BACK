@@ -138,8 +138,129 @@ void WebPageProxyHaiku::getGuessesForWord(const String& word, const String& cont
 #include "BWebView.h"
 #include "BWebPageClient.h"
 #include "EditorState.h"
+#include "WebHitTestResultData.h"
 
+#include <Cursor.h>
 #include <Window.h>
+
+void WebPageProxyHaiku::setCursor(const WebCore::Cursor& cursor)
+{
+    if (!m_view)
+        return;
+
+    switch (cursor.type()) {
+    case WebCore::Cursor::Pointer:
+        m_view->SetViewCursor(B_HAND_CURSOR);
+        break;
+    case WebCore::Cursor::Cross:
+        m_view->SetViewCursor(B_CROSSHAIR_CURSOR);
+        break;
+    case WebCore::Cursor::Hand:
+        m_view->SetViewCursor(B_HAND_CURSOR);
+        break;
+    case WebCore::Cursor::IBeam:
+        m_view->SetViewCursor(B_I_BEAM_CURSOR);
+        break;
+    case WebCore::Cursor::Wait:
+        m_view->SetViewCursor(B_WAIT_CURSOR);
+        break;
+    case WebCore::Cursor::Help:
+        m_view->SetViewCursor(B_HELP_CURSOR);
+        break;
+    case WebCore::Cursor::Move:
+    case WebCore::Cursor::MiddlePanning:
+        m_view->SetViewCursor(B_MOVE_CURSOR);
+        break;
+    case WebCore::Cursor::EastResize:
+    case WebCore::Cursor::EastPanning:
+    case WebCore::Cursor::EResize:
+        // FIXME: Add specific cursors for resizing.
+        m_view->SetViewCursor(B_HAND_CURSOR);
+        break;
+    case WebCore::Cursor::NorthResize:
+    case WebCore::Cursor::NorthPanning:
+    case WebCore::Cursor::NResize:
+        m_view->SetViewCursor(B_HAND_CURSOR);
+        break;
+    case WebCore::Cursor::NorthEastResize:
+    case WebCore::Cursor::NorthEastPanning:
+    case WebCore::Cursor::NEResize:
+        m_view->SetViewCursor(B_HAND_CURSOR);
+        break;
+    case WebCore::Cursor::NorthWestResize:
+    case WebCore::Cursor::NorthWestPanning:
+    case WebCore::Cursor::NWResize:
+        m_view->SetViewCursor(B_HAND_CURSOR);
+        break;
+    case WebCore::Cursor::SouthResize:
+    case WebCore::Cursor::SouthPanning:
+    case WebCore::Cursor::SResize:
+        m_view->SetViewCursor(B_HAND_CURSOR);
+        break;
+    case WebCore::Cursor::SouthEastResize:
+    case WebCore::Cursor::SouthEastPanning:
+    case WebCore::Cursor::SEResize:
+        m_view->SetViewCursor(B_HAND_CURSOR);
+        break;
+    case WebCore::Cursor::SouthWestResize:
+    case WebCore::Cursor::SouthWestPanning:
+    case WebCore::Cursor::SWResize:
+        m_view->SetViewCursor(B_HAND_CURSOR);
+        break;
+    case WebCore::Cursor::WestResize:
+    case WebCore::Cursor::WestPanning:
+    case WebCore::Cursor::WResize:
+        m_view->SetViewCursor(B_HAND_CURSOR);
+        break;
+    case WebCore::Cursor::NorthSouthResize:
+    case WebCore::Cursor::NSResize:
+        m_view->SetViewCursor(B_HAND_CURSOR);
+        break;
+    case WebCore::Cursor::EastWestResize:
+    case WebCore::Cursor::EWResize:
+        m_view->SetViewCursor(B_HAND_CURSOR);
+        break;
+    case WebCore::Cursor::NorthEastSouthWestResize:
+    case WebCore::Cursor::NESWResize:
+        m_view->SetViewCursor(B_HAND_CURSOR);
+        break;
+    case WebCore::Cursor::NorthWestSouthEastResize:
+    case WebCore::Cursor::NWSEResize:
+        m_view->SetViewCursor(B_HAND_CURSOR);
+        break;
+    case WebCore::Cursor::ColumnResize:
+    case WebCore::Cursor::RowResize:
+        m_view->SetViewCursor(B_HAND_CURSOR);
+        break;
+    case WebCore::Cursor::VerticalText:
+    case WebCore::Cursor::Cell:
+    case WebCore::Cursor::ContextMenu:
+    case WebCore::Cursor::Alias:
+    case WebCore::Cursor::Progress:
+    case WebCore::Cursor::NoDrop:
+    case WebCore::Cursor::NotAllowed:
+    case WebCore::Cursor::ZoomIn:
+    case WebCore::Cursor::ZoomOut:
+    case WebCore::Cursor::Copy:
+    case WebCore::Cursor::None:
+    case WebCore::Cursor::Grab:
+    case WebCore::Cursor::Grabbing:
+        m_view->SetViewCursor(B_HAND_CURSOR);
+        break;
+    case WebCore::Cursor::Custom:
+        // TODO: Support custom cursors.
+        m_view->SetViewCursor(B_HAND_CURSOR);
+        break;
+    }
+}
+
+void WebPageProxyHaiku::mouseDidMoveOverElement(const WebHitTestResultData& hitTestResult, OptionSet<WebEventModifier>, UserData)
+{
+    if (!m_view)
+        return;
+
+    m_view->SetToolTip(hitTestResult.title.string());
+}
 
 void WebPageProxyHaiku::setWindowRect(const WebCore::FloatRect& rect)
 {

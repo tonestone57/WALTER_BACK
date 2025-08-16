@@ -117,6 +117,9 @@ private:
     void setStatusbarVisible(bool);
     void statusbarIsVisible(CompletionHandler<void(bool)>&&);
 
+    void setCursor(const WebCore::Cursor&);
+    void mouseDidMoveOverElement(const WebHitTestResultData&, OptionSet<WebEventModifier>, UserData);
+
     void registerUndoStep(uint64_t, const String&);
     void registerRedoStep(uint64_t, const String&);
     void clearUndoRedo();

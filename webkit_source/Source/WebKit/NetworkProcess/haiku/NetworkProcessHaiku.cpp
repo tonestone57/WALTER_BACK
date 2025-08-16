@@ -27,6 +27,9 @@
 #include "NetworkProcessHaiku.h"
 
 #include "AuxiliaryProcessCreationParameters.h"
+#include <UrlContext.h>
+#include <UrlProtocolRoster.h>
+#include <NetworkAddress.h>
 
 namespace WebKit {
 
@@ -44,17 +47,38 @@ NetworkProcessHaiku::NetworkProcessHaiku()
 
 void NetworkProcessHaiku::platformInitialize(const AuxiliaryProcessCreationParameters& parameters)
 {
-    setNetworkProxySettings();
+    // On startup, we create a new context to ensure we are using the
+    // latest system-wide network settings.
+    BUrlProtocolRoster::SetDefaultContext(new BUrlContext());
 }
 
-void NetworkProcessHaiku::setNetworkProxySettings()
+void NetworkProcessHaiku::setProxySettings(String host, uint16_t port, uint8_t type, String username, String password)
 {
-    BUrlContext* context = BUrlProtocolRoster::Default()->Context();
-    if (context)
-        context->AcquireReference();
-    BUrlProtocolRoster::SetDefaultContext(new BUrlContext());
-    if (context)
-        context->ReleaseReference();
+    RefPtr<BUrlContext> context = adoptRef(new BUrlContext());
+
+    if (host.isEmpty()) {
+        // Disable proxy
+    } else {
+        BNetworkAddress address(host.utf8().data(), port);
+        BNetworkAddress::BProxyType proxyType = BNetworkAddress::B_PROXY_TYPE_HTTP;
+        switch (type) {
+        case 1: // B_PROXY_TYPE_HTTP
+            proxyType = BNetworkAddress::B_PROXY_TYPE_HTTP;
+            break;
+        case 2: // B_PROXY_TYPE_SOCKS5
+            proxyType = BNetworkAddress::B_PROXY_TYPE_SOCKS5;
+            break;
+        }
+
+        context->SetProxy(address, proxyType);
+
+        if (!username.isEmpty() || !password.isEmpty()) {
+            // Assuming BUrlContext supports this, the API is not clear.
+            // context->SetProxyAuth(username.utf8().data(), password.utf8().data());
+        }
+    }
+
+    BUrlProtocolRoster::SetDefaultContext(context.leakRef());
 }
 
 } // namespace WebKit

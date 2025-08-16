@@ -23,20 +23,31 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef FullscreenVideoControllerHaiku_h
-#define FullscreenVideoControllerHaiku_h
+#pragma once
 
 #if ENABLE(VIDEO)
 
+#include "FullscreenVideoController.h"
+#include <Window.h>
+
 namespace WebKit {
 
-class FullscreenVideoControllerHaiku {
+class FullscreenVideoControllerHaiku final : public FullscreenVideoController {
 public:
-    FullscreenVideoControllerHaiku();
-    ~FullscreenVideoControllerHaiku();
+    FullscreenVideoControllerHaiku(WebPageProxy&);
+    virtual ~FullscreenVideoControllerHaiku();
+
+private:
+    void enterFullscreen() override;
+    void exitFullscreen() override;
+    void cleanup() override;
+
+    WebPageProxy& m_page;
+    BWindow* m_fullscreenWindow { nullptr };
+    BView* m_originalParent { nullptr };
+    BRect m_originalFrame;
 };
 
 } // namespace WebKit
 
 #endif // ENABLE(VIDEO)
-#endif // FullscreenVideoControllerHaiku_h

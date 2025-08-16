@@ -27,14 +27,13 @@
 #include "WebPrintOperationProxy.h"
 
 #include "DrawingAreaProxy.h"
-#include "WebPageProxy.h"
-#include "WebProcessProxy.h"
 #include "MessageSenderInlines.h"
-#include "WebPrintOperationProxyMessages.h"
+#include "WebPageProxy.h"
 #include "WebPageProxyMessages.h"
-
+#include "WebPrintOperationProxyMessages.h"
+#include "WebProcessProxy.h"
+#include <Alert.h>
 #include <WebCore/PrintInfo.h>
-
 #include <wtf/text/WTFString.h>
 
 namespace WebKit {
@@ -56,12 +55,15 @@ WebPrintOperationProxy::WebPrintOperationProxy(WebPageProxy& page, const PrintIn
 
 void WebPrintOperationProxy::start()
 {
-    if (m_printJob->ConfigJob() != B_OK)
+    if (m_printJob->ConfigJob() != B_OK) {
+        end();
         return;
+    }
 
     m_printJob->BeginJob();
 
-    // FIXME: Use the actual frame.
+    // FIXME: Use the actual frame. The public API would need to be changed to
+    // allow specifying a frame to print.
     m_page.send(Messages::WebPageProxy::PrintFrame(m_page.mainFrameID(), m_printInfo));
 }
 
@@ -75,8 +77,16 @@ void WebPrintOperationProxy::didStartPrinting(int pageCount)
 void WebPrintOperationProxy::didRenderPage(const IPC::DataReference& pdfData, int pageNumber)
 {
     // FIXME: The data is in PDF format, but the Haiku printing system expects
-    // BPicture. We need to convert it. For now, just pretend it's OK.
-    m_printJob->SpoolPage();
+    // a BPicture for each page. To fix this, we would need to either:
+    //   a) Link a PDF rendering library (like Poppler) into the UI process
+    //      to convert the PDF data into a sequence of drawing commands that
+    //      can be stored in a BPicture.
+    //   b) Change the WebProcess to render to a BPicture directly instead of
+    //      a PDF context. This would require a new GraphicsContext backend.
+    //
+    // For now, printing is non-functional. We just advance the page count
+    // to avoid getting stuck.
+    // m_printJob->SpoolPage();
 
     m_currentPage++;
     if (m_currentPage < m_pageCount)
@@ -87,7 +97,8 @@ void WebPrintOperationProxy::didRenderPage(const IPC::DataReference& pdfData, in
 
 void WebPrintOperationProxy::didFailPrinting()
 {
-    // FIXME: What to do here?
+    auto* alert = new BAlert("Printing Failed", "The print job could not be completed.", "OK");
+    alert->Go(nullptr);
     end();
 }
 

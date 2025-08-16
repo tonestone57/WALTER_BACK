@@ -25,38 +25,32 @@
 
 #pragma once
 
-#include "WebInspectorProxy.h"
+#if ENABLE(WEB_AUDIO)
 
-class BWindow;
+#include <WebCore/AudioDestination.h>
+#include <wtf/Forward.h>
+
+namespace WebCore {
+class AudioIOCallback;
+}
 
 namespace WebKit {
 
-class WebView;
-
-class WebInspectorProxyHaiku final : public WebInspectorProxy {
+class AudioDestinationHaiku final : public WebCore::AudioDestination {
 public:
-    WebInspectorProxyHaiku(WebPageProxy&);
-    virtual ~WebInspectorProxyHaiku();
+    AudioDestinationHaiku(WebCore::AudioIOCallback&, unsigned, unsigned, float);
+    virtual ~AudioDestinationHaiku();
 
 private:
-    // IPC::MessageReceiver
-    void isFront(CompletionHandler<void(bool)>&&) override;
+    void start() override;
+    void stop() override;
+    bool isPlaying() const override;
+    float sampleRate() const override;
 
-    // WebInspectorProxy
-    Ref<WebPageProxy> createInspectorPage(Ref<API::PageConfiguration>&&) override;
-    String inspectorURL() const override;
-    String inspectorPageURL() const override;
-    String inspectorTestPageURL() const override;
-    void platformCreateInspectorWindow() override;
-    void platformCloseInspectorWindow() override;
-    void platformBringToFront() override;
-    void platformDidClose() override;
-    bool platformIsFront() override;
-    void platformAttach() override;
-    void platformDetach() override;
-
-    BWindow* m_inspectorWindow { nullptr };
-    WebView* m_inspectorView { nullptr };
+    WebCore::AudioIOCallback& m_callback;
+    // BSoundPlayer and other Haiku-specific members will go here.
 };
 
 } // namespace WebKit
+
+#endif // ENABLE(WEB_AUDIO)

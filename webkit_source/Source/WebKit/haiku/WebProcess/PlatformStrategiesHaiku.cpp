@@ -27,6 +27,7 @@
 #include "PlatformStrategiesHaiku.h"
 
 #include <WebCore/BlobRegistryImpl.h>
+#include "AudioDestinationHaiku.h"
 #include <WebCore/MediaStrategy.h>
 #include <WebCore/NotImplemented.h>
 #include <WebCore/ResourceLoadScheduler.h>
@@ -117,9 +118,7 @@ private:
     std::unique_ptr<AudioDestination> createAudioDestination(AudioIOCallback& callback, const String& inputDeviceId,
         unsigned numberOfInputChannels, unsigned numberOfOutputChannels, float sampleRate) override
     {
-        // FIXME: We should probably use the WebKit provided AudioDestination a la AudioDestinationCocoa
-        notImplemented();
-        return nullptr;
+        return std::make_unique<AudioDestinationHaiku>(callback, numberOfInputChannels, numberOfOutputChannels, sampleRate);
     }
 #endif
 };

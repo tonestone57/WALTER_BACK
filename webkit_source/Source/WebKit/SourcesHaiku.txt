@@ -52,6 +52,7 @@ haiku/WebProcess/WebFrameLoaderClientHaiku.cpp
 haiku/WebProcess/WebHistoryItemClientHaiku.cpp
 haiku/WebProcess/WebInspectorClientHaiku.cpp
 haiku/WebProcess/WebNavigatorContentUtilsClientHaiku.cpp
+    haiku/WebProcess/AudioDestinationHaiku.cpp
 haiku/WebProcess/WebPageHaiku.cpp
 haiku/WebProcess/WebProcessHaiku.cpp
 haiku/WebProcess/WebProcessMainHaiku.cpp

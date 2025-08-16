@@ -23,20 +23,89 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "config.h"
 #include "FullscreenVideoControllerHaiku.h"
 
-#include <WebCore/NotImplemented.h>
+#if ENABLE(VIDEO)
+
+#include "WebPageProxy.h"
+#include "WebView.h"
+#include <Screen.h>
+#include <View.h>
+#include <Window.h>
 
 namespace WebKit {
 
-FullscreenVideoControllerHaiku::FullscreenVideoControllerHaiku()
+class FullscreenWindow : public BWindow {
+public:
+    FullscreenWindow(BRect frame)
+        : BWindow(frame, "Fullscreen Video", B_NO_BORDER_WINDOW_LOOK, B_NORMAL_WINDOW_FEEL, B_AVOID_FRONT)
+    {
+    }
+
+    void FrameResized(float newWidth, float newHeight) override
+    {
+        if (BView* child = ChildAt(0))
+            child->ResizeTo(newWidth, newHeight);
+    }
+};
+
+FullscreenVideoControllerHaiku::FullscreenVideoControllerHaiku(WebPageProxy& page)
+    : m_page(page)
 {
-    notImplemented();
 }
 
 FullscreenVideoControllerHaiku::~FullscreenVideoControllerHaiku()
 {
-    notImplemented();
+    cleanup();
+}
+
+void FullscreenVideoControllerHaiku::enterFullscreen()
+{
+    if (m_fullscreenWindow)
+        return;
+
+    BView* view = m_page.view();
+    if (!view)
+        return;
+
+    m_originalParent = view->Parent();
+    m_originalFrame = view->Frame();
+
+    BScreen screen(B_MAIN_SCREEN_ID);
+    BRect screenFrame = screen.Frame();
+
+    m_fullscreenWindow = new FullscreenWindow(screenFrame);
+    m_fullscreenWindow->AddChild(view);
+    view->ResizeTo(screenFrame.Width(), screenFrame.Height());
+    m_fullscreenWindow->Show();
+}
+
+void FullscreenVideoControllerHaiku::exitFullscreen()
+{
+    if (!m_fullscreenWindow)
+        return;
+
+    BView* view = m_page.view();
+    m_fullscreenWindow->RemoveChild(view);
+
+    if (m_originalParent) {
+        m_originalParent->AddChild(view);
+        view->MoveTo(m_originalFrame.LeftTop());
+        view->ResizeTo(m_originalFrame.Width(), m_originalFrame.Height());
+    }
+
+    m_fullscreenWindow->Lock();
+    m_fullscreenWindow->Quit();
+    m_fullscreenWindow = nullptr;
+    m_originalParent = nullptr;
+}
+
+void FullscreenVideoControllerHaiku::cleanup()
+{
+    exitFullscreen();
 }
 
 } // namespace WebKit
+
+#endif // ENABLE(VIDEO)

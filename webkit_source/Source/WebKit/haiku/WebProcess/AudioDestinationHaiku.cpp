@@ -23,40 +23,54 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include "config.h"
+#include "AudioDestinationHaiku.h"
 
-#include "WebInspectorProxy.h"
+#if ENABLE(WEB_AUDIO)
 
-class BWindow;
+#include <WebCore/AudioIOCallback.h>
+#include <WebCore/NotImplemented.h>
 
 namespace WebKit {
 
-class WebView;
+AudioDestinationHaiku::AudioDestinationHaiku(WebCore::AudioIOCallback& callback,
+    unsigned numberOfInputChannels, unsigned numberOfOutputChannels, float sampleRate)
+    : m_callback(callback)
+{
+    // TODO: Initialize BSoundPlayer here.
+}
 
-class WebInspectorProxyHaiku final : public WebInspectorProxy {
-public:
-    WebInspectorProxyHaiku(WebPageProxy&);
-    virtual ~WebInspectorProxyHaiku();
+AudioDestinationHaiku::~AudioDestinationHaiku()
+{
+    // TODO: Clean up BSoundPlayer.
+}
 
-private:
-    // IPC::MessageReceiver
-    void isFront(CompletionHandler<void(bool)>&&) override;
+void AudioDestinationHaiku::start()
+{
+    // TODO: Start the BSoundPlayer.
+    notImplemented();
+}
 
-    // WebInspectorProxy
-    Ref<WebPageProxy> createInspectorPage(Ref<API::PageConfiguration>&&) override;
-    String inspectorURL() const override;
-    String inspectorPageURL() const override;
-    String inspectorTestPageURL() const override;
-    void platformCreateInspectorWindow() override;
-    void platformCloseInspectorWindow() override;
-    void platformBringToFront() override;
-    void platformDidClose() override;
-    bool platformIsFront() override;
-    void platformAttach() override;
-    void platformDetach() override;
+void AudioDestinationHaiku::stop()
+{
+    // TODO: Stop the BSoundPlayer.
+    notImplemented();
+}
 
-    BWindow* m_inspectorWindow { nullptr };
-    WebView* m_inspectorView { nullptr };
-};
+bool AudioDestinationHaiku::isPlaying() const
+{
+    // TODO: Return the state of the BSoundPlayer.
+    notImplemented();
+    return false;
+}
+
+float AudioDestinationHaiku::sampleRate() const
+{
+    // TODO: Return the actual sample rate.
+    notImplemented();
+    return 0;
+}
 
 } // namespace WebKit
+
+#endif // ENABLE(WEB_AUDIO)

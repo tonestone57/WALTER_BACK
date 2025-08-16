@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include "DataReference.h"
 #include "WebFrameProxy.h"
 
 #include <Point.h>
@@ -40,8 +41,12 @@ public:
     virtual ~WebFrameProxyHaiku();
 
     void loadURL(const String&);
+    void loadData(const IPC::DataReference&, const String&, const String&, const String&);
+    void loadAlternateHTML(const IPC::DataReference&, const String&, const String&);
     void stopLoading();
     void reload();
+    void goBack();
+    void goForward();
 
     String requestedURL() const;
     String url() const;
@@ -92,6 +97,8 @@ public:
     const String& title() const;
 
     const char* name() const;
+
+    void runJavaScript(const String&);
 
     JSGlobalContextRef globalContext() const;
 
