@@ -29,21 +29,28 @@
 #include "WebProcessCreationParameters.h"
 #include <WebCore/NotImplemented.h>
 
+#include <Application.h>
+#include <Path.h>
+#include <Roster.h>
+
 namespace WebKit {
 
 void WebProcessPool::platformInitialize(NeedsGlobalStaticInitialization)
 {
-    notImplemented();
 }
 
 void WebProcessPool::platformInitializeNetworkProcess(NetworkProcessCreationParameters&)
 {
-    notImplemented();
 }
 
 void WebProcessPool::platformInitializeWebProcess(const WebKit::WebProcessProxy&, WebProcessCreationParameters& parameters)
 {
-    notImplemented();
+    app_info info;
+    be_app->GetAppInfo(&info);
+    BPath path(&info.ref);
+    path.GetParent(&path);
+    path.Append("WebProcess");
+    parameters.processPath = path.Path();
 }
 
 void WebProcessPool::platformInvalidateContext()

@@ -79,7 +79,11 @@ void WebContextMenuProxyHaiku::showContextMenuWithItems(Vector<Ref<WebContextMen
         if (item->data().type() == ContextMenuItemType::Separator) {
             menu->AddSeparatorItem();
         } else if (item->data().type() == ContextMenuItemType::Submenu) {
-            // FIXME: Implement submenus.
+            BMenu* subMenu = new BMenu(item->data().title().utf8().data());
+            // FIXME: The WebContextMenuItemData doesn't contain the submenu items.
+            // We need to add a submenu() method to WebContextMenuItemData that returns a WebContextMenu object.
+            // This requires changes in files that are not part of the Haiku port.
+            menu->AddItem(subMenu);
         } else {
             BMessage* message = new BMessage(B_EXECUTE);
             message->AddInt32("action", item->data().action());

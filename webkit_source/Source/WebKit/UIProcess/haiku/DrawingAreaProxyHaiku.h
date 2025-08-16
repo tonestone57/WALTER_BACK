@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Your Name <your@email.com>
+ * Copyright (C) 2024 Haiku, Inc.
  *
  * All rights reserved.
  *
@@ -28,7 +28,9 @@
 #pragma once
 
 #include "DrawingAreaProxy.h"
+#include "UpdateInfo.h"
 #include <Bitmap.h>
+#include <WebCore/GraphicsContext.h>
 
 namespace WebKit {
 
@@ -38,9 +40,14 @@ public:
     virtual ~DrawingAreaProxyHaiku();
 
     BBitmap* backingStore() { return m_backingStore.get(); }
+    void paint(WebCore::GraphicsContext&, const WebCore::IntRect&);
 
 private:
+    // DrawingAreaProxy
     void sizeDidChange() override;
+
+    // IPC
+    void incorporateUpdate(const UpdateInfo&);
 
     std::unique_ptr<BBitmap> m_backingStore;
 };

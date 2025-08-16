@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Your Name <you@example.com>
+ * Copyright (C) 2024 Haiku, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions

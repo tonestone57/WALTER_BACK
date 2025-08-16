@@ -28,4 +28,8 @@
 
 namespace WebKit {
 
+// FIXME: This feature is not implemented.
+// The remote web inspector allows the web inspector to be run in a separate
+// process, and to inspect a remote target. This is not yet supported on Haiku.
+
 };

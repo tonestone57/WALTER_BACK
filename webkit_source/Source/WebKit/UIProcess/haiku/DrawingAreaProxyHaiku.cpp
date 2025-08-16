@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Your Name <your@email.com>
+ * Copyright (C) 2024 Haiku, Inc.
  *
  * All rights reserved.
  *
@@ -28,9 +28,15 @@
 #include "config.h"
 #include "DrawingAreaProxyHaiku.h"
 
+#include "ShareableBitmap.h"
+#include "UpdateInfo.h"
 #include "WebPageProxy.h"
+#include <WebCore/GraphicsContext.h>
+
+#include <View.h>
 
 namespace WebKit {
+using namespace WebCore;
 
 DrawingAreaProxyHaiku::DrawingAreaProxyHaiku(WebPageProxy& page, WebProcessProxy& process)
     : DrawingAreaProxy(DrawingAreaType::Haiku, page, process)
@@ -39,6 +45,39 @@ DrawingAreaProxyHaiku::DrawingAreaProxyHaiku(WebPageProxy& page, WebProcessProxy
 
 DrawingAreaProxyHaiku::~DrawingAreaProxyHaiku()
 {
+}
+
+void DrawingAreaProxyHaiku::paint(GraphicsContext& context, const IntRect& rect)
+{
+    if (!m_backingStore)
+        return;
+
+    BView* view = context.platformContext();
+    if (!view)
+        return;
+
+    view->DrawBitmap(m_backingStore.get(), rect, rect);
+}
+
+void DrawingAreaProxyHaiku::incorporateUpdate(const UpdateInfo& updateInfo)
+{
+    if (!m_backingStore)
+        return;
+
+    for (const auto& rect : updateInfo.updateRects()) {
+        RefPtr<ShareableBitmap> bitmap = ShareableBitmap::create(updateInfo.bitmapHandle());
+        if (!bitmap)
+            return;
+
+        const void* data = bitmap->data();
+        if (!data)
+            return;
+
+        m_backingStore->ImportBits(data, bitmap->size().width() * bitmap->size().height() * 4,
+            bitmap->size().width() * 4, 0, rect.location(), rect.size().width(), rect.size().height());
+    }
+
+    m_pageProxy.viewNeedsDisplay(updateInfo.updateRects());
 }
 
 void DrawingAreaProxyHaiku::sizeDidChange()

@@ -26,22 +26,20 @@
 #include "config.h"
 #include "WebProcess.h"
 
-#include "NotImplemented.h"
+#include "WebProcessCreationParameters.h"
 
 namespace WebKit {
 
 void WebProcess::platformInitializeWebProcess(WebProcessCreationParameters&& parameters)
 {
-    notImplemented();
 }
 
 void WebProcess::platformTerminate()
 {
 }
 
-void WebProcess::platformSetCacheModel(CacheModel cacheModel)
+void WebProcess::platformSetCacheModel(CacheModel)
 {
-    notImplemented();
 }
 
 }

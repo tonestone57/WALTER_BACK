@@ -41,28 +41,23 @@ namespace WebKit {
 
 void WebInspectorProxy::platformHide()
 {
-    notImplemented();
 }
 
 void WebInspectorProxy::platformResetState()
 {
-    notImplemented();
 }
 
 void WebInspectorProxy::platformBringToFront()
 {
-    notImplemented();
 }
 
 bool WebInspectorProxy::platformIsFront()
 {
-    notImplemented();
     return false;
 }
 
 void WebInspectorProxy::platformInspectedURLChanged(const String& url)
 {
-    notImplemented();
 }
 
 String WebInspectorProxy::inspectorPageURL()
@@ -85,91 +80,85 @@ String WebInspectorProxy::inspectorTestPageURL()
 
 String WebInspectorProxy::inspectorBaseURL()
 {
-    notImplemented();
-    return "file://" /*+ WebCore::inspectorResourcePath()*/;
+    // FIXME: This needs to be implemented to return the path to the inspector resources.
+    // This is likely a file:// URL pointing to the Resources/inspector directory
+    // in the application bundle.
+    return "file://";
 }
 
 unsigned WebInspectorProxy::platformInspectedWindowHeight()
 {
-    notImplemented();
     return 0;
 }
 
 unsigned WebInspectorProxy::platformInspectedWindowWidth()
 {
-    notImplemented();
     return 0;
 }
 
 void WebInspectorProxy::platformAttach()
 {
-    notImplemented();
 }
 
 void WebInspectorProxy::platformDetach()
 {
-    notImplemented();
 }
 
 void WebInspectorProxy::platformSetAttachedWindowHeight(unsigned)
 {
-    notImplemented();
 }
 
 void WebInspectorProxy::platformSetAttachedWindowWidth(unsigned)
 {
-    notImplemented();
 }
 
 void WebInspectorProxy::platformSave(const String&, const String&, bool, bool)
 {
-    notImplemented();
 }
 
 void WebInspectorProxy::platformAppend(const String&, const String&)
 {
-    notImplemented();
 }
 
 void WebInspectorProxy::platformAttachAvailabilityChanged(bool)
 {
-    notImplemented();
 }
 
 void WebInspectorProxy::platformStartWindowDrag()
 {
-	notImplemented();
 }
 
 void WebInspectorProxy::platformCreateFrontendWindow()
 {
-	notImplemented();
+    // FIXME: This needs to be implemented to create a new window for the inspector.
+    // This will involve creating a BWindow and a WebView, and loading the inspector frontend.
 }
+
 void WebInspectorProxy::platformCloseFrontendPageAndWindow()
 {
-	notImplemented();
 }
 
 void WebInspectorProxy::platformShowCertificate(const WebCore::CertificateInfo&)
 {
-	notImplemented();
 }
 
 void WebInspectorProxy::platformDidCloseForCrash()
 {
-	notImplemented();
 }
+
 void WebInspectorProxy::platformInvalidate()
 {
-	notImplemented();
 }
+
 void WebInspectorProxy::platformBringInspectedPageToFront()
 {
-	notImplemented();
 }
+
 WebPageProxy* WebInspectorProxy::platformCreateFrontendPage()
 {
-	notImplemented();
+    // FIXME: This needs to be implemented to create a new WebPageProxy for the inspector.
+    // This will likely involve creating a new WebView with a special configuration.
+    return nullptr;
 }
 
 }

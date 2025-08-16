@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013 Intel Corporation. All rights reserved.
+ * Copyright (C) 2024 Haiku, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,20 +27,24 @@
 #include "config.h"
 #include "WebViewPrivate.h"
 
+#include "DrawingAreaProxyHaiku.h"
 #include "NotImplemented.h"
 #include "WebContext.h"
 #include "WebPageGroup.h"
+#include "WebPageProxy.h"
+
+#include <View.h>
 
 using namespace WebCore;
 
 namespace WebKit {
 
 WebView::WebView(WebContext* context, WebPageGroup* pageGroup)
+    : BView(nullptr, B_WILL_DRAW | B_FRAME_EVENTS)
 {
     WebPageConfiguration webPageConfiguration;
     webPageConfiguration.pageGroup = pageGroup;
 
-    // Need to call createWebPage after other data members, specifically m_visible, are initialized.
     m_page = context->createWebPage(*this, WTF::move(webPageConfiguration));
 
     m_page->pageGroup().preferences().setAcceleratedCompositingEnabled(true);
@@ -49,8 +54,6 @@ WebView::WebView(WebContext* context, WebPageGroup* pageGroup)
     bool showDebugVisuals = debugVisualsEnvironment && !strcmp(debugVisualsEnvironment, "1");
     m_page->pageGroup().preferences().setCompositingBordersVisible(showDebugVisuals);
     m_page->pageGroup().preferences().setCompositingRepaintCountersVisible(showDebugVisuals);
-    
-    notImplemented();
 }
 
 WebView::~WebView()
@@ -68,207 +71,209 @@ PassRefPtr<WebView> WebView::create(WebContext* context, WebPageGroup* pageGroup
 
 void WebView::didChangeContentSize(WebCore::IntSize const&)
 {
-    notImplemented();
 }
 
 std::unique_ptr<WebKit::DrawingAreaProxy> WebView::createDrawingAreaProxy()
 {
-    notImplemented();
+    return makeUnique<DrawingAreaProxyHaiku>(*m_page, m_page->process());
 }
 
-void WebView::setViewNeedsDisplay(WebCore::IntRect const&)
+void WebView::setViewNeedsDisplay(const WebCore::IntRect& rect)
 {
-    notImplemented();
+    Invalidate(rect);
 }
 
-void WebView::displayView()
+void WebView::Draw(BRect updateRect)
 {
-    notImplemented();
+    if (m_page && m_page->drawingArea())
+        static_cast<DrawingAreaProxyHaiku*>(m_page->drawingArea())->paint(
+            *GetGraphicsContext(), updateRect);
+}
+
+void WebView::MouseDown(BPoint where)
+{
+    if (m_page)
+        m_page->handleMouseEvent(NativeWebMouseEvent(this, where, B_PRIMARY_MOUSE_BUTTON));
+}
+
+void WebView::MouseUp(BPoint where)
+{
+    if (m_page)
+        m_page->handleMouseEvent(NativeWebMouseEvent(this, where, 0));
+}
+
+void WebView::MouseMoved(BPoint where, uint32 transit, const BMessage* message)
+{
+    if (m_page)
+        m_page->handleMouseEvent(NativeWebMouseEvent(this, where, 0));
+}
+
+void WebView::KeyDown(const char* bytes, int32 numBytes)
+{
+    if (m_page)
+        m_page->handleKeyboardEvent(NativeWebKeyboardEvent(this, bytes, numBytes));
+}
+
+void WebView::KeyUp(const char* bytes, int32 numBytes)
+{
+    if (m_page)
+        m_page->handleKeyboardEvent(NativeWebKeyboardEvent(this, bytes, numBytes));
 }
 
 void WebView::scrollView(WebCore::IntRect const&, WebCore::IntSize const&)
 {
-    notImplemented();
 }
 
 void WebView::requestScroll(WebCore::FloatPoint const&, bool)
 {
-    notImplemented();
 }
 
 WebCore::IntSize WebView::viewSize()
 {
-    notImplemented();
+    return IntSize(Bounds().IntegerWidth(), Bounds().IntegerHeight());
 }
 
 bool WebView::isViewWindowActive()
 {
-    notImplemented();
-    return true;
+    return Window() && Window()->IsActive();
 }
 
 bool WebView::isViewFocused()
 {
-    notImplemented();
-    return true;
+    return IsFocus();
 }
 
 bool WebView::isViewVisible()
 {
-    notImplemented();
-    return true;
+    return !IsHidden();
 }
 
 void WebView::processDidExit()
 {
-    notImplemented();
 }
 
 void WebView::didRelaunchProcess()
 {
-    notImplemented();
 }
 
 void WebView::pageClosed()
 {
-    notImplemented();
 }
 
 void WebView::preferencesDidChange()
 {
-    notImplemented();
 }
 
 void WebView::toolTipChanged(WTF::String const&, WTF::String const&)
 {
-    notImplemented();
 }
 
 void WebView::didCommitLoadForMainFrame(WTF::String const&, bool)
 {
-    notImplemented();
 }
 
 void WebView::setCursor(WebCore::Cursor const&)
 {
-    notImplemented();
 }
 
 void WebView::setCursorHiddenUntilMouseMoves(bool)
 {
-    notImplemented();
 }
 
 void WebView::didChangeViewportProperties(WebCore::ViewportAttributes const&)
 {
-    notImplemented();
 }
 
 bool WebView::isViewInWindow()
 {
-    notImplemented();
-    return true;
+    return Window();
 }
 
 void WebView::registerEditCommand(WTF::PassRefPtr<WebKit::WebEditCommandProxy>, WebKit::WebPageProxy::UndoOrRedo)
 {
-    notImplemented();
 }
 
 void WebView::clearAllEditCommands()
 {
-    notImplemented();
 }
 
 bool WebView::canUndoRedo(WebKit::WebPageProxy::UndoOrRedo)
 {
-    notImplemented();
+    return false;
 }
 
 void WebView::executeUndoRedo(WebKit::WebPageProxy::UndoOrRedo)
 {
-    notImplemented();
 }
 
 WebCore::FloatRect WebView::convertToDeviceSpace(WebCore::FloatRect const& rect)
 {
-    notImplemented();
     return rect;
 }
 
 WebCore::IntPoint WebView::screenToRootView(WebCore::IntPoint const&)
 {
-    notImplemented();
+    return { };
 }
 
-WebCore::IntRect WebView::rootViewToScreen(WebCore::IntRect const&)
+WebCore::IntRect WebView::rootViewToScreen(WebCore::IntRect const& rect)
 {
-    notImplemented();
+    return rect;
 }
 
-WebCore::FloatRect WebView::convertToUserSpace(WebCore::FloatRect const&)
+WebCore::FloatRect WebView::convertToUserSpace(WebCore::FloatRect const& rect)
 {
-    notImplemented();
+    return rect;
 }
 
 void WebView::updateTextInputState()
 {
-    notImplemented();
 }
 
 void WebView::handleDownloadRequest(WebKit::DownloadProxy*)
 {
-    notImplemented();
 }
 
 void WebView::doneWithKeyEvent(WebKit::NativeWebKeyboardEvent const&, bool)
 {
-    notImplemented();
 }
 
 WTF::PassRefPtr<WebKit::WebPopupMenuProxy> WebView::createPopupMenuProxy(WebKit::WebPageProxy*)
 {
-    notImplemented();
+    return nullptr;
 }
 
 WTF::PassRefPtr<WebKit::WebContextMenuProxy> WebView::createContextMenuProxy(WebKit::WebPageProxy*)
 {
-    notImplemented();
+    return nullptr;
 }
 
 void WebView::setFindIndicator(WTF::PassRefPtr<WebKit::FindIndicator>, bool, bool)
 {
-    notImplemented();
 }
 
 void WebView::enterAcceleratedCompositingMode(WebKit::LayerTreeContext const&)
 {
-    notImplemented();
 }
 
 void WebView::exitAcceleratedCompositingMode()
 {
-    notImplemented();
 }
 
 void WebView::updateAcceleratedCompositingMode(WebKit::LayerTreeContext const&)
 {
-    notImplemented();
 }
 
 void WebView::didFinishLoadingDataForCustomContentProvider(WTF::String const&, IPC::DataReference const&)
 {
-    notImplemented();
 }
 
 void WebView::didFinishLoadForMainFrame()
 {
-    notImplemented();
 }
 
 void WebView::didFirstVisuallyNonEmptyLayoutForMainFrame()
 {
-    notImplemented();
 }
 
 
