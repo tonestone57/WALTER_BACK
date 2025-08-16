@@ -35,6 +35,9 @@ namespace WebKit {
 
 NetworkProcessHaiku& NetworkProcessHaiku::singleton()
 {
+    // FIXME: This is a memory leak. However, since the NetworkProcess is a
+    // singleton that lives for the entire duration of the application, this
+    // is probably not a major issue.
     static NetworkProcessHaiku* process = new NetworkProcessHaiku;
     return *process;
 }

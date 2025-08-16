@@ -32,6 +32,9 @@ namespace WebKit {
 
 GPUProcessHaiku& GPUProcessHaiku::singleton()
 {
+    // FIXME: This is a memory leak. However, since the GPUProcess is a
+    // singleton that lives for the entire duration of the application, this
+    // is probably not a major issue.
     static GPUProcessHaiku* process = new GPUProcessHaiku;
     return *process;
 }
