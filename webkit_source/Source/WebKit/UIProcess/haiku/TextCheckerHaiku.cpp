@@ -42,6 +42,8 @@ TextCheckerState& checkerState()
 
 Vector<TextCheckingResult> TextChecker::checkTextOfParagraph(SpellDocumentTag, StringView, int32_t, OptionSet<TextCheckingType>, bool)
 {
+    // FIXME: This is a stub implementation.
+    // We need to implement spell checking using the Haiku API.
     return { };
 }
 

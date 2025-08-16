@@ -64,15 +64,15 @@ void DrawingAreaProxyHaiku::incorporateUpdate(const UpdateInfo& updateInfo)
     if (!m_backingStore)
         return;
 
+    RefPtr<ShareableBitmap> bitmap = ShareableBitmap::create(updateInfo.bitmapHandle());
+    if (!bitmap)
+        return;
+
+    const void* data = bitmap->data();
+    if (!data)
+        return;
+
     for (const auto& rect : updateInfo.updateRects()) {
-        RefPtr<ShareableBitmap> bitmap = ShareableBitmap::create(updateInfo.bitmapHandle());
-        if (!bitmap)
-            return;
-
-        const void* data = bitmap->data();
-        if (!data)
-            return;
-
         m_backingStore->ImportBits(data, bitmap->size().width() * bitmap->size().height() * 4,
             bitmap->size().width() * 4, 0, rect.location(), rect.size().width(), rect.size().height());
     }
