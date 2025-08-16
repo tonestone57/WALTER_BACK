@@ -86,7 +86,10 @@ public:
     void redo();
 
 private:
+    WebPageProxyHaiku(PageConfiguration&);
+
     // WebPageProxy
+    void platformInitialize() override;
     void showContextMenu(FrameInfoData&&, ContextMenuContextData&&, const UserData&) override;
     void runOpenPanel(WebFrameProxy&, FrameInfoData&&, API::OpenPanelParameters&, WebOpenPanelResultListenerProxy&) override;
     void runJavaScriptAlert(WebFrameProxy&, FrameInfoData&&, const String&, CompletionHandler<void()>&&) override;
@@ -133,6 +136,7 @@ private:
     void didChangeProgress(double) override;
     void didFinishProgress() override;
     void didFailLoad(WebCore::FrameIdentifier, FrameInfoData&&, WebCore::ResourceRequest&&, const WebCore::ResourceError&) override;
+    void editorStateChanged(const WebKit::EditorState&) override;
 
     std::unique_ptr<WebView> m_view;
     String m_mainFrameTitle;
@@ -145,9 +149,6 @@ private:
 
     // WebContextMenuProxy::Client
     void contextMenuItemSelected(const WebContextMenuItemData&) override;
-
-    // WebPageProxy
-    void editorStateChanged(const WebKit::EditorState&) override;
 
     Vector<UndoStepInfo> m_undoStack;
     Vector<UndoStepInfo> m_redoStack;

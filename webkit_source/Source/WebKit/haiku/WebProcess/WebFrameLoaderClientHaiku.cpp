@@ -128,10 +128,9 @@ void WebFrameLoaderClientHaiku::detachedFromParent()
 {
 }
 
-void WebFrameLoaderClientHaiku::dispatchDidReceiveAuthenticationChallenge(WebCore::DocumentLoader&, uint64_t, const WebCore::AuthenticationChallenge&)
+void WebFrameLoaderClientHaiku::dispatchDidReceiveAuthenticationChallenge(WebCore::DocumentLoader& loader, uint64_t challengeID, const WebCore::AuthenticationChallenge& challenge)
 {
-    // TODO: Implement. For now, we do nothing, which will result in the connection failing.
-    // A proper implementation would send a message to the UI process to ask the user for credentials.
+    WebLocalFrameLoaderClient::dispatchDidReceiveAuthenticationChallenge(loader, challengeID, challenge);
 }
 
 void WebFrameLoaderClientHaiku::dispatchDidFailLoad(const WebCore::ResourceError& error)

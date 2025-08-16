@@ -25,6 +25,8 @@
     DispatchedTo=WebContent
 ]
 messages -> DrawingArea {
+    DidUpdate()
+
 #if USE(COORDINATED_GRAPHICS) || USE(TEXTURE_MAPPER)
     UpdateGeometry(WebCore::IntSize size) -> ()
     ForceUpdate()

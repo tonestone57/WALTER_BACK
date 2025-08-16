@@ -33,16 +33,21 @@ namespace WebKit {
 
 void FindClientHaiku::didFindString(WebPageProxy&, const String&, unsigned, bool, unsigned)
 {
+    // FIXME: This should update the UI with the result of the find operation,
+    // for example by highlighting the match. For now, just log it.
     fprintf(stderr, "Found string\n");
 }
 
 void FindClientHaiku::didFailToFindString(WebPageProxy&, const String&)
 {
+    // FIXME: This should update the UI to indicate that the string was not found.
     fprintf(stderr, "String not found\n");
 }
 
 void FindClientHaiku::didCountStringMatches(WebPageProxy&, const String&, unsigned matchCount)
 {
+    // FIXME: This should update a "Find" panel or similar UI element with the
+    // total number of matches found on the page.
     fprintf(stderr, "Found %d matches\n", matchCount);
 }
 

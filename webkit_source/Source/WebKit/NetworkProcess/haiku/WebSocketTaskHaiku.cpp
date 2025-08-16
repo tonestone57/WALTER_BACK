@@ -63,11 +63,18 @@ void WebSocketTask::sendData(std::span<const uint8_t> data, CompletionHandler<vo
     sendString(data, WTFMove(completionHandler));
 }
 
-void WebSocketTask::close(int32_t, const String&)
+void WebSocketTask::close(int32_t code, const String& reason)
 {
-    // TODO: Perform the WebSocket closing handshake.
+    // Switch to a "closing" state. The worker thread will send the close
+    // frame, wait for the server to close the connection, and then terminate.
+    callOnWorkerThread([this, protectedThis = Ref{*this}, code, reason] {
+        // TODO: Actually create and send a close frame.
+        // For now, just close the socket.
+        m_running = false;
+    });
+
     if (auto channel = m_channel.get())
-        channel->didClose(0, String());
+        channel->didClose(code, reason);
 }
 
 void WebSocketTask::cancel()

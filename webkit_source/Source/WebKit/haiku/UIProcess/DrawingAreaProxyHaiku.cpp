@@ -71,6 +71,8 @@ void DrawingAreaProxyHaiku::update(const ShareableBitmap::Handle& handle, const 
 
     if (auto* page = page())
         page->setViewNeedsDisplay(rect);
+
+    send(Messages::DrawingArea::DidUpdate());
 }
 
 } // namespace WebKit

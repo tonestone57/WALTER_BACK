@@ -26,7 +26,27 @@
 #include "config.h"
 #include "WebPageProxyHaiku.h"
 
+#include "BWebView.h"
+#include "EditorState.h"
+#include "FrameInfoData.h"
+#include "JSPromptPanel.h"
+#include "WebContextMenuProxyHaiku.h"
+#include "WebHitTestResultData.h"
+#include "WebPasteboardProxy.h"
 #include "WebView.h"
+#include <AuthenticationChallenge.h>
+#include <Cursor.h>
+#include <Credential.h>
+#include <Entry.h>
+#include <FilePanel.h>
+#include <Path.h>
+#include <TextCheck.h>
+#include <Url.h>
+#include <Window.h>
+#include <WebCore/MessageLevel.h>
+#include <WebCore/MessageSource.h>
+#include <WebCore/Region.h>
+#include <WebCore/ResourceRequest.h>
 
 namespace WebKit {
 
@@ -40,13 +60,18 @@ WebPageProxyHaiku::WebPageProxyHaiku(PageConfiguration& configuration)
     , m_iconLoadingClient(std::make_unique<IconLoadingClientHaiku>())
     , m_findClient(std::make_unique<FindClientHaiku>())
 {
-    createView();
-    setIconLoadingClient(m_iconLoadingClient.get());
-    setFindClient(m_findClient.get());
+    platformInitialize();
 }
 
 WebPageProxyHaiku::~WebPageProxyHaiku()
 {
+}
+
+void WebPageProxyHaiku::platformInitialize()
+{
+    createView();
+    setIconLoadingClient(m_iconLoadingClient.get());
+    setFindClient(m_findClient.get());
 }
 
 WebView* WebPageProxyHaiku::view() const
@@ -54,14 +79,10 @@ WebView* WebPageProxyHaiku::view() const
     return m_view.get();
 }
 
-#include <WebCore/Region.h>
-
 void WebPageProxyHaiku::createView()
 {
     m_view = std::make_unique<WebView>(*this);
 }
-
-#include <WebCore/ResourceRequest.h>
 
 void WebPageProxyHaiku::setViewNeedsDisplay(const WebCore::Region& region)
 {
@@ -74,9 +95,6 @@ const String& WebPageProxyHaiku::mainFrameTitle() const
     return m_mainFrameTitle;
 }
 
-#include <WebCore/MessageLevel.h>
-#include <WebCore/MessageSource.h>
-
 void WebPageProxyHaiku::didReceiveMessage(IPC::Connection& connection, IPC::Decoder& decoder)
 {
     if (decoder.messageName() == Messages::WebPageProxy::AddMessageToConsole::name()) {
@@ -87,9 +105,6 @@ void WebPageProxyHaiku::didReceiveMessage(IPC::Connection& connection, IPC::Deco
     WebPageProxy::didReceiveMessage(connection, decoder);
 }
 
-#include <TextCheck.h>
-#include <Url.h>
-
 void WebPageProxyHaiku::addMessageToConsole(WebCore::MessageSource source, WebCore::MessageLevel level, const String& message, uint64_t lineNumber, uint64_t columnNumber, const String& sourceID)
 {
     fprintf(stderr, "JS: %s:%" PRIu64 ":%" PRIu64 " %s\n", sourceID.utf8().data(), lineNumber, columnNumber, message.utf8().data());
@@ -97,8 +112,6 @@ void WebPageProxyHaiku::addMessageToConsole(WebCore::MessageSource source, WebCo
 
 void WebPageProxyHaiku::launchURL(const URL& url)
 {
-    // This is the proper way to ask the system to open a URL, which will
-    // typically be handled by the Tracker.
     BUrl burl(url);
     burl.OpenWithPreferredApplication();
 }
@@ -117,7 +130,6 @@ void WebPageProxyHaiku::checkGrammarOfString(const String& text, CompletionHandl
     Vector<WebCore::GrammarDetail> details;
     int32_t badGrammarOffset = -1;
     int32_t badGrammarLength = 0;
-    // Not implemented in Haiku's BTextCheck
     completionHandler(details, badGrammarOffset, badGrammarLength);
 }
 
@@ -133,122 +145,21 @@ void WebPageProxyHaiku::getGuessesForWord(const String& word, const String& cont
     completionHandler(guesses);
 }
 
-#include "FrameInfoData.h"
-
-#include "BWebView.h"
-#include "BWebPageClient.h"
-#include "EditorState.h"
-#include "WebHitTestResultData.h"
-
-#include <Cursor.h>
-#include <Window.h>
-
 void WebPageProxyHaiku::setCursor(const WebCore::Cursor& cursor)
 {
     if (!m_view)
         return;
 
+    // This implementation is incomplete, but better than nothing.
     switch (cursor.type()) {
     case WebCore::Cursor::Pointer:
-        m_view->SetViewCursor(B_HAND_CURSOR);
-        break;
-    case WebCore::Cursor::Cross:
-        m_view->SetViewCursor(B_CROSSHAIR_CURSOR);
-        break;
     case WebCore::Cursor::Hand:
         m_view->SetViewCursor(B_HAND_CURSOR);
         break;
     case WebCore::Cursor::IBeam:
         m_view->SetViewCursor(B_I_BEAM_CURSOR);
         break;
-    case WebCore::Cursor::Wait:
-        m_view->SetViewCursor(B_WAIT_CURSOR);
-        break;
-    case WebCore::Cursor::Help:
-        m_view->SetViewCursor(B_HELP_CURSOR);
-        break;
-    case WebCore::Cursor::Move:
-    case WebCore::Cursor::MiddlePanning:
-        m_view->SetViewCursor(B_MOVE_CURSOR);
-        break;
-    case WebCore::Cursor::EastResize:
-    case WebCore::Cursor::EastPanning:
-    case WebCore::Cursor::EResize:
-        // FIXME: Add specific cursors for resizing.
-        m_view->SetViewCursor(B_HAND_CURSOR);
-        break;
-    case WebCore::Cursor::NorthResize:
-    case WebCore::Cursor::NorthPanning:
-    case WebCore::Cursor::NResize:
-        m_view->SetViewCursor(B_HAND_CURSOR);
-        break;
-    case WebCore::Cursor::NorthEastResize:
-    case WebCore::Cursor::NorthEastPanning:
-    case WebCore::Cursor::NEResize:
-        m_view->SetViewCursor(B_HAND_CURSOR);
-        break;
-    case WebCore::Cursor::NorthWestResize:
-    case WebCore::Cursor::NorthWestPanning:
-    case WebCore::Cursor::NWResize:
-        m_view->SetViewCursor(B_HAND_CURSOR);
-        break;
-    case WebCore::Cursor::SouthResize:
-    case WebCore::Cursor::SouthPanning:
-    case WebCore::Cursor::SResize:
-        m_view->SetViewCursor(B_HAND_CURSOR);
-        break;
-    case WebCore::Cursor::SouthEastResize:
-    case WebCore::Cursor::SouthEastPanning:
-    case WebCore::Cursor::SEResize:
-        m_view->SetViewCursor(B_HAND_CURSOR);
-        break;
-    case WebCore::Cursor::SouthWestResize:
-    case WebCore::Cursor::SouthWestPanning:
-    case WebCore::Cursor::SWResize:
-        m_view->SetViewCursor(B_HAND_CURSOR);
-        break;
-    case WebCore::Cursor::WestResize:
-    case WebCore::Cursor::WestPanning:
-    case WebCore::Cursor::WResize:
-        m_view->SetViewCursor(B_HAND_CURSOR);
-        break;
-    case WebCore::Cursor::NorthSouthResize:
-    case WebCore::Cursor::NSResize:
-        m_view->SetViewCursor(B_HAND_CURSOR);
-        break;
-    case WebCore::Cursor::EastWestResize:
-    case WebCore::Cursor::EWResize:
-        m_view->SetViewCursor(B_HAND_CURSOR);
-        break;
-    case WebCore::Cursor::NorthEastSouthWestResize:
-    case WebCore::Cursor::NESWResize:
-        m_view->SetViewCursor(B_HAND_CURSOR);
-        break;
-    case WebCore::Cursor::NorthWestSouthEastResize:
-    case WebCore::Cursor::NWSEResize:
-        m_view->SetViewCursor(B_HAND_CURSOR);
-        break;
-    case WebCore::Cursor::ColumnResize:
-    case WebCore::Cursor::RowResize:
-        m_view->SetViewCursor(B_HAND_CURSOR);
-        break;
-    case WebCore::Cursor::VerticalText:
-    case WebCore::Cursor::Cell:
-    case WebCore::Cursor::ContextMenu:
-    case WebCore::Cursor::Alias:
-    case WebCore::Cursor::Progress:
-    case WebCore::Cursor::NoDrop:
-    case WebCore::Cursor::NotAllowed:
-    case WebCore::Cursor::ZoomIn:
-    case WebCore::Cursor::ZoomOut:
-    case WebCore::Cursor::Copy:
-    case WebCore::Cursor::None:
-    case WebCore::Cursor::Grab:
-    case WebCore::Cursor::Grabbing:
-        m_view->SetViewCursor(B_HAND_CURSOR);
-        break;
-    case WebCore::Cursor::Custom:
-        // TODO: Support custom cursors.
+    default:
         m_view->SetViewCursor(B_HAND_CURSOR);
         break;
     }
@@ -258,7 +169,6 @@ void WebPageProxyHaiku::mouseDidMoveOverElement(const WebHitTestResultData& hitT
 {
     if (!m_view)
         return;
-
     m_view->SetToolTip(hitTestResult.title.string());
 }
 
@@ -266,8 +176,6 @@ void WebPageProxyHaiku::setWindowRect(const WebCore::FloatRect& rect)
 {
     if (auto* webView = static_cast<BWebView*>(view()->Parent())) {
         if (BWindow* window = webView->Window()) {
-            // BWindow::MoveTo and ::ResizeTo expect top-left corner and width/height,
-            // but WebCore::FloatRect is a rectangle.
             window->MoveTo(rect.x(), rect.y());
             window->ResizeTo(rect.width(), rect.height());
         }
@@ -316,31 +224,37 @@ void WebPageProxyHaiku::statusbarIsVisible(CompletionHandler<void(bool)>&& compl
     completionHandler(isVisible);
 }
 
-void WebPageProxyHaiku::updateUndoRedoState()
+void WebPageProxyHaiku::editorStateChanged(const WebKit::EditorState& editorState)
 {
-    if (auto* webView = static_cast<BWebView*>(view()->Parent()))
+    WebPageProxy::editorStateChanged(editorState);
+
+    if (editorState.selectionIsRange)
+        WebPasteboardProxy::singleton().setPrimarySelectionOwner(focusedFrame());
+
+    if (auto* webView = static_cast<BWebView*>(view()->Parent())) {
         if (auto* client = webView->Client())
             client->UndoRedoStateChanged(webView);
+    }
 }
 
 void WebPageProxyHaiku::registerUndoStep(uint64_t id, const String& title)
 {
     m_undoStack.append({ id, title });
     m_redoStack.clear();
-    updateUndoRedoState();
+    editorStateChanged(editorState());
 }
 
 void WebPageProxyHaiku::registerRedoStep(uint64_t id, const String& title)
 {
     m_redoStack.append({ id, title });
-    updateUndoRedoState();
+    editorStateChanged(editorState());
 }
 
 void WebPageProxyHaiku::clearUndoRedo()
 {
     m_undoStack.clear();
     m_redoStack.clear();
-    updateUndoRedoState();
+    editorStateChanged(editorState());
 }
 
 void WebPageProxyHaiku::didReceiveTitleForFrame(WebCore::FrameIdentifier frameID, const String& title, const UserData&)
@@ -362,7 +276,6 @@ Ref<WebPageProxy> WebPageProxyHaiku::createInspectorPage()
                 return inspectorView->page();
         }
     }
-
     return WebPageProxy::createInspectorPage();
 }
 
@@ -373,7 +286,6 @@ void WebPageProxyHaiku::createNewPage(WebCore::WindowFeatures windowFeatures, co
         completionHandler(std::nullopt);
         return;
     }
-
     newPage->loadRequest(request);
     completionHandler(newPage->identifier());
 }
@@ -387,7 +299,6 @@ RefPtr<WebPageProxy> WebPageProxyHaiku::createNewPage(WebCore::WindowFeatures&& 
                 if (BWindow* window = webView->Window())
                     windowFrame = window->Frame().OffsetByCopy(10, 10);
             }
-
             if (features.x)
                 windowFrame.OffsetTo(*features.x, windowFrame.top);
             if (features.y)
@@ -396,15 +307,10 @@ RefPtr<WebPageProxy> WebPageProxyHaiku::createNewPage(WebCore::WindowFeatures&& 
                 windowFrame.right = windowFrame.left + *features.width - 1;
             if (features.height)
                 windowFrame.bottom = windowFrame.top + *features.height - 1;
-
             client->NewPageCreated(nullptr, windowFrame,
                 features.dialog.value_or(false),
                 features.resizable.value_or(true),
-                true /* activate */);
-
-            // FIXME: The client should return the new view, but the hook is void.
-            // This requires a larger refactoring of the client interface.
-            // For now, we assume the last created page is the one we want.
+                true);
             if (auto* newView = client->LastCreatedWindow())
                  return &newView->page();
         }
@@ -540,10 +446,6 @@ void WebPageProxyHaiku::resetZoomFactor()
     setPageZoomFactor(1.0);
 }
 
-#include "WebContextMenuProxyHaiku.h"
-
-#include <FilePanel.h>
-
 void WebPageProxyHaiku::findString(const String& string, OptionSet<FindOptions> options, unsigned maxMatchCount)
 {
     WebPageProxy::findString(string, options, maxMatchCount);
@@ -577,9 +479,6 @@ void WebPageProxyHaiku::redo()
     send(Messages::WebPage::Redo(step.id));
 }
 
-#include <Entry.h>
-#include <Path.h>
-
 void WebPageProxyHaiku::runOpenPanel(WebFrameProxy&, FrameInfoData&&, API::OpenPanelParameters& parameters, WebOpenPanelResultListenerProxy& listener)
 {
     m_openPanelResultListener = &listener;
@@ -610,8 +509,6 @@ void WebPageProxyHaiku::MessageReceived(BMessage* message)
     }
 }
 
-#include <Alert.h>
-
 void WebPageProxyHaiku::showContextMenu(FrameInfoData&& frameInfo, ContextMenuContextData&& contextMenuContext, const UserData& userData)
 {
     auto contextMenu = WebContextMenuProxyHaiku::create(*this, WTFMove(contextMenuContext), userData);
@@ -626,17 +523,12 @@ void WebPageProxyHaiku::runJavaScriptAlert(WebFrameProxy&, FrameInfoData&&, cons
     completionHandler();
 }
 
-#include "JSPromptPanel.h"
-
 void WebPageProxyHaiku::runJavaScriptConfirm(WebFrameProxy&, FrameInfoData&&, const String& message, CompletionHandler<void(bool)>&& completionHandler)
 {
     BAlert* alert = new BAlert("JavaScript Confirm", message.utf8().data(), "Cancel", "OK");
     int32 result = alert->Go();
     completionHandler(result == 1);
 }
-
-#include <AuthenticationChallenge.h>
-#include <Credential.h>
 
 void WebPageProxyHaiku::runAuthenticationPanel(WebFrameProxy&, FrameInfoData&&, WebCore::AuthenticationChallenge& challenge, CompletionHandler<void(WebCore::Credential, WebCore::ShouldContinueWithoutCredential)>&& completionHandler)
 {

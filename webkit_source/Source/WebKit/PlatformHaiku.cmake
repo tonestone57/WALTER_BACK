@@ -60,17 +60,18 @@ LIST(APPEND WebKit_LIBRARIES
 )
 
 INSTALL(FILES
-    haiku/API/WebWindow.h
-    haiku/API/WebViewConstants.h
-    haiku/API/WebView.h
-    haiku/API/WebSettings.h
-    haiku/API/WebPage.h
-    haiku/API/WebKitInfo.h
-    haiku/API/WebFrame.h
-    haiku/API/WebDownload.h
+    haiku/API/BWebWindow.h
+    haiku/API/BWebView.h
+    haiku/API/BWebSettings.h
+    haiku/API/BWebPage.h
+    haiku/API/BWebPageClient.h
+    haiku/API/BWebKitInfo.h
+    haiku/API/BWebHistory.h
+    haiku/API/BWebIconDatabase.h
     haiku/API/BWebFrame.h
+    haiku/API/BWebDownload.h
     haiku/API/BWebCookieJar.h
-    DESTINATION develop/headers${CMAKE_HAIKU_SECONDARY_ARCH_SUBDIR}
+    DESTINATION "develop/headers/private/kits/webkit"
     COMPONENT devel
 )
 

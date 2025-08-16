@@ -23,22 +23,22 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.hh"
+#include "config.h"
 #include "WebChromeClientHaiku.h"
 
-#include "WebPage.h"
-#include "WebProcess.h"
-#include "WebPageProxyMessages.h"
-#include <WebCore/ContextMenu.h>
-#include <WebCore/FrameLoader.h>
-#include <WebCore/WindowFeatures.h>
-#include <WebCore/NavigationAction.h>
-
-#include "WebContextMenuItemData.h"
 #include "ContextMenuContextData.h"
+#include "HangDetectionDisabler.h"
+#include "WebContextMenuItemData.h"
 #include "WebOpenPanelResultListener.h"
+#include "WebPage.h"
+#include "WebPageProxyMessages.h"
+#include "WebProcess.h"
+#include <WebCore/ContextMenu.h>
 #include <WebCore/FileChooser.h>
 #include <WebCore/Frame.h>
+#include <WebCore/FrameLoader.h>
+#include <WebCore/NavigationAction.h>
+#include <WebCore/WindowFeatures.h>
 
 namespace WebKit {
 
@@ -51,89 +51,99 @@ WebChromeClientHaiku::WebChromeClientHaiku(WebPage& page)
 
 void WebChromeClientHaiku::setWindowRect(const FloatRect& rect)
 {
-    m_page.process().send(Messages::WebPageProxy::SetWindowRect(rect), m_page.identifier());
+    m_page.send(Messages::WebPageProxy::SetWindowRect(rect));
 }
 
 FloatRect WebChromeClientHaiku::windowRect() const
 {
-    FloatRect rect;
-    m_page.process().sendSync(Messages::WebPageProxy::GetWindowRect(), Messages::WebPageProxy::GetWindowRect::Reply(rect), m_page.identifier());
+    auto sendResult = m_page.sendSync(Messages::WebPageProxy::GetWindowRect());
+    auto [rect] = sendResult.takeReplyOr(FloatRect { });
     return rect;
 }
 
 void WebChromeClientHaiku::focus()
 {
-    m_page.process().send(Messages::WebPageProxy::SetFocus(true), m_page.identifier());
+    m_page.send(Messages::WebPageProxy::SetFocus(true));
 }
 
 void WebChromeClientHaiku::unfocus()
 {
-    m_page.process().send(Messages::WebPageProxy::SetFocus(false), m_page.identifier());
+    m_page.send(Messages::WebPageProxy::SetFocus(false));
 }
 
 void WebChromeClientHaiku::runJavaScriptAlert(LocalFrame& frame, const String& message)
 {
+    HangDetectionDisabler hangDetectionDisabler;
+    m_page.prepareToRunModalJavaScriptDialog();
     m_page.sendSync(Messages::WebPageProxy::RunJavaScriptAlert(frame.frameID(), frame.info(), message), Messages::WebPageProxy::RunJavaScriptAlert::Reply());
 }
 
 bool WebChromeClientHaiku::runJavaScriptConfirm(LocalFrame& frame, const String& message)
 {
-    bool result = false;
-    m_page.sendSync(Messages::WebPageProxy::RunJavaScriptConfirm(frame.frameID(), frame.info(), message), Messages::WebPageProxy::RunJavaScriptConfirm::Reply(result));
+    HangDetectionDisabler hangDetectionDisabler;
+    m_page.prepareToRunModalJavaScriptDialog();
+    auto sendResult = m_page.sendSync(Messages::WebPageProxy::RunJavaScriptConfirm(frame.frameID(), frame.info(), message));
+    auto [result] = sendResult.takeReplyOr(false);
     return result;
 }
 
 bool WebChromeClientHaiku::runJavaScriptPrompt(LocalFrame& frame, const String& message, const String& defaultValue, String& result)
 {
-    bool ok = false;
-    m_page.sendSync(Messages::WebPageProxy::RunJavaScriptPrompt(frame.frameID(), frame.info(), message, defaultValue), Messages::WebPageProxy::RunJavaScriptPrompt::Reply(ok, result));
+    HangDetectionDisabler hangDetectionDisabler;
+    m_page.prepareToRunModalJavaScriptDialog();
+    auto sendResult = m_page.sendSync(Messages::WebPageProxy::RunJavaScriptPrompt(frame.frameID(), frame.info(), message, defaultValue));
+    auto [ok, promptResult] = sendResult.takeReplyOr(false, String { });
+    result = promptResult;
     return ok;
 }
 
 void WebChromeClientHaiku::setStatusbarVisible(bool visible)
 {
-    m_page.process().send(Messages::WebPageProxy::SetStatusbarVisible(visible), m_page.identifier());
+    m_page.send(Messages::WebPageProxy::SetStatusbarVisible(visible));
 }
 
 bool WebChromeClientHaiku::statusbarVisible() const
 {
-    bool isVisible = true;
-    m_page.process().sendSync(Messages::WebPageProxy::StatusbarIsVisible(), Messages::WebPageProxy::StatusbarIsVisible::Reply(isVisible), m_page.identifier());
+    auto sendResult = m_page.sendSync(Messages::WebPageProxy::StatusbarIsVisible());
+    auto [isVisible] = sendResult.takeReplyOr(true);
     return isVisible;
 }
 
 void WebChromeClientHaiku::setToolbarsVisible(bool visible)
 {
-    m_page.process().send(Messages::WebPageProxy::SetToolbarsVisible(visible), m_page.identifier());
+    m_page.send(Messages::WebPageProxy::SetToolbarsVisible(visible));
 }
 
 bool WebChromeClientHaiku::toolbarsVisible() const
 {
-    bool isVisible = true;
-    m_page.process().sendSync(Messages::WebPageProxy::ToolbarsAreVisible(), Messages::WebPageProxy::ToolbarsAreVisible::Reply(isVisible), m_page.identifier());
+    auto sendResult = m_page.sendSync(Messages::WebPageProxy::ToolbarsAreVisible());
+    auto [isVisible] = sendResult.takeReplyOr(true);
     return isVisible;
 }
 
 void WebChromeClientHaiku::setMenubarVisible(bool visible)
 {
-    m_page.process().send(Messages::WebPageProxy::SetMenubarVisible(visible), m_page.identifier());
+    m_page.send(Messages::WebPageProxy::SetMenubarVisible(visible));
 }
 
 bool WebChromeClientHaiku::menubarVisible() const
 {
-    bool isVisible = true;
-    m_page.process().sendSync(Messages::WebPageProxy::MenubarIsVisible(), Messages::WebPageProxy::MenubarIsVisible::Reply(isVisible), m_page.identifier());
+    auto sendResult = m_page.sendSync(Messages::WebPageProxy::MenubarIsVisible());
+    auto [isVisible] = sendResult.takeReplyOr(true);
     return isVisible;
 }
 
 void WebChromeClientHaiku::setResizable(bool resizable)
 {
-    m_page.process().send(Messages::WebPageProxy::SetResizable(resizable), m_page.identifier());
+    m_page.send(Messages::WebPageProxy::SetResizable(resizable));
 }
 
 void WebChromeClientHaiku::closeWindow()
 {
-    m_page.process().send(Messages::WebPageProxy::ClosePage(), m_page.identifier());
+    if (RefPtr coreFrame = m_page.mainFrame().coreLocalFrame())
+        coreFrame->loader().stopForUserCancel();
+
+    m_page.sendClose();
 }
 
 void WebChromeClientHaiku::addMessageToConsole(MessageSource source, MessageLevel level, const String& message, unsigned lineNumber, unsigned columnNumber, const String& sourceID)
@@ -153,7 +163,7 @@ void WebChromeClientHaiku::setCursor(const WebCore::Cursor& cursor)
 
 void WebChromeClientHaiku::print(LocalFrame& frame)
 {
-    // TODO: Implement
+    m_page.sendSync(Messages::WebPageProxy::PrintFrame(frame.frameID(), frame.document()->title(), {}));
 }
 
 void WebChromeClientHaiku::runOpenPanel(LocalFrame& frame, FileChooser& chooser)
@@ -201,8 +211,8 @@ void WebChromeClientHaiku::showContextMenu(const ContextMenu* menu) const
     for (const auto& item : menu->items())
         menuItems.append(WebContextMenuItemData(item));
 
-    m_page.process().send(Messages::WebPageProxy::ShowContextMenu(
-            m_page.contextMenuContextData(), menuItems), m_page.identifier());
+    m_page.send(Messages::WebPageProxy::ShowContextMenu(
+            m_page.contextMenuContextData(), menuItems));
 }
 
 } // namespace WebKit
