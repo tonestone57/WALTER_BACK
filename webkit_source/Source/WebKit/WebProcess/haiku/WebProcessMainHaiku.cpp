@@ -33,10 +33,13 @@
 namespace WebKit {
 using namespace WebCore;
 
+#include <stdio.h>
+
 class WebProcessMain final : public AuxiliaryProcessMainBase {
 public:
     bool platformInitialize() override
     {
+        printf("WebProcess started\n");
         BApplication* app = new BApplication("application/x-vnd.haiku-webkit.webprocess");
         return true;
     }

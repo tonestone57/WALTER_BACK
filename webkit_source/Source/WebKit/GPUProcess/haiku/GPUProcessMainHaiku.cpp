@@ -27,7 +27,10 @@
 #include "GPUProcessMain.h"
 #include "GPUProcessHaiku.h"
 
+#include <stdio.h>
+
 int main(int argc, char** argv)
 {
+    printf("GPUProcess started\n");
     return WebKit::GPUProcessMain(argc, argv, WebKit::GPUProcessHaiku::singleton());
 }

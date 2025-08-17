@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Your Name <you@example.com>
+ * Copyright (C) 2024 Haiku, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,6 +34,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <thread>
 #include <wtf/text/CString.h>
 #include <wtf/UniStdExtras.h>
 
@@ -49,9 +50,11 @@ void ProcessLauncher::launchProcess()
 
     String executablePath = processExecutablePath();
     if (executablePath.isEmpty()) {
-        printf("Could not find the WebProcess executable\n");
+        fprintf(stderr, "Could not find the helper executable\n");
         return;
     }
+
+    printf("Launching %s\n", executablePath.utf8().data());
 
     CString executablePathCString = executablePath.utf8();
     const char* argv[] = {
@@ -61,17 +64,34 @@ void ProcessLauncher::launchProcess()
         String::number(socketPair.server).utf8().data(),
         nullptr
     };
+    int argc = (sizeof(argv) / sizeof(argv[0])) - 1;
 
-    thread_id thread = load_image_etc(3, argv, (const char**)environ, B_NORMAL_PRIORITY,
+    printf("  arguments:\n");
+    for (int i = 0; i < argc; i++)
+        printf("    argv[%d]: %s\n", i, argv[i]);
+
+    thread_id thread = load_image_etc(argc, argv, (const char**)environ, B_NORMAL_PRIORITY,
         B_CURRENT_TEAM, 0);
 
     if (thread < B_OK) {
-        printf("Failed to launch %s: %s\n", executablePath.utf8().data(), strerror(thread));
+        fprintf(stderr, "Failed to launch %s: %s\n", executablePath.utf8().data(), strerror(thread));
         return;
     }
 
     m_processID = thread;
     resume_thread(thread);
+
+    std::thread([this, processID = m_processID] {
+        status_t status;
+        wait_for_thread(processID, &status);
+
+        callOnMainThread([this, processID] {
+            if (m_processID == processID) {
+                m_client->processDidTerminate(this);
+                m_processID = 0;
+            }
+        });
+    }).detach();
 
     didFinishLaunchingProcess(m_processID, IPC::Connection::Identifier(socketPair.client));
 }
@@ -81,6 +101,8 @@ void ProcessLauncher::terminateProcess()
     if (!m_processID)
         return;
 
+    // FIXME: This is not a graceful shutdown. We should send a "please exit"
+    // message to the process and wait for it to exit, before killing it.
     kill_thread(m_processID);
     m_processID = 0;
 }

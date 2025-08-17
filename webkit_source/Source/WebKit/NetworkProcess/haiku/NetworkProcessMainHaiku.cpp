@@ -27,7 +27,10 @@
 #include "NetworkProcessMain.h"
 #include "NetworkProcessHaiku.h"
 
+#include <stdio.h>
+
 int main(int argc, char** argv)
 {
+    printf("NetworkProcess started\n");
     return WebKit::NetworkProcessMain(argc, argv, WebKit::NetworkProcessHaiku::singleton());
 }

@@ -26,6 +26,7 @@
 #include "config.h"
 #include "WebProcessPool.h"
 
+#include "GPUProcessCreationParameters.h"
 #include "WebProcessCreationParameters.h"
 #include <WebCore/NotImplemented.h>
 
@@ -39,18 +40,44 @@ void WebProcessPool::platformInitialize(NeedsGlobalStaticInitialization)
 {
 }
 
-void WebProcessPool::platformInitializeNetworkProcess(NetworkProcessCreationParameters&)
+void WebProcessPool::platformInitializeGPUProcess(GPUProcessCreationParameters& parameters)
 {
+    // Assume the GPUProcess executable is in the same directory as the main application executable.
+    app_info info;
+    if (be_app->GetAppInfo(&info) != B_OK)
+        return;
+
+    BPath path(&info.ref);
+    path.GetParent(&path);
+    path.Append("GPUProcess");
+    parameters.processPath = path.Path();
+    printf("GPUProcess executable path: %s\n", parameters.processPath.utf8().data());
+}
+
+void WebProcessPool::platformInitializeNetworkProcess(NetworkProcessCreationParameters& parameters)
+{
+    // Assume the NetworkProcess executable is in the same directory as the main application executable.
+    app_info info;
+    if (be_app->GetAppInfo(&info) != B_OK)
+        return;
+
+    BPath path(&info.ref);
+    path.GetParent(&path);
+    path.Append("NetworkProcess");
+    parameters.processPath = path.Path();
+    printf("NetworkProcess executable path: %s\n", parameters.processPath.utf8().data());
 }
 
 void WebProcessPool::platformInitializeWebProcess(const WebKit::WebProcessProxy&, WebProcessCreationParameters& parameters)
 {
+    // Assume the WebProcess executable is in the same directory as the main application executable.
     app_info info;
     be_app->GetAppInfo(&info);
     BPath path(&info.ref);
     path.GetParent(&path);
     path.Append("WebProcess");
     parameters.processPath = path.Path();
+    printf("WebProcess executable path: %s\n", parameters.processPath.utf8().data());
 }
 
 void WebProcessPool::platformInvalidateContext()
@@ -59,6 +86,9 @@ void WebProcessPool::platformInvalidateContext()
 
 void WebProcessPool::platformResolvePathsForSandboxExtensions()
 {
+    // FIXME: This needs to be implemented to set up the sandbox for the
+    // auxiliary processes. This will require a deep understanding of the
+    // Haiku security model and the available sandboxing APIs.
 }
 
 } // namespace WebKit

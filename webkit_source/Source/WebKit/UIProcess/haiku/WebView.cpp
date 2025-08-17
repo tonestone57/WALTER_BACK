@@ -146,6 +146,9 @@ bool WebView::isViewVisible()
 
 void WebView::processDidExit()
 {
+    // FIXME: This should be implemented to show a "crashed tab" UI to the user,
+    // with an option to reload the page.
+    printf("WebProcess has crashed!\n");
 }
 
 void WebView::didRelaunchProcess()
